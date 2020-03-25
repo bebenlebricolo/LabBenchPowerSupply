@@ -5,9 +5,9 @@ EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
 Sheet 1 2
-Title ""
-Date "jeu. 02 avril 2015"
-Rev ""
+Title "Lab bench power supply"
+Date "2020-03-25"
+Rev "1.0"
 Comp ""
 Comment1 ""
 Comment2 ""
