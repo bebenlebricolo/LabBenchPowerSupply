@@ -21,7 +21,7 @@ Text Label 8700 1200 0    60   ~ 0
 Text Label 8700 1300 0    60   ~ 0
 Reset
 Text Label 8700 1900 2    60   ~ 0
-FAN_CONTROL
+fan_control
 Text Label 8700 2000 0    60   ~ 0
 7
 Text Label 8700 2100 0    60   ~ 0
@@ -334,8 +334,8 @@ F 3 "~" H 5575 1400 50  0001 C CNN
 	1    5575 1400
 	1    0    0    -1  
 $EndComp
-Text Notes 3150 675  0    50   ~ 0
-220 V AC / 12 V AC
+Text Notes 2625 650  0    50   ~ 0
+220 V AC / 2x11.5 serie = 23V AC
 $Comp
 L Connector:Conn_WallPlug_Earth P?
 U 1 1 5E7C9D33
@@ -473,476 +473,229 @@ Connection ~ 4600 1525
 Wire Wire Line
 	4725 950  5225 950 
 Wire Wire Line
-	3850 1000 4600 1000
-Wire Wire Line
 	3850 1400 4025 1400
 $Comp
 L NMOS_TH:IRFZ14PBF U?
 U 1 1 5E823E21
-P 1600 2525
-F 0 "U?" V 1893 2525 50  0000 C CNN
-F 1 "IRFZ14PBF" V 1802 2525 50  0000 C CNN
-F 2 "" H 1600 2525 50  0001 C CNN
-F 3 "" H 1600 2525 50  0001 C CNN
-	1    1600 2525
+P 1450 2525
+F 0 "U?" V 1743 2525 50  0000 C CNN
+F 1 "IRFZ14PBF" V 1652 2525 50  0000 C CNN
+F 2 "" H 1450 2525 50  0001 C CNN
+F 3 "" H 1450 2525 50  0001 C CNN
+	1    1450 2525
 	0    -1   -1   0   
 $EndComp
 Wire Wire Line
-	1250 2475 1400 2475
+	1100 2475 1250 2475
 Wire Wire Line
-	1800 2475 2075 2475
+	1650 2475 1925 2475
 Wire Wire Line
-	2075 2475 2075 2775
+	1925 2475 1925 2625
 $Comp
 L Device:D_Schottky D?
 U 1 1 5E82A595
-P 2075 2925
-F 0 "D?" V 2029 3004 50  0000 L CNN
-F 1 "D_Schottky" V 2120 3004 50  0000 L CNN
-F 2 "" H 2075 2925 50  0001 C CNN
-F 3 "~" H 2075 2925 50  0001 C CNN
-	1    2075 2925
+P 1925 2775
+F 0 "D?" V 1879 2854 50  0000 L CNN
+F 1 "D_Schottky" V 1970 2854 50  0000 L CNN
+F 2 "" H 1925 2775 50  0001 C CNN
+F 3 "~" H 1925 2775 50  0001 C CNN
+	1    1925 2775
 	0    1    1    0   
 $EndComp
 $Comp
 L power:Earth #PWR?
 U 1 1 5E82CEAE
-P 2525 3100
-F 0 "#PWR?" H 2525 2850 50  0001 C CNN
-F 1 "Earth" H 2525 2950 50  0001 C CNN
-F 2 "" H 2525 3100 50  0001 C CNN
-F 3 "~" H 2525 3100 50  0001 C CNN
-	1    2525 3100
+P 1925 3100
+F 0 "#PWR?" H 1925 2850 50  0001 C CNN
+F 1 "Earth" H 1925 2950 50  0001 C CNN
+F 2 "" H 1925 3100 50  0001 C CNN
+F 3 "~" H 1925 3100 50  0001 C CNN
+	1    1925 3100
 	1    0    0    -1  
 $EndComp
 $Comp
 L Device:L L?
 U 1 1 5E82DAFE
-P 2525 2475
-F 0 "L?" V 2715 2475 50  0000 C CNN
-F 1 "L" V 2624 2475 50  0000 C CNN
-F 2 "" H 2525 2475 50  0001 C CNN
-F 3 "~" H 2525 2475 50  0001 C CNN
-	1    2525 2475
+P 2225 2475
+F 0 "L?" V 2415 2475 50  0000 C CNN
+F 1 "L" V 2324 2475 50  0000 C CNN
+F 2 "" H 2225 2475 50  0001 C CNN
+F 3 "~" H 2225 2475 50  0001 C CNN
+	1    2225 2475
 	0    -1   -1   0   
 $EndComp
 Wire Wire Line
-	2075 2475 2375 2475
-Connection ~ 2075 2475
-$Comp
-L NMOS_TH:IRFZ14PBF U?
-U 1 1 5E83214C
-P 2925 2900
-F 0 "U?" H 3081 2946 50  0000 L CNN
-F 1 "IRFZ14PBF" H 3081 2855 50  0000 L CNN
-F 2 "" H 2925 2900 50  0001 C CNN
-F 3 "" H 2925 2900 50  0001 C CNN
-	1    2925 2900
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	2975 2700 2975 2475
-Wire Wire Line
-	2975 3100 2525 3100
-Connection ~ 2525 3100
-Wire Wire Line
-	2525 3100 2075 3100
-Wire Wire Line
-	2075 3100 2075 3075
-$Comp
-L Device:D_Schottky D?
-U 1 1 5E83ADD8
-P 3325 2475
-F 0 "D?" H 3325 2259 50  0000 C CNN
-F 1 "D_Schottky" H 3325 2350 50  0000 C CNN
-F 2 "" H 3325 2475 50  0001 C CNN
-F 3 "~" H 3325 2475 50  0001 C CNN
-	1    3325 2475
-	-1   0    0    1   
-$EndComp
-Wire Wire Line
-	2675 2475 2975 2475
-Wire Wire Line
-	3175 2475 2975 2475
-Connection ~ 2975 2475
+	1925 2475 2075 2475
+Connection ~ 1925 2475
 Wire Wire Line
 	5575 1825 5825 1825
 Connection ~ 5575 1825
-Wire Wire Line
-	2075 3100 1250 3100
-Connection ~ 2075 3100
 $Comp
 L Device:CP1 C?
 U 1 1 5E853BFE
-P 3700 2800
-F 0 "C?" H 3815 2846 50  0000 L CNN
-F 1 "CP1" H 3815 2755 50  0000 L CNN
-F 2 "" H 3700 2800 50  0001 C CNN
-F 3 "~" H 3700 2800 50  0001 C CNN
-	1    3700 2800
+P 2600 2800
+F 0 "C?" H 2715 2846 50  0000 L CNN
+F 1 "CP1" H 2715 2755 50  0000 L CNN
+F 2 "" H 2600 2800 50  0001 C CNN
+F 3 "~" H 2600 2800 50  0001 C CNN
+	1    2600 2800
 	1    0    0    -1  
 $EndComp
 $Comp
 L Device:CP1 C?
 U 1 1 5E8541D6
-P 4075 2800
-F 0 "C?" H 4190 2846 50  0000 L CNN
-F 1 "CP1" H 4190 2755 50  0000 L CNN
-F 2 "" H 4075 2800 50  0001 C CNN
-F 3 "~" H 4075 2800 50  0001 C CNN
-	1    4075 2800
+P 2975 2800
+F 0 "C?" H 3090 2846 50  0000 L CNN
+F 1 "CP1" H 3090 2755 50  0000 L CNN
+F 2 "" H 2975 2800 50  0001 C CNN
+F 3 "~" H 2975 2800 50  0001 C CNN
+	1    2975 2800
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	3475 2475 3700 2475
+	2375 2475 2600 2475
 Wire Wire Line
-	4075 2475 4075 2650
+	2975 2475 2975 2650
 Wire Wire Line
-	3700 2650 3700 2475
-Connection ~ 3700 2475
+	2600 2650 2600 2475
+Connection ~ 2600 2475
 Wire Wire Line
-	3700 2475 4075 2475
+	2600 2475 2975 2475
 Wire Wire Line
-	4075 3100 4075 2950
-Connection ~ 2975 3100
+	2975 3100 2975 2950
 Wire Wire Line
-	3700 2950 3700 3100
+	2600 2950 2600 3100
+Connection ~ 2600 3100
 Wire Wire Line
-	2975 3100 3700 3100
-Connection ~ 3700 3100
+	2600 3100 2975 3100
 Wire Wire Line
-	3700 3100 4075 3100
-Wire Wire Line
-	4075 2475 4475 2475
-Connection ~ 4075 2475
+	2975 2475 3375 2475
+Connection ~ 2975 2475
 $Comp
 L Device:R_Shunt R?
 U 1 1 5E866D27
-P 4550 3100
-F 0 "R?" V 4325 3100 50  0000 C CNN
-F 1 "R_Shunt" V 4416 3100 50  0000 C CNN
-F 2 "" V 4480 3100 50  0001 C CNN
-F 3 "~" H 4550 3100 50  0001 C CNN
-	1    4550 3100
+P 3450 3100
+F 0 "R?" V 3225 3100 50  0000 C CNN
+F 1 "R_Shunt" V 3316 3100 50  0000 C CNN
+F 2 "" V 3380 3100 50  0001 C CNN
+F 3 "~" H 3450 3100 50  0001 C CNN
+	1    3450 3100
 	0    1    1    0   
 $EndComp
 Wire Wire Line
-	4075 3100 4350 3100
-Connection ~ 4075 3100
+	2975 3100 3250 3100
+Connection ~ 2975 3100
 Wire Wire Line
-	4750 3100 5050 3100
+	3650 3100 3950 3100
 Text Label 5800 950  0    50   ~ 0
-12Vsmoothed
-Text Label 1250 2475 2    50   ~ 0
-12Vsmoothed
-Text Label 5050 2475 0    50   ~ 0
+23v_smoothed
+Text Label 3950 2475 0    50   ~ 0
 RegulatedOut
 Text Label 5825 1825 0    50   ~ 0
 CommonLine
-Text Label 1250 3100 2    50   ~ 0
+Text Label 1425 3100 2    50   ~ 0
 CommonLine
 Wire Wire Line
-	4450 3250 4075 3250
+	3350 3250 2975 3250
 Wire Wire Line
-	4075 3250 4075 3100
+	2975 3250 2975 3100
 Wire Wire Line
-	4650 3250 4650 3475
+	3550 3250 3550 3475
 $Comp
 L Device:CP1 C?
 U 1 1 5E87E7BA
-P 3700 3250
-F 0 "C?" H 3585 3204 50  0000 R CNN
-F 1 "CP1" H 3585 3295 50  0000 R CNN
-F 2 "" H 3700 3250 50  0001 C CNN
-F 3 "~" H 3700 3250 50  0001 C CNN
-	1    3700 3250
+P 2600 3250
+F 0 "C?" H 2485 3204 50  0000 R CNN
+F 1 "CP1" H 2485 3295 50  0000 R CNN
+F 2 "" H 2600 3250 50  0001 C CNN
+F 3 "~" H 2600 3250 50  0001 C CNN
+	1    2600 3250
 	-1   0    0    1   
 $EndComp
 Wire Wire Line
-	3700 3400 3700 3475
+	2600 3400 2600 3475
 Wire Wire Line
-	3475 3475 3700 3475
-Connection ~ 3700 3475
+	2375 3475 2600 3475
+Connection ~ 2600 3475
 Wire Wire Line
-	3700 3475 4650 3475
-Text Label 3475 3475 2    50   ~ 0
+	2600 3475 3550 3475
+Text Label 2375 3475 2    50   ~ 0
 CurrentSensing
 Text Label 10550 2200 0    50   ~ 0
 CurrentSensing
-Text Label 8150 5325 2    50   ~ 0
-12Vsmoothed
-$Comp
-L Regulator_Linear:LM7805_TO220 U?
-U 1 1 5E958855
-P 8800 5325
-F 0 "U?" H 8800 5567 50  0000 C CNN
-F 1 "LM7805_TO220" H 8800 5476 50  0000 C CNN
-F 2 "Package_TO_SOT_THT:TO-220-3_Vertical" H 8800 5550 50  0001 C CIN
-F 3 "http://www.fairchildsemi.com/ds/LM/LM7805.pdf" H 8800 5275 50  0001 C CNN
-	1    8800 5325
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
-	8500 5325 8150 5325
-Text Label 8125 5925 2    50   ~ 0
-CommonLine
-$Comp
-L Device:CP1 C?
-U 1 1 5E967507
-P 9875 5775
-F 0 "C?" H 9990 5821 50  0000 L CNN
-F 1 "CP1" H 9990 5730 50  0000 L CNN
-F 2 "" H 9875 5775 50  0001 C CNN
-F 3 "~" H 9875 5775 50  0001 C CNN
-	1    9875 5775
-	1    0    0    -1  
-$EndComp
-$Comp
-L Transistor_BJT:2N2219 Q?
-U 1 1 5E979576
-P 9875 5425
-F 0 "Q?" H 10065 5471 50  0000 L CNN
-F 1 "2N2222" H 10075 5275 50  0000 L CNN
-F 2 "Package_TO_SOT_THT:TO-39-3" H 10075 5350 50  0001 L CIN
-F 3 "http://www.onsemi.com/pub_link/Collateral/2N2219-D.PDF" H 9875 5425 50  0001 L CNN
-	1    9875 5425
-	0    -1   -1   0   
-$EndComp
-$Comp
-L Device:R R?
-U 1 1 5E981D46
-P 9525 5625
-F 0 "R?" V 9318 5625 50  0000 C CNN
-F 1 "1k" V 9409 5625 50  0000 C CNN
-F 2 "" V 9455 5625 50  0001 C CNN
-F 3 "~" H 9525 5625 50  0001 C CNN
-	1    9525 5625
-	0    1    1    0   
-$EndComp
-Text Label 10300 5325 0    50   ~ 0
-Vcc(4.4V)
-Wire Wire Line
-	10075 5325 10300 5325
-Connection ~ 9875 5625
-Wire Wire Line
-	9100 5325 9225 5325
-Wire Wire Line
-	9675 5625 9875 5625
-Wire Wire Line
-	9375 5625 9225 5625
-Wire Wire Line
-	9225 5625 9225 5325
-Connection ~ 9225 5325
-Wire Wire Line
-	9225 5325 9675 5325
-Wire Wire Line
-	8800 5625 8800 5925
-Wire Wire Line
-	8800 5925 9875 5925
-Wire Wire Line
-	8800 5925 8125 5925
-Connection ~ 8800 5925
-$Comp
-L power:Earth #PWR?
-U 1 1 5E9C0CF3
-P 8800 5925
-F 0 "#PWR?" H 8800 5675 50  0001 C CNN
-F 1 "Earth" H 8800 5775 50  0001 C CNN
-F 2 "" H 8800 5925 50  0001 C CNN
-F 3 "~" H 8800 5925 50  0001 C CNN
-	1    8800 5925
-	1    0    0    -1  
-$EndComp
-Text Label 10250 950  1    50   ~ 0
-Vcc(4.4V)
-$Comp
-L Transistor_BJT:2N2219 Q?
-U 1 1 5EB1C954
-P 1900 4350
-F 0 "Q?" H 2090 4396 50  0000 L CNN
-F 1 "2N2222" H 2100 4200 50  0000 L CNN
-F 2 "Package_TO_SOT_THT:TO-39-3" H 2100 4275 50  0001 L CIN
-F 3 "http://www.onsemi.com/pub_link/Collateral/2N2219-D.PDF" H 1900 4350 50  0001 L CNN
-	1    1900 4350
-	1    0    0    -1  
-$EndComp
-$Comp
-L Device:R R?
-U 1 1 5EB1D9CF
-P 1550 4350
-F 0 "R?" V 1343 4350 50  0000 C CNN
-F 1 "1k" V 1434 4350 50  0000 C CNN
-F 2 "" V 1480 4350 50  0001 C CNN
-F 3 "~" H 1550 4350 50  0001 C CNN
-	1    1550 4350
-	0    1    1    0   
-$EndComp
-$Comp
-L Device:R R?
-U 1 1 5EB1DF6E
-P 1700 4500
-F 0 "R?" H 1630 4454 50  0000 R CNN
-F 1 "56k" H 1630 4545 50  0000 R CNN
-F 2 "" V 1630 4500 50  0001 C CNN
-F 3 "~" H 1700 4500 50  0001 C CNN
-	1    1700 4500
-	-1   0    0    1   
-$EndComp
-Connection ~ 1700 4350
-Text Label 1775 4000 2    50   ~ 0
-12Vsmoothed
-Wire Wire Line
-	1775 4000 2000 4000
-Wire Wire Line
-	2000 4000 2000 4150
-Wire Wire Line
-	2000 4550 2450 4550
-$Comp
-L Device:R R?
-U 1 1 5EB361DB
-P 2450 4700
-F 0 "R?" H 2380 4654 50  0000 R CNN
-F 1 "1k" H 2380 4745 50  0000 R CNN
-F 2 "" V 2380 4700 50  0001 C CNN
-F 3 "~" H 2450 4700 50  0001 C CNN
-	1    2450 4700
-	-1   0    0    1   
-$EndComp
-Connection ~ 2450 4550
-Wire Wire Line
-	2450 4550 2600 4550
-Wire Wire Line
-	1700 4650 1700 4850
-Wire Wire Line
-	1700 4850 2450 4850
-Wire Wire Line
-	1700 4850 1600 4850
-Connection ~ 1700 4850
+	2475 4050 2475 4200
 $Comp
 L Transistor_BJT:2N2219 Q?
 U 1 1 5EB84D84
-P 4550 4375
-F 0 "Q?" H 4740 4421 50  0000 L CNN
-F 1 "2N2222" H 4750 4225 50  0000 L CNN
-F 2 "Package_TO_SOT_THT:TO-39-3" H 4750 4300 50  0001 L CIN
-F 3 "http://www.onsemi.com/pub_link/Collateral/2N2219-D.PDF" H 4550 4375 50  0001 L CNN
-	1    4550 4375
+P 2375 5625
+F 0 "Q?" H 2565 5671 50  0000 L CNN
+F 1 "2N2222" H 2575 5475 50  0000 L CNN
+F 2 "Package_TO_SOT_THT:TO-39-3" H 2575 5550 50  0001 L CIN
+F 3 "http://www.onsemi.com/pub_link/Collateral/2N2219-D.PDF" H 2375 5625 50  0001 L CNN
+	1    2375 5625
 	1    0    0    -1  
-$EndComp
-$Comp
-L Device:R R?
-U 1 1 5EB84D8E
-P 4200 4375
-F 0 "R?" V 3993 4375 50  0000 C CNN
-F 1 "1k" V 4084 4375 50  0000 C CNN
-F 2 "" V 4130 4375 50  0001 C CNN
-F 3 "~" H 4200 4375 50  0001 C CNN
-	1    4200 4375
-	0    1    1    0   
 $EndComp
 $Comp
 L Device:R R?
 U 1 1 5EB84D98
-P 4350 4525
-F 0 "R?" H 4280 4479 50  0000 R CNN
-F 1 "56k" H 4280 4570 50  0000 R CNN
-F 2 "" V 4280 4525 50  0001 C CNN
-F 3 "~" H 4350 4525 50  0001 C CNN
-	1    4350 4525
+P 2175 5775
+F 0 "R?" H 2105 5729 50  0000 R CNN
+F 1 "56k" H 2105 5820 50  0000 R CNN
+F 2 "" V 2105 5775 50  0001 C CNN
+F 3 "~" H 2175 5775 50  0001 C CNN
+	1    2175 5775
 	-1   0    0    1   
 $EndComp
-Connection ~ 4350 4375
-Text Label 4425 4025 2    50   ~ 0
-12Vsmoothed
+Connection ~ 2175 5625
 Wire Wire Line
-	4425 4025 4650 4025
+	2175 5925 2175 6125
 Wire Wire Line
-	4650 4025 4650 4175
-Wire Wire Line
-	4650 4575 5100 4575
-$Comp
-L Device:R R?
-U 1 1 5EB84DA7
-P 5100 4725
-F 0 "R?" H 5030 4679 50  0000 R CNN
-F 1 "1k" H 5030 4770 50  0000 R CNN
-F 2 "" V 5030 4725 50  0001 C CNN
-F 3 "~" H 5100 4725 50  0001 C CNN
-	1    5100 4725
-	-1   0    0    1   
-$EndComp
-Connection ~ 5100 4575
-Wire Wire Line
-	5100 4575 5250 4575
-Wire Wire Line
-	4350 4675 4350 4875
-Wire Wire Line
-	4350 4875 5100 4875
-Wire Wire Line
-	4350 4875 4250 4875
-Connection ~ 4350 4875
-Text Label 1600 4850 2    50   ~ 0
-CommonLine
-Text Label 4250 4875 2    50   ~ 0
-CommonLine
-Wire Wire Line
-	4875 2475 5050 2475
+	3775 2475 3950 2475
 Text Label 8700 2300 2    60   ~ 0
-BOOST_CONTROL
-Text Label 8700 2200 2    60   ~ 0
-BUCK_CONTROL
+mosfet_low_side
 Text Label 8700 1500 2    60   ~ 0
-PLUS_BUTTON
+plus_button
 Text Label 8700 1600 2    60   ~ 0
-MINUS_BUTTON
+minus_button
 Text Label 8700 1700 2    60   ~ 0
-VARIABLE_BUTTON
+var_select_button
 Text Label 8700 1800 2    60   ~ 0
-MEMORY_BUTTON
-Text Label 1375 4350 2    60   ~ 0
-BUCK_CONTROL
-Text Label 4050 4375 2    60   ~ 0
-BOOST_CONTROL
-Text Label 2600 4550 0    60   ~ 0
+mode_button
+Text Label 675  5025 2    60   ~ 0
+mosfet_low_side
+Text Label 3075 5025 0    60   ~ 0
 buck_mosfet
-Text Label 5250 4575 0    60   ~ 0
-boost_mosfet
-Text Label 1400 2775 2    60   ~ 0
+Text Label 1250 2775 2    60   ~ 0
 buck_mosfet
 Wire Wire Line
-	2675 2700 2675 2900
-Wire Wire Line
-	1400 2775 1600 2775
-Text Label 2675 2700 2    60   ~ 0
-boost_mosfet
+	1250 2775 1450 2775
 $Sheet
 S 3600 6475 1875 525 
 U 5EC77F4C
 F0 "Cooling" 50
 F1 "Cooling.sch" 50
-F2 "12VSmoothed" I L 3600 6600 50 
-F3 "FanControl" I L 3600 6725 50 
-F4 "ThermistorVcc" I L 3600 6850 50 
-F5 "TemperatureMeasurement" I R 5475 6600 50 
+F2 "FanControl" I L 3600 6725 50 
+F3 "ThermistorVcc" I L 3600 6850 50 
+F4 "TemperatureMeasurement" I R 5475 6600 50 
+F5 "Vsupply" I L 3600 6600 50 
 $EndSheet
-Text Label 3600 6600 2    50   ~ 0
-12Vsmoothed
 Text Label 3600 6725 2    60   ~ 0
-FAN_CONTROL
+fan_control
 $Comp
 L Switch:SW_DPST SW?
 U 1 1 5EDB4B06
-P 4675 2375
-F 0 "SW?" H 4675 2700 50  0000 C CNN
-F 1 "SW_DPST" H 4675 2609 50  0000 C CNN
-F 2 "" H 4675 2375 50  0001 C CNN
-F 3 "~" H 4675 2375 50  0001 C CNN
-	1    4675 2375
+P 3575 2375
+F 0 "SW?" H 3575 2700 50  0000 C CNN
+F 1 "SW_DPST" H 3575 2609 50  0000 C CNN
+F 2 "" H 3575 2375 50  0001 C CNN
+F 3 "~" H 3575 2375 50  0001 C CNN
+	1    3575 2375
 	1    0    0    -1  
 $EndComp
-Text Label 4875 2275 0    50   ~ 0
+Text Label 3775 2275 0    50   ~ 0
 CommonLine
-Text Label 4475 2275 2    50   ~ 0
+Text Label 3375 2275 2    50   ~ 0
 ConnectLedGnd
 $Comp
 L Device:LED D?
@@ -955,8 +708,6 @@ F 3 "~" H 7475 3550 50  0001 C CNN
 	1    7475 3550
 	0    -1   -1   0   
 $EndComp
-Text Label 7475 3400 0    50   ~ 0
-Vcc(4.4V)
 $Comp
 L Device:R R?
 U 1 1 5EDBF69D
@@ -1010,7 +761,7 @@ Wire Notes Line
 	2925 6450 600  6450
 Text Notes 1225 6375 0    50   ~ 0
 Power connectors
-Text Label 5050 3100 0    50   ~ 0
+Text Label 3950 3100 0    50   ~ 0
 ReturnOut
 Text Label 1650 6875 2    50   ~ 0
 ReturnOut
@@ -1023,14 +774,12 @@ P 8425 3550
 AR Path="/5EE6415A" Ref="R?"  Part="1" 
 AR Path="/5EE32D8E/5EE6415A" Ref="R?"  Part="1" 
 F 0 "R?" H 8355 3504 50  0000 R CNN
-F 1 "150k" H 8355 3595 50  0000 R CNN
+F 1 "220k" H 8355 3595 50  0000 R CNN
 F 2 "" V 8355 3550 50  0001 C CNN
 F 3 "~" H 8425 3550 50  0001 C CNN
 	1    8425 3550
 	-1   0    0    1   
 $EndComp
-Text Label 8500 3325 0    50   ~ 0
-12Vsmoothed
 $Comp
 L Device:R R?
 U 1 1 5EE64161
@@ -1179,14 +928,314 @@ Wire Wire Line
 	3425 6850 3600 6850
 Text Label 5475 6600 0    60   ~ 0
 TemperatureMeasurement
+Text Notes 825  3925 0    50   ~ 0
+Power MOSFET transistors driver section with \nanti-latch protection (single input which controls\nboth sides of the mosfet driver section)
+Wire Wire Line
+	1425 3100 1925 3100
+Connection ~ 1925 3100
+Wire Wire Line
+	1925 3100 2600 3100
+Wire Wire Line
+	1925 2925 1925 3100
 Wire Notes Line
-	625  3825 5925 3825
+	4500 2000 4500 3550
 Wire Notes Line
-	5925 3825 5925 5025
+	4500 3550 550  3550
 Wire Notes Line
-	5925 5025 625  5025
+	550  3550 550  2000
 Wire Notes Line
-	625  5025 625  3825
-Text Notes 1775 3775 0    50   ~ 0
-Power MOSFET transistors driver section (minimalist implementation of it)
+	550  2000 4500 2000
+Text Notes 1900 1975 0    50   ~ 0
+Power section (Buck converter)
+Wire Wire Line
+	2475 5025 3075 5025
+Text Label 1950 6125 2    50   ~ 0
+CommonLine
+Wire Wire Line
+	1950 6125 2175 6125
+Wire Wire Line
+	2475 6125 2475 5825
+Connection ~ 2175 6125
+Wire Wire Line
+	2175 6125 2475 6125
+Text Notes 3950 975  0    50   ~ 0
+23V
+$Comp
+L Connector_Generic:Conn_01x02 J?
+U 1 1 5E873FAA
+P 8225 4850
+F 0 "J?" H 8305 4842 50  0000 L CNN
+F 1 "Conn_01x02" H 8305 4751 50  0000 L CNN
+F 2 "" H 8225 4850 50  0001 C CNN
+F 3 "~" H 8225 4850 50  0001 C CNN
+	1    8225 4850
+	1    0    0    -1  
+$EndComp
+Text Label 8025 4950 2    50   ~ 0
+CommonLine
+$Comp
+L Connector_Generic:Conn_01x02 J?
+U 1 1 5E875461
+P 9050 4850
+F 0 "J?" H 8968 5067 50  0000 C CNN
+F 1 "Conn_01x02" H 8968 4976 50  0000 C CNN
+F 2 "" H 9050 4850 50  0001 C CNN
+F 3 "~" H 9050 4850 50  0001 C CNN
+	1    9050 4850
+	-1   0    0    -1  
+$EndComp
+Text Label 9250 4950 0    50   ~ 0
+CommonLine
+Wire Notes Line
+	8025 4525 9200 4525
+Wire Notes Line
+	9200 4525 9200 5275
+Wire Notes Line
+	9200 5275 8025 5275
+Wire Notes Line
+	8025 5275 8025 4525
+Text Notes 7825 4475 0    50   ~ 0
+External buck converter board 23 -> 5V
+Text Label 9250 4850 0    50   ~ 0
+Vcc(5v)
+Text Label 10250 950  1    50   ~ 0
+Vcc(5v)
+Wire Wire Line
+	3850 1000 4250 1000
+$Comp
+L Device:D D?
+U 1 1 5E890948
+P 4250 750
+F 0 "D?" H 4250 534 50  0000 C CNN
+F 1 "D" H 4250 625 50  0000 C CNN
+F 2 "" H 4250 750 50  0001 C CNN
+F 3 "~" H 4250 750 50  0001 C CNN
+	1    4250 750 
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	4250 1000 4250 900 
+Connection ~ 4250 1000
+Wire Wire Line
+	4250 1000 4600 1000
+$Comp
+L Device:CP1 C?
+U 1 1 5E897965
+P 4450 725
+F 0 "C?" H 4565 771 50  0000 L CNN
+F 1 "470µ" H 4565 680 50  0000 L CNN
+F 2 "" H 4450 725 50  0001 C CNN
+F 3 "~" H 4450 725 50  0001 C CNN
+	1    4450 725 
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	4250 600  4250 550 
+Wire Wire Line
+	4250 550  4450 550 
+Wire Wire Line
+	4450 550  4450 575 
+$Comp
+L power:Earth #PWR?
+U 1 1 5E8B1977
+P 4450 875
+F 0 "#PWR?" H 4450 625 50  0001 C CNN
+F 1 "Earth" H 4450 725 50  0001 C CNN
+F 2 "" H 4450 875 50  0001 C CNN
+F 3 "~" H 4450 875 50  0001 C CNN
+	1    4450 875 
+	1    0    0    -1  
+$EndComp
+Connection ~ 4450 550 
+Wire Wire Line
+	4850 550  4850 700 
+Wire Wire Line
+	4850 700  5250 700 
+Wire Wire Line
+	4450 550  4850 550 
+Text Label 5250 700  0    50   ~ 0
+10v_smoothed
+Text Label 1850 4050 2    50   ~ 0
+10v_smoothed
+Text Label 8500 3325 0    50   ~ 0
+23v_smoothed
+Text Label 1100 2475 2    50   ~ 0
+23v_smoothed
+Text Label 8025 4850 2    50   ~ 0
+10v_smoothed
+Text Label 3600 6600 2    50   ~ 0
+23v_smoothed
+Text Notes 2775 4250 0    50   ~ 0
+Note : usually most of generic power mosfets are tolerant to \n30V between Gate and Source. If so, you can either connect the \n23V smoothed line instead of the 10V one, as a power line to \ncontrol the mosfet.
+$Comp
+L Transistor_BJT:BC307 Q?
+U 1 1 5E9096F9
+P 2375 4400
+F 0 "Q?" H 2566 4354 50  0000 L CNN
+F 1 "BC307" H 2566 4445 50  0000 L CNN
+F 2 "Package_TO_SOT_THT:TO-92_Inline" H 2575 4325 50  0001 L CIN
+F 3 "http://www.onsemi.com/pub_link/Collateral/BC307-D.PDF" H 2375 4400 50  0001 L CNN
+	1    2375 4400
+	1    0    0    1   
+$EndComp
+$Comp
+L Device:R R?
+U 1 1 5E909F1B
+P 2175 4250
+F 0 "R?" H 2105 4204 50  0000 R CNN
+F 1 "56k" H 2105 4295 50  0000 R CNN
+F 2 "" V 2105 4250 50  0001 C CNN
+F 3 "~" H 2175 4250 50  0001 C CNN
+	1    2175 4250
+	-1   0    0    1   
+$EndComp
+Wire Wire Line
+	1850 4050 2175 4050
+Wire Wire Line
+	2175 4050 2175 4100
+Connection ~ 2175 4050
+Wire Wire Line
+	2175 4050 2475 4050
+$Comp
+L Transistor_BJT:2N2219 Q?
+U 1 1 5E918642
+P 1600 4625
+F 0 "Q?" H 1790 4671 50  0000 L CNN
+F 1 "2N2222" H 1800 4475 50  0000 L CNN
+F 2 "Package_TO_SOT_THT:TO-39-3" H 1800 4550 50  0001 L CIN
+F 3 "http://www.onsemi.com/pub_link/Collateral/2N2219-D.PDF" H 1600 4625 50  0001 L CNN
+	1    1600 4625
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	1700 4425 1700 4400
+$Comp
+L Device:R R?
+U 1 1 5E920F2F
+P 1200 4625
+F 0 "R?" V 993 4625 50  0000 C CNN
+F 1 "1k" V 1084 4625 50  0000 C CNN
+F 2 "" V 1130 4625 50  0001 C CNN
+F 3 "~" H 1200 4625 50  0001 C CNN
+	1    1200 4625
+	0    1    1    0   
+$EndComp
+$Comp
+L Device:R R?
+U 1 1 5E9214BF
+P 1400 4775
+F 0 "R?" H 1330 4729 50  0000 R CNN
+F 1 "56k" H 1330 4820 50  0000 R CNN
+F 2 "" V 1330 4775 50  0001 C CNN
+F 3 "~" H 1400 4775 50  0001 C CNN
+	1    1400 4775
+	-1   0    0    1   
+$EndComp
+Wire Wire Line
+	1350 4625 1400 4625
+Connection ~ 1400 4625
+$Comp
+L power:Earth #PWR?
+U 1 1 5E9291D2
+P 1400 4925
+F 0 "#PWR?" H 1400 4675 50  0001 C CNN
+F 1 "Earth" H 1400 4775 50  0001 C CNN
+F 2 "" H 1400 4925 50  0001 C CNN
+F 3 "~" H 1400 4925 50  0001 C CNN
+	1    1400 4925
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	1400 4925 1700 4925
+Wire Wire Line
+	1700 4925 1700 4825
+Connection ~ 1400 4925
+$Comp
+L Transistor_BJT:BC307 Q?
+U 1 1 5E949A66
+P 1600 5425
+F 0 "Q?" H 1791 5379 50  0000 L CNN
+F 1 "BC307" H 1791 5470 50  0000 L CNN
+F 2 "Package_TO_SOT_THT:TO-92_Inline" H 1800 5350 50  0001 L CIN
+F 3 "http://www.onsemi.com/pub_link/Collateral/BC307-D.PDF" H 1600 5425 50  0001 L CNN
+	1    1600 5425
+	1    0    0    1   
+$EndComp
+$Comp
+L Device:R R?
+U 1 1 5E94AF88
+P 2025 4400
+F 0 "R?" V 1818 4400 50  0000 C CNN
+F 1 "1k" V 1909 4400 50  0000 C CNN
+F 2 "" V 1955 4400 50  0001 C CNN
+F 3 "~" H 2025 4400 50  0001 C CNN
+	1    2025 4400
+	0    1    1    0   
+$EndComp
+Connection ~ 2175 4400
+Wire Wire Line
+	1875 4400 1700 4400
+$Comp
+L Device:R R?
+U 1 1 5E95C800
+P 2025 5625
+F 0 "R?" V 1818 5625 50  0000 C CNN
+F 1 "1k" V 1909 5625 50  0000 C CNN
+F 2 "" V 1955 5625 50  0001 C CNN
+F 3 "~" H 2025 5625 50  0001 C CNN
+	1    2025 5625
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	1700 5625 1875 5625
+$Comp
+L Device:R R?
+U 1 1 5E974F87
+P 1400 5275
+F 0 "R?" H 1330 5229 50  0000 R CNN
+F 1 "56k" H 1330 5320 50  0000 R CNN
+F 2 "" V 1330 5275 50  0001 C CNN
+F 3 "~" H 1400 5275 50  0001 C CNN
+	1    1400 5275
+	-1   0    0    1   
+$EndComp
+Wire Wire Line
+	1250 5125 1400 5125
+Wire Wire Line
+	1700 5125 1700 5225
+Connection ~ 1400 5125
+Wire Wire Line
+	1400 5125 1700 5125
+Text Label 7475 3400 0    50   ~ 0
+Vcc(5v)
+Text Label 1250 5125 2    50   ~ 0
+Vcc(5v)
+$Comp
+L Device:R R?
+U 1 1 5E984F36
+P 1250 5425
+F 0 "R?" V 1043 5425 50  0000 C CNN
+F 1 "1k" V 1134 5425 50  0000 C CNN
+F 2 "" V 1180 5425 50  0001 C CNN
+F 3 "~" H 1250 5425 50  0001 C CNN
+	1    1250 5425
+	0    1    1    0   
+$EndComp
+Connection ~ 1400 5425
+Wire Wire Line
+	1050 4625 800  4625
+Wire Wire Line
+	800  5425 1100 5425
+Wire Wire Line
+	675  5025 800  5025
+Wire Wire Line
+	800  4625 800  5025
+Connection ~ 800  5025
+Wire Wire Line
+	800  5025 800  5425
+Connection ~ 2475 5025
+Wire Wire Line
+	2475 5025 2475 5425
+Wire Wire Line
+	2475 4600 2475 5025
 $EndSCHEMATC
