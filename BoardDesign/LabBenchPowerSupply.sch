@@ -394,7 +394,6 @@ Wire Wire Line
 	5575 1250 5575 950 
 Wire Wire Line
 	5225 1250 5225 950 
-Connection ~ 5225 950 
 Wire Wire Line
 	5225 950  5575 950 
 Wire Wire Line
@@ -462,16 +461,6 @@ Wire Wire Line
 Wire Wire Line
 	4025 1225 4300 1225
 Connection ~ 4300 1225
-Wire Wire Line
-	4600 1000 4600 1225
-Connection ~ 4600 1225
-Wire Wire Line
-	4600 1525 4725 1525
-Wire Wire Line
-	4725 1525 4725 950 
-Connection ~ 4600 1525
-Wire Wire Line
-	4725 950  5225 950 
 Wire Wire Line
 	3850 1400 4025 1400
 $Comp
@@ -1016,8 +1005,6 @@ $EndComp
 Wire Wire Line
 	4250 1000 4250 900 
 Connection ~ 4250 1000
-Wire Wire Line
-	4250 1000 4600 1000
 $Comp
 L Device:CP1 C?
 U 1 1 5E897965
@@ -1238,4 +1225,17 @@ Wire Wire Line
 	2475 5025 2475 5425
 Wire Wire Line
 	2475 4600 2475 5025
+Wire Wire Line
+	4800 1000 4800 1525
+Wire Wire Line
+	4800 1525 4600 1525
+Wire Wire Line
+	4250 1000 4800 1000
+Connection ~ 4600 1525
+Wire Wire Line
+	4600 1225 4600 950 
+Wire Wire Line
+	4600 950  5225 950 
+Connection ~ 4600 1225
+Connection ~ 5225 950 
 $EndSCHEMATC
