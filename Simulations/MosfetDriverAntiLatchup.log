@@ -1,22 +1,21 @@
 Circuit: * Z:\home\Grobuntu_home\groben\Repos\LabBenchPowerSupply\Simulations\MosfetDriverAntiLatchup.asc
 
-WARNING: Less than two connections to node 5V.  This node is used by V1.
 Direct Newton iteration for .op point succeeded.
 
-Date: Sun Mar 29 18:20:46 2020
-Total elapsed time: 0.169 seconds.
+Date: Sun Mar 29 19:06:22 2020
+Total elapsed time: 0.123 seconds.
 
 tnom = 27
 temp = 27
 method = modified trap
-totiter = 11511
-traniter = 11488
-tranpoints = 5009
-accept = 4257
-rejected = 752
-matrix size = 27
-fillins = 2
+totiter = 9331
+traniter = 9314
+tranpoints = 4006
+accept = 3428
+rejected = 578
+matrix size = 26
+fillins = 6
 solver = Normal
-Matrix Compiler1: 1.78 KB object code size  0.9/0.6/[0.4]
-Matrix Compiler2: off  [0.5]/0.8/0.7
+Matrix Compiler1: 1.98 KB object code size  0.4/0.3/[0.1]
+Matrix Compiler2: off  [0.2]/0.3/0.4
 
