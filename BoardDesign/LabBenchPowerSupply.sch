@@ -1,5 +1,4 @@
 EESchema Schematic File Version 4
-LIBS:LabBenchPowerSupply-cache
 EELAYER 30 0
 EELAYER END
 $Descr A4 11693 8268
@@ -577,8 +576,8 @@ Connection ~ 2975 3100
 Wire Wire Line
 	3650 3100 3950 3100
 Text Label 5800 950  0    50   ~ 0
-23v_smoothed
-Text Label 3950 2475 0    50   ~ 0
+MainPowerLine
+Text Label 4350 2475 0    50   ~ 0
 RegulatedOut
 Text Label 5825 1825 0    50   ~ 0
 CommonLine
@@ -613,34 +612,32 @@ CurrentSensing
 Text Label 10550 2200 0    50   ~ 0
 CurrentSensing
 Wire Wire Line
-	2475 4050 2475 4200
+	3550 4050 3550 4200
 $Comp
 L Transistor_BJT:2N2219 Q?
 U 1 1 5EB84D84
-P 2375 5625
-F 0 "Q?" H 2565 5671 50  0000 L CNN
-F 1 "2N2222" H 2575 5475 50  0000 L CNN
-F 2 "Package_TO_SOT_THT:TO-39-3" H 2575 5550 50  0001 L CIN
-F 3 "http://www.onsemi.com/pub_link/Collateral/2N2219-D.PDF" H 2375 5625 50  0001 L CNN
-	1    2375 5625
+P 3450 5625
+F 0 "Q?" H 3640 5671 50  0000 L CNN
+F 1 "BC337" H 3650 5475 50  0000 L CNN
+F 2 "Package_TO_SOT_THT:TO-39-3" H 3650 5550 50  0001 L CIN
+F 3 "http://www.onsemi.com/pub_link/Collateral/2N2219-D.PDF" H 3450 5625 50  0001 L CNN
+	1    3450 5625
 	1    0    0    -1  
 $EndComp
 $Comp
 L Device:R R?
 U 1 1 5EB84D98
-P 2175 5775
-F 0 "R?" H 2105 5729 50  0000 R CNN
-F 1 "56k" H 2105 5820 50  0000 R CNN
-F 2 "" V 2105 5775 50  0001 C CNN
-F 3 "~" H 2175 5775 50  0001 C CNN
-	1    2175 5775
+P 3250 5775
+F 0 "R?" H 3180 5729 50  0000 R CNN
+F 1 "56k" H 3180 5820 50  0000 R CNN
+F 2 "" V 3180 5775 50  0001 C CNN
+F 3 "~" H 3250 5775 50  0001 C CNN
+	1    3250 5775
 	-1   0    0    1   
 $EndComp
-Connection ~ 2175 5625
+Connection ~ 3250 5625
 Wire Wire Line
-	2175 5925 2175 6125
-Wire Wire Line
-	3775 2475 3950 2475
+	3250 5925 3250 6125
 Text Label 8700 2300 2    60   ~ 0
 mosfet_low_side
 Text Label 8700 1500 2    60   ~ 0
@@ -651,12 +648,12 @@ Text Label 8700 1700 2    60   ~ 0
 var_select_button
 Text Label 8700 1800 2    60   ~ 0
 mode_button
-Text Label 675  5025 2    60   ~ 0
-mosfet_low_side
-Text Label 3075 5025 0    60   ~ 0
-buck_mosfet
+Text Label 1875 4625 2    60   ~ 0
+mosfet_high_side
+Text Label 4150 5025 0    60   ~ 0
+mosfet_gate
 Text Label 1250 2775 2    60   ~ 0
-buck_mosfet
+mosfet_gate
 Wire Wire Line
 	1250 2775 1450 2775
 $Sheet
@@ -671,21 +668,6 @@ F5 "Vsupply" I L 3600 6600 50
 $EndSheet
 Text Label 3600 6725 2    60   ~ 0
 fan_control
-$Comp
-L Switch:SW_DPST SW?
-U 1 1 5EDB4B06
-P 3575 2375
-F 0 "SW?" H 3575 2700 50  0000 C CNN
-F 1 "SW_DPST" H 3575 2609 50  0000 C CNN
-F 2 "" H 3575 2375 50  0001 C CNN
-F 3 "~" H 3575 2375 50  0001 C CNN
-	1    3575 2375
-	1    0    0    -1  
-$EndComp
-Text Label 3775 2275 0    50   ~ 0
-CommonLine
-Text Label 3375 2275 2    50   ~ 0
-ConnectLedGnd
 $Comp
 L Device:LED D?
 U 1 1 5EDBDAEF
@@ -917,7 +899,7 @@ Wire Wire Line
 	3425 6850 3600 6850
 Text Label 5475 6600 0    60   ~ 0
 TemperatureMeasurement
-Text Notes 825  3925 0    50   ~ 0
+Text Notes 725  3975 0    50   ~ 0
 Power MOSFET transistors driver section with \nanti-latch protection (single input which controls\nboth sides of the mosfet driver section)
 Wire Wire Line
 	1425 3100 1925 3100
@@ -937,16 +919,11 @@ Wire Notes Line
 Text Notes 1900 1975 0    50   ~ 0
 Power section (Buck converter)
 Wire Wire Line
-	2475 5025 3075 5025
-Text Label 1950 6125 2    50   ~ 0
-CommonLine
+	3550 5025 4150 5025
 Wire Wire Line
-	1950 6125 2175 6125
+	3550 6125 3550 5825
 Wire Wire Line
-	2475 6125 2475 5825
-Connection ~ 2175 6125
-Wire Wire Line
-	2175 6125 2475 6125
+	3250 6125 3400 6125
 Text Notes 3950 975  0    50   ~ 0
 23V
 $Comp
@@ -1041,190 +1018,124 @@ Wire Wire Line
 Wire Wire Line
 	4450 550  4850 550 
 Text Label 5250 700  0    50   ~ 0
-10v_smoothed
-Text Label 1850 4050 2    50   ~ 0
-10v_smoothed
+MonoRectification(30V)
+Text Label 2925 4050 2    50   ~ 0
+MonoRectification(30V)
 Text Label 8500 3325 0    50   ~ 0
-23v_smoothed
+MainPowerLine
 Text Label 1100 2475 2    50   ~ 0
-23v_smoothed
+MainPowerLine
 Text Label 8025 4850 2    50   ~ 0
-10v_smoothed
+MonoRectification(30V)
 Text Label 3600 6600 2    50   ~ 0
-23v_smoothed
-Text Notes 2775 4250 0    50   ~ 0
+MainPowerLine
+Text Notes 3850 4250 0    50   ~ 0
 Note : usually most of generic power mosfets are tolerant to \n30V between Gate and Source. If so, you can either connect the \n23V smoothed line instead of the 10V one, as a power line to \ncontrol the mosfet.
 $Comp
 L Transistor_BJT:BC307 Q?
 U 1 1 5E9096F9
-P 2375 4400
-F 0 "Q?" H 2566 4354 50  0000 L CNN
-F 1 "BC307" H 2566 4445 50  0000 L CNN
-F 2 "Package_TO_SOT_THT:TO-92_Inline" H 2575 4325 50  0001 L CIN
-F 3 "http://www.onsemi.com/pub_link/Collateral/BC307-D.PDF" H 2375 4400 50  0001 L CNN
-	1    2375 4400
+P 3450 4400
+F 0 "Q?" H 3641 4354 50  0000 L CNN
+F 1 "BC327" H 3641 4445 50  0000 L CNN
+F 2 "Package_TO_SOT_THT:TO-92_Inline" H 3650 4325 50  0001 L CIN
+F 3 "http://www.onsemi.com/pub_link/Collateral/BC307-D.PDF" H 3450 4400 50  0001 L CNN
+	1    3450 4400
 	1    0    0    1   
 $EndComp
 $Comp
 L Device:R R?
 U 1 1 5E909F1B
-P 2175 4250
-F 0 "R?" H 2105 4204 50  0000 R CNN
-F 1 "56k" H 2105 4295 50  0000 R CNN
-F 2 "" V 2105 4250 50  0001 C CNN
-F 3 "~" H 2175 4250 50  0001 C CNN
-	1    2175 4250
+P 3250 4250
+F 0 "R?" H 3180 4204 50  0000 R CNN
+F 1 "56k" H 3180 4295 50  0000 R CNN
+F 2 "" V 3180 4250 50  0001 C CNN
+F 3 "~" H 3250 4250 50  0001 C CNN
+	1    3250 4250
 	-1   0    0    1   
 $EndComp
 Wire Wire Line
-	1850 4050 2175 4050
+	2925 4050 3250 4050
 Wire Wire Line
-	2175 4050 2175 4100
-Connection ~ 2175 4050
+	3250 4050 3250 4100
+Connection ~ 3250 4050
 Wire Wire Line
-	2175 4050 2475 4050
+	3250 4050 3550 4050
 $Comp
 L Transistor_BJT:2N2219 Q?
 U 1 1 5E918642
-P 1600 4625
-F 0 "Q?" H 1790 4671 50  0000 L CNN
-F 1 "2N2222" H 1800 4475 50  0000 L CNN
-F 2 "Package_TO_SOT_THT:TO-39-3" H 1800 4550 50  0001 L CIN
-F 3 "http://www.onsemi.com/pub_link/Collateral/2N2219-D.PDF" H 1600 4625 50  0001 L CNN
-	1    1600 4625
+P 2675 4625
+F 0 "Q?" H 2865 4671 50  0000 L CNN
+F 1 "BC337" H 2875 4475 50  0000 L CNN
+F 2 "Package_TO_SOT_THT:TO-39-3" H 2875 4550 50  0001 L CIN
+F 3 "http://www.onsemi.com/pub_link/Collateral/2N2219-D.PDF" H 2675 4625 50  0001 L CNN
+	1    2675 4625
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	1700 4425 1700 4400
+	2775 4425 2775 4400
 $Comp
 L Device:R R?
 U 1 1 5E920F2F
-P 1200 4625
-F 0 "R?" V 993 4625 50  0000 C CNN
-F 1 "1k" V 1084 4625 50  0000 C CNN
-F 2 "" V 1130 4625 50  0001 C CNN
-F 3 "~" H 1200 4625 50  0001 C CNN
-	1    1200 4625
+P 2275 4625
+F 0 "R?" V 2068 4625 50  0000 C CNN
+F 1 "1k" V 2159 4625 50  0000 C CNN
+F 2 "" V 2205 4625 50  0001 C CNN
+F 3 "~" H 2275 4625 50  0001 C CNN
+	1    2275 4625
 	0    1    1    0   
 $EndComp
 $Comp
 L Device:R R?
 U 1 1 5E9214BF
-P 1400 4775
-F 0 "R?" H 1330 4729 50  0000 R CNN
-F 1 "56k" H 1330 4820 50  0000 R CNN
-F 2 "" V 1330 4775 50  0001 C CNN
-F 3 "~" H 1400 4775 50  0001 C CNN
-	1    1400 4775
+P 2475 4775
+F 0 "R?" H 2405 4729 50  0000 R CNN
+F 1 "56k" H 2405 4820 50  0000 R CNN
+F 2 "" V 2405 4775 50  0001 C CNN
+F 3 "~" H 2475 4775 50  0001 C CNN
+	1    2475 4775
 	-1   0    0    1   
 $EndComp
 Wire Wire Line
-	1350 4625 1400 4625
-Connection ~ 1400 4625
-$Comp
-L power:Earth #PWR?
-U 1 1 5E9291D2
-P 1400 4925
-F 0 "#PWR?" H 1400 4675 50  0001 C CNN
-F 1 "Earth" H 1400 4775 50  0001 C CNN
-F 2 "" H 1400 4925 50  0001 C CNN
-F 3 "~" H 1400 4925 50  0001 C CNN
-	1    1400 4925
-	1    0    0    -1  
-$EndComp
+	2425 4625 2475 4625
+Connection ~ 2475 4625
 Wire Wire Line
-	1400 4925 1700 4925
+	2475 4925 2775 4925
 Wire Wire Line
-	1700 4925 1700 4825
-Connection ~ 1400 4925
-$Comp
-L Transistor_BJT:BC307 Q?
-U 1 1 5E949A66
-P 1600 5425
-F 0 "Q?" H 1791 5379 50  0000 L CNN
-F 1 "BC307" H 1791 5470 50  0000 L CNN
-F 2 "Package_TO_SOT_THT:TO-92_Inline" H 1800 5350 50  0001 L CIN
-F 3 "http://www.onsemi.com/pub_link/Collateral/BC307-D.PDF" H 1600 5425 50  0001 L CNN
-	1    1600 5425
-	1    0    0    1   
-$EndComp
+	2775 4925 2775 4825
 $Comp
 L Device:R R?
 U 1 1 5E94AF88
-P 2025 4400
-F 0 "R?" V 1818 4400 50  0000 C CNN
-F 1 "1k" V 1909 4400 50  0000 C CNN
-F 2 "" V 1955 4400 50  0001 C CNN
-F 3 "~" H 2025 4400 50  0001 C CNN
-	1    2025 4400
+P 3100 4400
+F 0 "R?" V 2893 4400 50  0000 C CNN
+F 1 "1k" V 2984 4400 50  0000 C CNN
+F 2 "" V 3030 4400 50  0001 C CNN
+F 3 "~" H 3100 4400 50  0001 C CNN
+	1    3100 4400
 	0    1    1    0   
 $EndComp
-Connection ~ 2175 4400
+Connection ~ 3250 4400
 Wire Wire Line
-	1875 4400 1700 4400
+	2950 4400 2775 4400
 $Comp
 L Device:R R?
 U 1 1 5E95C800
-P 2025 5625
-F 0 "R?" V 1818 5625 50  0000 C CNN
-F 1 "1k" V 1909 5625 50  0000 C CNN
-F 2 "" V 1955 5625 50  0001 C CNN
-F 3 "~" H 2025 5625 50  0001 C CNN
-	1    2025 5625
+P 3100 5625
+F 0 "R?" V 2893 5625 50  0000 C CNN
+F 1 "1k" V 2984 5625 50  0000 C CNN
+F 2 "" V 3030 5625 50  0001 C CNN
+F 3 "~" H 3100 5625 50  0001 C CNN
+	1    3100 5625
 	0    1    1    0   
 $EndComp
-Wire Wire Line
-	1700 5625 1875 5625
-$Comp
-L Device:R R?
-U 1 1 5E974F87
-P 1400 5275
-F 0 "R?" H 1330 5229 50  0000 R CNN
-F 1 "56k" H 1330 5320 50  0000 R CNN
-F 2 "" V 1330 5275 50  0001 C CNN
-F 3 "~" H 1400 5275 50  0001 C CNN
-	1    1400 5275
-	-1   0    0    1   
-$EndComp
-Wire Wire Line
-	1250 5125 1400 5125
-Wire Wire Line
-	1700 5125 1700 5225
-Connection ~ 1400 5125
-Wire Wire Line
-	1400 5125 1700 5125
 Text Label 7475 3400 0    50   ~ 0
 Vcc(5v)
-Text Label 1250 5125 2    50   ~ 0
-Vcc(5v)
-$Comp
-L Device:R R?
-U 1 1 5E984F36
-P 1250 5425
-F 0 "R?" V 1043 5425 50  0000 C CNN
-F 1 "1k" V 1134 5425 50  0000 C CNN
-F 2 "" V 1180 5425 50  0001 C CNN
-F 3 "~" H 1250 5425 50  0001 C CNN
-	1    1250 5425
-	0    1    1    0   
-$EndComp
-Connection ~ 1400 5425
 Wire Wire Line
-	1050 4625 800  4625
+	2125 4625 1875 4625
+Connection ~ 3550 5025
 Wire Wire Line
-	800  5425 1100 5425
+	3550 5025 3550 5425
 Wire Wire Line
-	675  5025 800  5025
-Wire Wire Line
-	800  4625 800  5025
-Connection ~ 800  5025
-Wire Wire Line
-	800  5025 800  5425
-Connection ~ 2475 5025
-Wire Wire Line
-	2475 5025 2475 5425
-Wire Wire Line
-	2475 4600 2475 5025
+	3550 4600 3550 5025
 Wire Wire Line
 	4800 1000 4800 1525
 Wire Wire Line
@@ -1238,4 +1149,127 @@ Wire Wire Line
 	4600 950  5225 950 
 Connection ~ 4600 1225
 Connection ~ 5225 950 
+$Comp
+L Switch:SW_DPST SW?
+U 1 1 5EDB4B06
+P 5150 2175
+F 0 "SW?" H 5150 2500 50  0000 C CNN
+F 1 "SW_DPST" H 5150 2409 50  0000 C CNN
+F 2 "" H 5150 2175 50  0001 C CNN
+F 3 "~" H 5150 2175 50  0001 C CNN
+	1    5150 2175
+	1    0    0    -1  
+$EndComp
+$Comp
+L Relay:DIPxx-1Axx-11x K?
+U 1 1 5E8449FB
+P 3675 2275
+F 0 "K?" V 3108 2275 50  0000 C CNN
+F 1 "DIPxx-1Axx-11x" V 3199 2275 50  0000 C CNN
+F 2 "Relay_THT:Relay_StandexMeder_DIP_LowProfile" H 4025 2225 50  0001 L CNN
+F 3 "https://standexelectronics.com/wp-content/uploads/datasheet_reed_relay_DIP.pdf" H 3675 2275 50  0001 C CNN
+	1    3675 2275
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	3975 2475 4350 2475
+Connection ~ 2475 4925
+$Comp
+L power:Earth #PWR?
+U 1 1 5E9291D2
+P 2475 4925
+F 0 "#PWR?" H 2475 4675 50  0001 C CNN
+F 1 "Earth" H 2475 4775 50  0001 C CNN
+F 2 "" H 2475 4925 50  0001 C CNN
+F 3 "~" H 2475 4925 50  0001 C CNN
+	1    2475 4925
+	1    0    0    -1  
+$EndComp
+$Comp
+L Transistor_BJT:2N2219 Q?
+U 1 1 5E832B19
+P 2125 5100
+F 0 "Q?" H 2315 5146 50  0000 L CNN
+F 1 "BC337" H 2325 4950 50  0000 L CNN
+F 2 "Package_TO_SOT_THT:TO-39-3" H 2325 5025 50  0001 L CIN
+F 3 "http://www.onsemi.com/pub_link/Collateral/2N2219-D.PDF" H 2125 5100 50  0001 L CNN
+	1    2125 5100
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:R R?
+U 1 1 5E832B1F
+P 1925 5250
+F 0 "R?" H 1855 5204 50  0000 R CNN
+F 1 "56k" H 1855 5295 50  0000 R CNN
+F 2 "" V 1855 5250 50  0001 C CNN
+F 3 "~" H 1925 5250 50  0001 C CNN
+	1    1925 5250
+	-1   0    0    1   
+$EndComp
+Connection ~ 1925 5100
+$Comp
+L Device:R R?
+U 1 1 5E832B27
+P 1775 5100
+F 0 "R?" V 1568 5100 50  0000 C CNN
+F 1 "1k" V 1659 5100 50  0000 C CNN
+F 2 "" V 1705 5100 50  0001 C CNN
+F 3 "~" H 1775 5100 50  0001 C CNN
+	1    1775 5100
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	1450 5100 1600 5100
+Wire Wire Line
+	1925 5400 2075 5400
+Wire Wire Line
+	2225 5400 2225 5300
+Wire Wire Line
+	2225 4900 2075 4900
+Wire Wire Line
+	2075 4900 2075 4375
+Wire Wire Line
+	2075 4375 2475 4375
+Wire Wire Line
+	2475 4375 2475 4625
+$Comp
+L power:Earth #PWR?
+U 1 1 5E85A54C
+P 2075 5400
+F 0 "#PWR?" H 2075 5150 50  0001 C CNN
+F 1 "Earth" H 2075 5250 50  0001 C CNN
+F 2 "" H 2075 5400 50  0001 C CNN
+F 3 "~" H 2075 5400 50  0001 C CNN
+	1    2075 5400
+	1    0    0    -1  
+$EndComp
+Connection ~ 2075 5400
+Wire Wire Line
+	2075 5400 2225 5400
+Wire Wire Line
+	1600 5100 1600 5625
+Wire Wire Line
+	1600 5625 2950 5625
+Connection ~ 1600 5100
+Wire Wire Line
+	1600 5100 1625 5100
+Text Label 1450 5100 2    60   ~ 0
+mosfet_low_side
+Text Label 8700 2200 2    60   ~ 0
+mosfet_high_side
+$Comp
+L power:Earth #PWR?
+U 1 1 5E8C0212
+P 3400 6125
+F 0 "#PWR?" H 3400 5875 50  0001 C CNN
+F 1 "Earth" H 3400 5975 50  0001 C CNN
+F 2 "" H 3400 6125 50  0001 C CNN
+F 3 "~" H 3400 6125 50  0001 C CNN
+	1    3400 6125
+	1    0    0    -1  
+$EndComp
+Connection ~ 3400 6125
+Wire Wire Line
+	3400 6125 3550 6125
 $EndSCHEMATC
