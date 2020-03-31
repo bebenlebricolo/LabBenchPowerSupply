@@ -1,5 +1,4 @@
 EESchema Schematic File Version 4
-LIBS:LabBenchPowerSupply-cache
 EELAYER 30 0
 EELAYER END
 $Descr A4 11693 8268
@@ -226,8 +225,6 @@ Text Notes 4825 1675 0    50   ~ 0
 Don't forget freewheel diodes!\n50V+ peak might occur at \ntransistors collectors otherwise
 Text Notes 2600 3025 0    50   ~ 0
 Base resistor to ground references the transistor to a\nknown 'low' voltage, preventing it to auto-start due to parasitic current flow running between collector and emitter\n(collector-base diode is reversed polarised but a small current is allowed to flow in, thus activating \nthe transistor effect.)
-Text HLabel 3900 1125 0    50   Input ~ 0
-12VSmoothed
 Text HLabel 2550 2025 0    50   Input ~ 0
 FanControl
 $Comp
@@ -267,6 +264,7 @@ U 1 1 5EF9CCAC
 P 8125 2175
 AR Path="/5EF9CCAC" Ref="C?"  Part="1" 
 AR Path="/5EE32D8E/5EF9CCAC" Ref="C?"  Part="1" 
+AR Path="/5EC77F4C/5EF9CCAC" Ref="C?"  Part="1" 
 F 0 "C?" H 8240 2221 50  0000 L CNN
 F 1 "10µ" H 8240 2130 50  0000 L CNN
 F 2 "" H 8125 2175 50  0001 C CNN
@@ -304,4 +302,6 @@ Text HLabel 8325 1625 0    50   Input ~ 0
 ThermistorVcc
 Text HLabel 8775 1975 2    50   Input ~ 0
 TemperatureMeasurement
+Text HLabel 3900 1125 0    50   Input ~ 0
+Vsupply
 $EndSCHEMATC
