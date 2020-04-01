@@ -3,7 +3,7 @@ EELAYER 30 0
 EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
-Sheet 1 2
+Sheet 1 3
 Title "Lab bench power supply"
 Date "2020-03-25"
 Rev "1.0"
@@ -38,9 +38,9 @@ SecondarySmoothed
 Text Label 10550 1900 0    60   ~ 0
 TemperatureMeasurement
 Text Label 10550 1800 0    60   ~ 0
-A4
+I2C_SDA
 Text Label 10550 1700 0    60   ~ 0
-A5
+I2C_SCL
 Text Label 10550 1600 0    60   ~ 0
 A6
 Text Label 10550 1500 0    60   ~ 0
@@ -657,16 +657,16 @@ mosfet_gate
 Wire Wire Line
 	1250 2775 1450 2775
 $Sheet
-S 3600 6475 1875 525 
+S 7900 5675 1875 525 
 U 5EC77F4C
 F0 "Cooling" 50
 F1 "Cooling.sch" 50
-F2 "FanControl" I L 3600 6725 50 
-F3 "ThermistorVcc" I L 3600 6850 50 
-F4 "TemperatureMeasurement" I R 5475 6600 50 
-F5 "Vsupply" I L 3600 6600 50 
+F2 "FanControl" I L 7900 5925 50 
+F3 "ThermistorVcc" I L 7900 6050 50 
+F4 "TemperatureMeasurement" I R 9775 5800 50 
+F5 "Vsupply" I L 7900 5800 50 
 $EndSheet
-Text Label 3600 6725 2    60   ~ 0
+Text Label 7900 5925 2    60   ~ 0
 fan_control
 $Comp
 L Device:LED D?
@@ -887,17 +887,17 @@ Voltages measurement
 $Comp
 L power:+3V3 #PWR?
 U 1 1 5EFD4716
-P 3425 6850
-F 0 "#PWR?" H 3425 6700 50  0001 C CNN
-F 1 "+3.3V" V 3425 7050 28  0000 C CNN
-F 2 "" H 3425 6850 50  0000 C CNN
-F 3 "" H 3425 6850 50  0000 C CNN
-	1    3425 6850
+P 7725 6050
+F 0 "#PWR?" H 7725 5900 50  0001 C CNN
+F 1 "+3.3V" V 7725 6250 28  0000 C CNN
+F 2 "" H 7725 6050 50  0000 C CNN
+F 3 "" H 7725 6050 50  0000 C CNN
+	1    7725 6050
 	0    -1   -1   0   
 $EndComp
 Wire Wire Line
-	3425 6850 3600 6850
-Text Label 5475 6600 0    60   ~ 0
+	7725 6050 7900 6050
+Text Label 9775 5800 0    60   ~ 0
 TemperatureMeasurement
 Text Notes 725  3975 0    50   ~ 0
 Power MOSFET transistors driver section with \nanti-latch protection (single input which controls\nboth sides of the mosfet driver section)
@@ -961,7 +961,7 @@ Wire Notes Line
 Wire Notes Line
 	8025 5275 8025 4525
 Text Notes 7825 4475 0    50   ~ 0
-External buck converter board 23 -> 5V
+External buck converter board 33V -> 5V
 Text Label 9250 4850 0    50   ~ 0
 Vcc(5v)
 Text Label 10250 950  1    50   ~ 0
@@ -1027,7 +1027,7 @@ Text Label 1100 2475 2    50   ~ 0
 MainPowerLine
 Text Label 8025 4850 2    50   ~ 0
 MonoRectification(30V)
-Text Label 3600 6600 2    50   ~ 0
+Text Label 7900 5800 2    50   ~ 0
 MainPowerLine
 Text Notes 3850 4250 0    50   ~ 0
 Note : usually most of generic power mosfets are tolerant to \n30V between Gate and Source. If so, you can either connect the \n23V smoothed line instead of the 10V one, as a power line to \ncontrol the mosfet.
@@ -1272,4 +1272,31 @@ $EndComp
 Connection ~ 3400 6125
 Wire Wire Line
 	3400 6125 3550 6125
+$Sheet
+S 4150 6600 1850 475 
+U 5E85D9C1
+F0 "UserInterface" 50
+F1 "UserInterface.sch" 50
+F2 "minus_button" I L 4150 6800 50 
+F3 "plus_button" I L 4150 6700 50 
+F4 "variable_select_button" I L 4150 7000 50 
+F5 "mode_button" I L 4150 6900 50 
+F6 "Vcc(5V)" I R 6000 6925 50 
+F7 "i2c_sda" I R 6000 6800 50 
+F8 "i2c_scl" I R 6000 6675 50 
+$EndSheet
+Text Label 4150 6700 2    60   ~ 0
+plus_button
+Text Label 4150 6800 2    60   ~ 0
+minus_button
+Text Label 4150 7000 2    60   ~ 0
+var_select_button
+Text Label 4150 6900 2    60   ~ 0
+mode_button
+Text Label 6000 6675 0    60   ~ 0
+I2C_SCL
+Text Label 6000 6800 0    60   ~ 0
+I2C_SDA
+Text Label 6000 6925 0    50   ~ 0
+Vcc(5v)
 $EndSCHEMATC
