@@ -252,18 +252,6 @@ Wire Notes Line
 Text Notes 9650 1100 0    60   ~ 0
 1
 $Comp
-L Device:Transformer_1P_SS T?
-U 1 1 5E79C1FF
-P 3450 1200
-F 0 "T?" H 3450 1581 50  0000 C CNN
-F 1 "Transformer_1P_SS" H 3450 1490 50  0000 C CNN
-F 2 "" H 3450 1200 50  0001 C CNN
-F 3 "~" H 3450 1200 50  0001 C CNN
-	1    3450 1200
-	1    0    0    -1  
-$EndComp
-NoConn ~ 3850 1200
-$Comp
 L Device:C C?
 U 1 1 5E79D587
 P 2675 1175
@@ -313,28 +301,28 @@ $EndComp
 $Comp
 L power:Earth #PWR?
 U 1 1 5E7A9721
-P 4550 1825
-F 0 "#PWR?" H 4550 1575 50  0001 C CNN
-F 1 "Earth" H 4550 1675 50  0001 C CNN
-F 2 "" H 4550 1825 50  0001 C CNN
-F 3 "~" H 4550 1825 50  0001 C CNN
-	1    4550 1825
+P 5050 1825
+F 0 "#PWR?" H 5050 1575 50  0001 C CNN
+F 1 "Earth" H 5050 1675 50  0001 C CNN
+F 2 "" H 5050 1825 50  0001 C CNN
+F 3 "~" H 5050 1825 50  0001 C CNN
+	1    5050 1825
 	1    0    0    -1  
 $EndComp
-Connection ~ 4550 1825
+Connection ~ 5050 1825
 $Comp
 L Device:CP1 C?
 U 1 1 5E7AB2AF
-P 5575 1400
-F 0 "C?" H 5690 1446 50  0000 L CNN
-F 1 "470µ" H 5690 1355 50  0000 L CNN
-F 2 "" H 5575 1400 50  0001 C CNN
-F 3 "~" H 5575 1400 50  0001 C CNN
-	1    5575 1400
+P 6075 1400
+F 0 "C?" H 6190 1446 50  0000 L CNN
+F 1 "470µ" H 6190 1355 50  0000 L CNN
+F 2 "" H 6075 1400 50  0001 C CNN
+F 3 "~" H 6075 1400 50  0001 C CNN
+	1    6075 1400
 	1    0    0    -1  
 $EndComp
-Text Notes 2625 650  0    50   ~ 0
-220 V AC / 2x11.5 serie = 23V AC
+Text Notes 3050 1800 0    50   ~ 0
+220 V AC / 2x11.5 parallel\n*  12V AC / 16V DC rectified
 $Comp
 L Connector:Conn_WallPlug_Earth P?
 U 1 1 5E7C9D33
@@ -348,7 +336,6 @@ F 3 "~" H 1675 1100 50  0001 C CNN
 $EndComp
 Wire Wire Line
 	2675 1700 2675 1825
-Connection ~ 2675 1825
 Wire Wire Line
 	2675 1825 1675 1825
 Wire Wire Line
@@ -377,91 +364,82 @@ Wire Wire Line
 $Comp
 L Device:CP1 C?
 U 1 1 5E7E36FA
-P 5225 1400
-F 0 "C?" H 5340 1446 50  0000 L CNN
-F 1 "470µ" H 5340 1355 50  0000 L CNN
-F 2 "" H 5225 1400 50  0001 C CNN
-F 3 "~" H 5225 1400 50  0001 C CNN
-	1    5225 1400
+P 5725 1400
+F 0 "C?" H 5840 1446 50  0000 L CNN
+F 1 "470µ" H 5840 1355 50  0000 L CNN
+F 2 "" H 5725 1400 50  0001 C CNN
+F 3 "~" H 5725 1400 50  0001 C CNN
+	1    5725 1400
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	5575 1825 5575 1550
+	6075 1825 6075 1550
 Wire Wire Line
-	4550 1825 5225 1825
+	5050 1825 5725 1825
 Wire Wire Line
-	5575 1250 5575 950 
+	6075 1250 6075 950 
 Wire Wire Line
-	5225 1250 5225 950 
+	5725 1250 5725 950 
 Wire Wire Line
-	5225 950  5575 950 
+	5725 950  6075 950 
 Wire Wire Line
-	5225 1550 5225 1825
-Connection ~ 5225 1825
+	5725 1550 5725 1825
+Connection ~ 5725 1825
 Wire Wire Line
-	5225 1825 5575 1825
+	5725 1825 6075 1825
 Wire Wire Line
-	5575 950  5800 950 
-Connection ~ 5575 950 
+	6075 950  6300 950 
+Connection ~ 6075 950 
 $Comp
 L Device:D D?
 U 1 1 5E7FB0DA
-P 4300 1375
-F 0 "D?" H 4300 1159 50  0000 C CNN
-F 1 "D" H 4300 1250 50  0000 C CNN
-F 2 "" H 4300 1375 50  0001 C CNN
-F 3 "~" H 4300 1375 50  0001 C CNN
-	1    4300 1375
+P 4800 1375
+F 0 "D?" H 4800 1159 50  0000 C CNN
+F 1 "D" H 4800 1250 50  0000 C CNN
+F 2 "" H 4800 1375 50  0001 C CNN
+F 3 "~" H 4800 1375 50  0001 C CNN
+	1    4800 1375
 	0    1    1    0   
 $EndComp
 $Comp
 L Device:D D?
 U 1 1 5E7FBA05
-P 4450 1225
-F 0 "D?" V 4496 1146 50  0000 R CNN
-F 1 "D" V 4405 1146 50  0000 R CNN
-F 2 "" H 4450 1225 50  0001 C CNN
-F 3 "~" H 4450 1225 50  0001 C CNN
-	1    4450 1225
+P 4950 1225
+F 0 "D?" V 4996 1146 50  0000 R CNN
+F 1 "D" V 4905 1146 50  0000 R CNN
+F 2 "" H 4950 1225 50  0001 C CNN
+F 3 "~" H 4950 1225 50  0001 C CNN
+	1    4950 1225
 	-1   0    0    1   
 $EndComp
 $Comp
 L Device:D D?
 U 1 1 5E7FBD99
-P 4600 1375
-F 0 "D?" H 4600 1159 50  0000 C CNN
-F 1 "D" H 4600 1250 50  0000 C CNN
-F 2 "" H 4600 1375 50  0001 C CNN
-F 3 "~" H 4600 1375 50  0001 C CNN
-	1    4600 1375
+P 5100 1375
+F 0 "D?" H 5100 1159 50  0000 C CNN
+F 1 "D" H 5100 1250 50  0000 C CNN
+F 2 "" H 5100 1375 50  0001 C CNN
+F 3 "~" H 5100 1375 50  0001 C CNN
+	1    5100 1375
 	0    1    1    0   
 $EndComp
 $Comp
 L Device:D D?
 U 1 1 5E7FC2B4
-P 4450 1525
-F 0 "D?" V 4496 1446 50  0000 R CNN
-F 1 "D" V 4405 1446 50  0000 R CNN
-F 2 "" H 4450 1525 50  0001 C CNN
-F 3 "~" H 4450 1525 50  0001 C CNN
-	1    4450 1525
+P 4950 1525
+F 0 "D?" V 4996 1446 50  0000 R CNN
+F 1 "D" V 4905 1446 50  0000 R CNN
+F 2 "" H 4950 1525 50  0001 C CNN
+F 3 "~" H 4950 1525 50  0001 C CNN
+	1    4950 1525
 	-1   0    0    1   
 $EndComp
 Wire Wire Line
-	2675 1825 4300 1825
+	4800 1525 4800 1825
+Connection ~ 4800 1525
 Wire Wire Line
-	4300 1525 4300 1825
-Connection ~ 4300 1525
-Connection ~ 4300 1825
-Wire Wire Line
-	4300 1825 4550 1825
-Wire Wire Line
-	4025 1400 4025 1225
-Wire Wire Line
-	4025 1225 4300 1225
-Connection ~ 4300 1225
-Wire Wire Line
-	3850 1400 4025 1400
+	4800 1825 5050 1825
+Connection ~ 4800 1225
 $Comp
 L NMOS_TH:IRFZ14PBF U?
 U 1 1 5E823E21
@@ -516,8 +494,8 @@ Wire Wire Line
 	1925 2475 2075 2475
 Connection ~ 1925 2475
 Wire Wire Line
-	5575 1825 5825 1825
-Connection ~ 5575 1825
+	6075 1825 6325 1825
+Connection ~ 6075 1825
 $Comp
 L Device:CP1 C?
 U 1 1 5E853BFE
@@ -575,11 +553,11 @@ Wire Wire Line
 Connection ~ 2975 3100
 Wire Wire Line
 	3650 3100 3950 3100
-Text Label 5800 950  0    50   ~ 0
+Text Label 6300 950  0    50   ~ 0
 MainPowerLine
 Text Label 4350 2475 0    50   ~ 0
 RegulatedOut
-Text Label 5825 1825 0    50   ~ 0
+Text Label 6325 1825 0    50   ~ 0
 CommonLine
 Text Label 1425 3100 2    50   ~ 0
 CommonLine
@@ -924,8 +902,6 @@ Wire Wire Line
 	3550 6125 3550 5825
 Wire Wire Line
 	3250 6125 3400 6125
-Text Notes 3950 975  0    50   ~ 0
-23V
 $Comp
 L Connector_Generic:Conn_01x02 J?
 U 1 1 5E873FAA
@@ -966,71 +942,69 @@ Text Label 9250 4850 0    50   ~ 0
 Vcc(5v)
 Text Label 10250 950  1    50   ~ 0
 Vcc(5v)
-Wire Wire Line
-	3850 1000 4250 1000
 $Comp
 L Device:D D?
 U 1 1 5E890948
-P 4250 750
-F 0 "D?" H 4250 534 50  0000 C CNN
-F 1 "D" H 4250 625 50  0000 C CNN
-F 2 "" H 4250 750 50  0001 C CNN
-F 3 "~" H 4250 750 50  0001 C CNN
-	1    4250 750 
+P 4750 750
+F 0 "D?" H 4750 534 50  0000 C CNN
+F 1 "D" H 4750 625 50  0000 C CNN
+F 2 "" H 4750 750 50  0001 C CNN
+F 3 "~" H 4750 750 50  0001 C CNN
+	1    4750 750 
 	0    1    1    0   
 $EndComp
 Wire Wire Line
-	4250 1000 4250 900 
-Connection ~ 4250 1000
+	4750 1000 4750 900 
+Connection ~ 4750 1000
 $Comp
 L Device:CP1 C?
 U 1 1 5E897965
-P 4450 725
-F 0 "C?" H 4565 771 50  0000 L CNN
-F 1 "470µ" H 4565 680 50  0000 L CNN
-F 2 "" H 4450 725 50  0001 C CNN
-F 3 "~" H 4450 725 50  0001 C CNN
-	1    4450 725 
+P 4950 725
+F 0 "C?" H 5065 771 50  0000 L CNN
+F 1 "470µ" H 5065 680 50  0000 L CNN
+F 2 "" H 4950 725 50  0001 C CNN
+F 3 "~" H 4950 725 50  0001 C CNN
+	1    4950 725 
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	4250 600  4250 550 
+	4750 600  4750 550 
 Wire Wire Line
-	4250 550  4450 550 
+	4750 550  4950 550 
 Wire Wire Line
-	4450 550  4450 575 
+	4950 550  4950 575 
 $Comp
 L power:Earth #PWR?
 U 1 1 5E8B1977
-P 4450 875
-F 0 "#PWR?" H 4450 625 50  0001 C CNN
-F 1 "Earth" H 4450 725 50  0001 C CNN
-F 2 "" H 4450 875 50  0001 C CNN
-F 3 "~" H 4450 875 50  0001 C CNN
-	1    4450 875 
+P 4950 875
+F 0 "#PWR?" H 4950 625 50  0001 C CNN
+F 1 "Earth" H 4950 725 50  0001 C CNN
+F 2 "" H 4950 875 50  0001 C CNN
+F 3 "~" H 4950 875 50  0001 C CNN
+	1    4950 875 
 	1    0    0    -1  
 $EndComp
-Connection ~ 4450 550 
+Connection ~ 4950 550 
 Wire Wire Line
-	4850 550  4850 700 
+	5350 550  5350 700 
 Wire Wire Line
-	4850 700  5250 700 
+	5350 700  5750 700 
 Wire Wire Line
-	4450 550  4850 550 
-Text Label 5250 700  0    50   ~ 0
-MonoRectification(30V)
+	4950 550  5350 550 
+Text Label 5750 700  0    50   ~ 0
+MonoRectification(16V)
 Text Label 2925 4050 2    50   ~ 0
-MonoRectification(30V)
+MonoRectification(16V)
 Text Label 8500 3325 0    50   ~ 0
 MainPowerLine
 Text Label 1100 2475 2    50   ~ 0
 MainPowerLine
 Text Label 8025 4850 2    50   ~ 0
-MonoRectification(30V)
+MonoRectification(16V)
 Text Label 7900 5800 2    50   ~ 0
 MainPowerLine
-Text Notes 3850 4250 0    50   ~ 0
-Note : usually most of generic power mosfets are tolerant to \n30V between Gate and Source. If so, you can either connect the \n23V smoothed line instead of the 10V one, as a power line to \ncontrol the mosfet.
+Text Notes 4000 4725 0    50   ~ 0
+Note : usually most of generic power mosfets are tolerant to \naround 20/30V between Gate and Source. \nIf so, you can use the secondary rectified smoothed line \nas the reference voltage to drive the mosfet gate.\nOtherwise, another power supply line (e.g. 12V line) \nwould be necessary and extra care will be required \nin the aim to drive mosfets in their safe area
 $Comp
 L Transistor_BJT:BC307 Q?
 U 1 1 5E9096F9
@@ -1137,18 +1111,18 @@ Wire Wire Line
 Wire Wire Line
 	3550 4600 3550 5025
 Wire Wire Line
-	4800 1000 4800 1525
+	5300 1000 5300 1525
 Wire Wire Line
-	4800 1525 4600 1525
+	5300 1525 5100 1525
 Wire Wire Line
-	4250 1000 4800 1000
-Connection ~ 4600 1525
+	4750 1000 5300 1000
+Connection ~ 5100 1525
 Wire Wire Line
-	4600 1225 4600 950 
+	5100 1225 5100 950 
 Wire Wire Line
-	4600 950  5225 950 
-Connection ~ 4600 1225
-Connection ~ 5225 950 
+	5100 950  5725 950 
+Connection ~ 5100 1225
+Connection ~ 5725 950 
 $Comp
 L Switch:SW_DPST SW?
 U 1 1 5EDB4B06
@@ -1159,17 +1133,6 @@ F 2 "" H 5150 2175 50  0001 C CNN
 F 3 "~" H 5150 2175 50  0001 C CNN
 	1    5150 2175
 	1    0    0    -1  
-$EndComp
-$Comp
-L Relay:DIPxx-1Axx-11x K?
-U 1 1 5E8449FB
-P 3675 2275
-F 0 "K?" V 3108 2275 50  0000 C CNN
-F 1 "DIPxx-1Axx-11x" V 3199 2275 50  0000 C CNN
-F 2 "Relay_THT:Relay_StandexMeder_DIP_LowProfile" H 4025 2225 50  0001 L CNN
-F 3 "https://standexelectronics.com/wp-content/uploads/datasheet_reed_relay_DIP.pdf" H 3675 2275 50  0001 C CNN
-	1    3675 2275
-	0    1    1    0   
 $EndComp
 Wire Wire Line
 	3975 2475 4350 2475
@@ -1299,4 +1262,57 @@ Text Label 6000 6800 0    60   ~ 0
 I2C_SDA
 Text Label 6000 6925 0    50   ~ 0
 Vcc(5v)
+$Comp
+L Device:Transformer_1P_2S T?
+U 1 1 5E86D6B6
+P 3450 1200
+F 0 "T?" H 3450 1781 50  0000 C CNN
+F 1 "Transformer_1P_2S" H 3450 1690 50  0000 C CNN
+F 2 "" H 3450 1200 50  0001 C CNN
+F 3 "~" H 3450 1200 50  0001 C CNN
+	1    3450 1200
+	1    0    0    -1  
+$EndComp
+Connection ~ 2675 1825
+Connection ~ 4800 1825
+Wire Wire Line
+	2675 1825 4800 1825
+Wire Wire Line
+	3850 1100 3950 1100
+Wire Wire Line
+	3950 1100 3950 1400
+Wire Wire Line
+	3950 1600 3850 1600
+Wire Wire Line
+	3850 1300 4000 1300
+Wire Wire Line
+	4000 1300 4000 1000
+Wire Wire Line
+	4000 800  3850 800 
+Wire Wire Line
+	4000 1000 4750 1000
+Connection ~ 4000 1000
+Wire Wire Line
+	4000 1000 4000 800 
+Wire Wire Line
+	3950 1400 4400 1400
+Wire Wire Line
+	4400 1400 4400 1225
+Wire Wire Line
+	4400 1225 4800 1225
+Connection ~ 3950 1400
+Wire Wire Line
+	3950 1400 3950 1600
+Text Notes 600  2200 0    39   ~ 0
+Note : mosfet could either be of N or P type\nN type will not get until full potential but is often \ncheaper, P type can maximise output potential (vout = vin)
+Wire Notes Line
+	675  4850 2400 4850
+Wire Notes Line
+	2400 4850 2400 5875
+Wire Notes Line
+	2400 5875 675  5875
+Wire Notes Line
+	675  5875 675  4850
+Text Notes 700  5875 0    31   ~ 0
+Anti collision protection circuit:\nwhen both high and low lines are triggered, \nthis transistor pulls back to ground the base of high side \nnpn driver, resulting in the extinction of high side driver, \nleaving low side driver on alone (forces N mosfets to close.\nMust reverse logic if P Mosfet is used instead of a N one)
 $EndSCHEMATC
