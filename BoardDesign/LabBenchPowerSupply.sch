@@ -862,17 +862,6 @@ Wire Notes Line
 	8025 4300 8025 3100
 Text Notes 9100 3050 0    50   ~ 0
 Voltages measurement
-$Comp
-L power:+3V3 #PWR?
-U 1 1 5EFD4716
-P 7725 6050
-F 0 "#PWR?" H 7725 5900 50  0001 C CNN
-F 1 "+3.3V" V 7725 6250 28  0000 C CNN
-F 2 "" H 7725 6050 50  0000 C CNN
-F 3 "" H 7725 6050 50  0000 C CNN
-	1    7725 6050
-	0    -1   -1   0   
-$EndComp
 Wire Wire Line
 	7725 6050 7900 6050
 Text Label 9775 5800 0    60   ~ 0
@@ -1315,4 +1304,6 @@ Wire Notes Line
 	675  5875 675  4850
 Text Notes 700  5875 0    31   ~ 0
 Anti collision protection circuit:\nwhen both high and low lines are triggered, \nthis transistor pulls back to ground the base of high side \nnpn driver, resulting in the extinction of high side driver, \nleaving low side driver on alone (forces N mosfets to close.\nMust reverse logic if P Mosfet is used instead of a N one)
+Text Label 7725 6050 2    50   ~ 0
+Vcc(5v)
 $EndSCHEMATC
