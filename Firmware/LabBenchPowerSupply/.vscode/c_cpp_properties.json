@@ -1,0 +1,34 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/clang",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "clang-x64"
+        },
+        {
+            "name": "LabBenchPowerSupply",
+            "includePath": [
+                "${workspaceFolder}/Drivers/Adc/inc",
+                "${workspaceFolder}/Drivers/Peripheral/inc",
+                "${workspaceFolder}/**",
+                "/usr/avr/include",
+                "/usr/lib/gcc/avr/9.3.0/include",
+                "/usr/lib/gcc/avr/9.3.0/include/**"
+            ],
+            "defines": [
+                "__AVR_ATmega328__"
+            ],
+            "compilerPath": "/usr/bin/avr-gcc",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "gcc-x86"
+        }
+    ],
+    "version": 4
+}
