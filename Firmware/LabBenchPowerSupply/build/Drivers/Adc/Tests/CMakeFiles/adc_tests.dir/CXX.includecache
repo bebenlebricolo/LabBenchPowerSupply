@@ -1,0 +1,36 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../Drivers/Adc/inc/adc.h
+stdbool.h
+-
+adc_reg.h
+../Drivers/Adc/inc/adc_reg.h
+generic_peripheral.h
+../Drivers/Adc/inc/generic_peripheral.h
+
+../Drivers/Adc/inc/adc_reg.h
+
+../Drivers/Adc/private_inc/adc_stack.h
+stdint.h
+-
+adc.h
+../Drivers/Adc/private_inc/adc.h
+adc_reg.h
+../Drivers/Adc/private_inc/adc_reg.h
+
+../Drivers/Peripheral/inc/generic_peripheral.h
+stdint.h
+-
+
+/home/groben/Repos/LabBenchPowerSupply/Firmware/LabBenchPowerSupply/Drivers/Adc/Tests/adc_tests.cpp
+gtest/gtest.h
+/home/groben/Repos/LabBenchPowerSupply/Firmware/LabBenchPowerSupply/Drivers/Adc/Tests/gtest/gtest.h
+adc_stack.h
+/home/groben/Repos/LabBenchPowerSupply/Firmware/LabBenchPowerSupply/Drivers/Adc/Tests/adc_stack.h
+

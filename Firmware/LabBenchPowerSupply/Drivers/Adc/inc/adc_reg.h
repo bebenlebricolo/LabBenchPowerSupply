@@ -1,6 +1,12 @@
 #ifndef ADC_REG_HEADER
 #define ADC_REG_HEADER
 
+/* Expose this API to C++ code without name mangling */
+#ifdef __cplusplus
+extern "C"
+{
+#endif /* __cplusplus */
+
 typedef enum {
     ADC_VOLTAGE_REF_INTERNAL_1V1 = 0x0,
     ADC_VOLTAGE_REF_AREF_PIN     = 0x1
@@ -22,7 +28,7 @@ typedef enum {
     ADC_MUX_ADC7                 = 0x7,
     ADC_MUX_INTERNAL_TEMPERATURE = 0x8,
     ADC_MUX_1v1_REF              = 0b1110,
-    ADC_MUX_GDN                  = 0xF,
+    ADC_MUX_GND                  = 0xF,
     ADC_MUX_COUNT                = 11
 } adc_mux_t;
 
@@ -59,5 +65,10 @@ typedef enum {
     ADC_DIGITAL_IN_6 = 6U,
     ADC_DIGITAL_IN_7 = 7U
 } adc_digital_in_t;
+
+/* Expose this API to C++ code without name mangling */
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif /* ADC_REG_HEADER */

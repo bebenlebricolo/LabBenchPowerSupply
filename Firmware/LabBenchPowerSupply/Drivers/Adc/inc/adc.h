@@ -1,31 +1,25 @@
 /**
  * @brief ADC custom driver
 */
-
 #ifndef ADC_HEADER
 #define ADC_HEADER
 
+/* Expose this API to C++ code without name mangling */
+#ifdef __cplusplus
+extern "C"
+{
+#endif /* __cplusplus */
+
 /* Generic includes */
 #include <stdbool.h>
+#include "adc_reg.h"
 
-/* Standard avr drivers */
-#include <avr/io.h>
-#include <avr/common.h>
 
 /* Application drivers */
 #include "generic_peripheral.h"
-#include "adc_reg.h"
 
 typedef uint16_t adc_result_t;
 typedef uint16_t adc_millivolts_t;
-
-/* Protect a bit initialisation array */
-#ifndef ANALOG_DEVICES_CNT
-    #warning "ANALOG_DEVICES_CNT undefined. To use adc, please define it first and give it the number of channels you want to use"
-    #define ANALOG_DEVICES_CNT ADC_MUX_COUNT
-#elif ANALOG_DEVICES_CNT > ADC_MUX_COUNT
-    #error "More than available adc channels were specified, check ANALOG_DEVICE_CNT"
-#endif
 
 /**
  * @brief this structure mimics ADC peripheral registers. It is passed when configuring ADC peripheral.
@@ -45,10 +39,6 @@ typedef struct {
 
 /* Configuration structure of ADC module */
 typedef struct {
-    struct {
-        adc_mux_t   devices[ANALOG_DEVICES_CNT]; /**< Channels to be scanned            */
-        uint8_t     configured_channels;         /**< How many channels are registered  */
-    } channels_config;
     adc_prescaler_t     prescaler;               /**< ADC internal prescaler            */
     adc_voltage_ref_t   ref;                     /**< ADC reference voltage             */
     adc_result_align_t  alignment;               /**< ADC data alignment                */
@@ -106,5 +96,9 @@ peripheral_error_t adc_get(const uint8_t channel, adc_result_t * const result);
 */
 peripheral_error_t adc_read_millivolt(const uint8_t channel, adc_millivolts_t * const reading);
 
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ADC_HEADER */
