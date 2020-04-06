@@ -16,7 +16,7 @@ static adc_mux_t mux_lookup_table[ADC_MUX_COUNT] =
     ADC_MUX_1v1_REF
 };
 
-TEST(adc_stack_tests, adc_stack_test_register_channels_until_full)
+TEST(adc_stack_tests, register_channels_until_full)
 {
     adc_stack_t registered_channels;
     const auto clear_result = adc_stack_reset(&registered_channels);
@@ -30,7 +30,7 @@ TEST(adc_stack_tests, adc_stack_test_register_channels_until_full)
     ASSERT_EQ(result, ADC_STACK_ERROR_FULL);
 }
 
-TEST(adc_stack_tests, adc_stack_test_remove_channels_from_the_end_until_empty)
+TEST(adc_stack_tests, remove_channels_from_the_end_until_empty)
 {
     adc_stack_t registered_channels;
     const auto clear_result = adc_stack_reset(&registered_channels);
@@ -53,7 +53,7 @@ TEST(adc_stack_tests, adc_stack_test_remove_channels_from_the_end_until_empty)
     ASSERT_EQ(result, ADC_STACK_ERROR_EMPTY);
 }
 
-TEST(adc_stack_tests, adc_stack_test_remove_channels_in_the_middle)
+TEST(adc_stack_tests, remove_channels_in_the_middle)
 {
     adc_stack_t registered_channels;
     const auto clear_result = adc_stack_reset(&registered_channels);
@@ -100,7 +100,7 @@ TEST(adc_stack_tests, adc_stack_guard_null)
     }
 }
 
-TEST(adc_stack_tests, adc_stack_test_get_next)
+TEST(adc_stack_tests, get_next)
 {
     const uint8_t max_registered_values = 11U;
     adc_stack_t registered_channels;

@@ -25,9 +25,9 @@ static inline bool adc_conversion_has_ended(void);
 
 
 
-static bool adc_is_initialised = false;
+static bool adc_is_adc_base_initsed = false;
 
-peripheral_error_t adc_init(adc_config_hal_t * const config, adc_handle_t const * const handle);
+adc_state_t adc_base_init(adc_config_hal_t * const config, adc_handle_t const * const handle);
 {
     static_assert(handle != NULL, L"Handle cannot be NULL!");
 	/* Leave PORTC pins 0 1 2 as tristate pins (no IO functions) */
@@ -50,9 +50,9 @@ peripheral_error_t adc_init(adc_config_hal_t * const config, adc_handle_t const 
     adc_is_initialised = true;
 }
 
-error_t adc_process(void)
+adc_state_t adc_process(void)
 {
-    error_t ret = ERROR_NONE;
+    adc_state_t ret = ERROR_NONE;
     if (!is_adc_enabled() || !adc_is_initialised)
     {
         ret = ERROR_CONFIG;
@@ -79,9 +79,9 @@ error_t adc_process(void)
     return ret;
 }
 
-error_t adc_get_result(const uint8_t index, adc_result_t * const result)
+adc_state_t adc_get_result(const uint8_t index, adc_result_t * const result)
 {
-    error_t ret = ERROR_NONE;
+    adc_state_t ret = ERROR_NONE;
     if (NULL == result || ANALOG_DEVICES_CNT <= index) {
         ret = ERROR_ARGUMENT;
     }
@@ -99,9 +99,9 @@ error_t adc_get_result(const uint8_t index, adc_result_t * const result)
     return ret;
 }
 
-error_t adc_read_millivolt(const uint8_t index, adc_millivolts_t * const reading)
+adc_state_t adc_read_millivolt(const uint8_t index, adc_millivolts_t * const reading)
 {
-    error_t ret = ERROR_NONE;
+    adc_state_t ret = ERROR_NONE;
     if (NULL == reading || ANALOG_DEVICES_CNT <= index)
     {
         ret = ERROR_ARGUMENT;

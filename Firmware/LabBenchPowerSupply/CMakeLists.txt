@@ -10,8 +10,9 @@ add_definitions(
 )
 
 
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -ggdb -fno-exceptions")
-set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -ggdb")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Og -g -fno-exceptions")
+set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Og -g")
+set (CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -flto")
 
 set (AVR_INCLUDES
     "/usr/avr/include/avr"
