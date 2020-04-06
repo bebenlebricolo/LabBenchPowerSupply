@@ -15,6 +15,7 @@
             "name": "LabBenchPowerSupply",
             "includePath": [
                 "${workspaceFolder}/Drivers/Adc/inc",
+                "${workspaceFolder}/Drivers/Adc/private_inc",
                 "${workspaceFolder}/Drivers/Peripheral/inc",
                 "${workspaceFolder}/**",
                 "/usr/avr/include",

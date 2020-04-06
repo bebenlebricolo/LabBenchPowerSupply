@@ -14,6 +14,16 @@
 /* ADCSRA register masks */
 #define ADC_PRESCALER_MSK       (0b111)
 
+
+/* Stores  */
+typedef struct
+{
+    adc_mux_t       mux;
+    adc_channel_t   channel;
+} adc_channel_descriptor_t;
+
+static adc_channel_descriptor_t registered_channels[ADC_MUX_COUNT];
+
 static inline void set_mux(adc_mux_t mux);
 static inline bool is_adc_enabled(void);
 static inline bool adc_conversion_has_ended(void);

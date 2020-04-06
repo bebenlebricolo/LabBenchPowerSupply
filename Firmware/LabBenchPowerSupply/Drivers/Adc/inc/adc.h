@@ -77,6 +77,16 @@ peripheral_error_t adc_init(adc_config_hal_t * const config, adc_handle_t const 
 peripheral_error_t adc_process(void);
 
 /**
+* @brief explicitely adds a channel to scanned channels configuration
+ * @param[in]   channel : channel to be configured and scanned */
+void adc_register_channel(const adc_mux_t channel);
+
+/**
+ * @brief explicitely removes channel from scanned channels configuration
+ * @param[in]   channel : channel to be removed */
+void adc_unregister_channel(const adc_mux_t channel);
+
+/**
  * @brief adc result getter function
  * @param[in]   channel  : targeted device index
  * @param[out]  result   : last fetched result from this device
@@ -84,7 +94,7 @@ peripheral_error_t adc_process(void);
  *      ERROR_NONE      : everything's fine
  *      ERROR_ARGUMENT  : wrong pointer or out of bounds index
 */
-peripheral_error_t adc_read(const uint8_t channel, adc_result_t * const result);
+peripheral_error_t adc_get(const uint8_t channel, adc_result_t * const result);
 
 /**
  * @brief adc raw reading getter
