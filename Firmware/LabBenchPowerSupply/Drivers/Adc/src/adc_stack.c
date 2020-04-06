@@ -1,7 +1,7 @@
 #include <stddef.h>
 #include "adc_stack.h"
 
-adc_stack_error_t adc_stack_clear(adc_stack_t * const stack)
+adc_stack_error_t adc_stack_reset(adc_stack_t * const stack)
 {
     adc_stack_error_t ret = ADC_STACK_ERROR_OK;
     if (NULL == stack)
@@ -14,9 +14,8 @@ adc_stack_error_t adc_stack_clear(adc_stack_t * const stack)
         stack->index = 0;
         for (uint8_t i = 0 ; i < ADC_MUX_COUNT ; i++)
         {
-            stack->channels_pair[i].channel = ADC_MUX_GND;
-            stack->channels_pair[i].locked  = false;
-            stack->channels_pair[i].result  = 0;
+            /* resets targeted pair to defaults */
+            adc_channel_pair_reset(&stack->channels_pair[i]);
         }
     }
     
@@ -38,6 +37,23 @@ adc_stack_error_t adc_channel_pair_copy(adc_channel_pair_t * dest, adc_channel_p
     }
     return ret;
 }
+
+adc_stack_error_t adc_channel_pair_reset(adc_channel_pair_t * const pair)
+{
+    adc_stack_error_t ret = ADC_STACK_ERROR_OK;
+    if (NULL == pair)
+    {
+        ret = ADC_STACK_ERROR_WRONG_POINTER;
+    }
+    else
+    {
+        pair->channel = ADC_MUX_GND;
+        pair->locked = false;
+        pair->result = 0;
+    }
+    return ret;
+}
+
 
 adc_stack_error_t adc_stack_register_channel(adc_stack_t * const stack, const adc_mux_t mux)
 {
@@ -107,9 +123,9 @@ adc_stack_error_t adc_stack_unregister_channel(adc_stack_t * const stack, const 
                 adc_channel_pair_copy(&stack->channels_pair[i], &stack->channels_pair[i+1]);
             }
             stack->count--;
-            stack->channels_pair[stack->count].channel = ADC_MUX_GND;
-            stack->channels_pair[stack->count].locked = false;
-            stack->channels_pair[stack->count].result = 0;
+
+            /* resets targeted pair to defaults */
+            adc_channel_pair_reset(&stack->channels_pair[stack->count]);
             if (stack->index == index && stack->count != 0)
             {
                 stack->index = (stack->count + stack->index - 1) % stack->count;
@@ -120,7 +136,7 @@ adc_stack_error_t adc_stack_unregister_channel(adc_stack_t * const stack, const 
     return ret;
 }
 
-adc_stack_error_t adc_stack_get_next(adc_stack_t * const stack, adc_channel_pair_t * pair)
+adc_stack_error_t adc_stack_get_next(adc_stack_t * const stack, adc_channel_pair_t ** pair)
 {
     adc_stack_error_t ret = ADC_STACK_ERROR_OK;
     if (NULL == stack)
@@ -141,7 +157,7 @@ adc_stack_error_t adc_stack_get_next(adc_stack_t * const stack, adc_channel_pair
     {
         stack->index++;
         stack->index %= stack->count;
-        pair = &(stack->channels_pair[stack->index]);
+        *pair = &(stack->channels_pair[stack->index]);
     }
 
     return ret;

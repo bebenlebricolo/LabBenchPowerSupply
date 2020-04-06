@@ -1,1 +1,0 @@
-/usr/bin/c++   -O0 -ggdb -fno-exceptions  -rdynamic CMakeFiles/adc_tests.dir/adc_tests.cpp.o CMakeFiles/adc_tests.dir/__/src/adc_stack.c.o  -o adc_tests  -lgtest -lpthread 

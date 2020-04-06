@@ -59,14 +59,25 @@ typedef struct
  * @brief copy a pair from source to destination
  * @param[out] dest : pointer to destination object
  * @param[in]  src  : pointer to source object
+ *      ADC_STACK_ERROR_OK              : operation succeeded
+ *      ADC_STACK_ERROR_WRONG_POINTER   : given pointer is NULL
 */
 adc_stack_error_t adc_channel_pair_copy(adc_channel_pair_t * dest, adc_channel_pair_t * const src);
+
+/**
+ * @brief initialises a newly created object with default data
+ * @param[in]  pair  : pointer to object
+ * @return 
+ *      ADC_STACK_ERROR_OK              : operation succeeded
+ *      ADC_STACK_ERROR_WRONG_POINTER   : given pointer is NULL
+*/
+adc_stack_error_t adc_channel_pair_reset(adc_channel_pair_t * const pair);
 
 /**
  * @brief Initialises all data structure to 0. Similar to a clear() action
  * @param[in] stack to be initialised
 */
-adc_stack_error_t adc_stack_clear(adc_stack_t * const stack);
+adc_stack_error_t adc_stack_reset(adc_stack_t * const stack);
 
 /**
  * @brief Registers a channel in adc stack
@@ -97,7 +108,7 @@ adc_stack_error_t adc_stack_unregister_channel(adc_stack_t * const stack, const 
  *      ADC_STACK_ERROR_OK      :   action performed ok
  *      ADC_STACK_ERROR_EMPTY   :   stack is empty, no next pair. Returned pair is unchanged 
 */
-adc_stack_error_t adc_stack_get_next(adc_stack_t * const stack, adc_channel_pair_t * pair);
+adc_stack_error_t adc_stack_get_next(adc_stack_t * const stack, adc_channel_pair_t ** pair);
 
 /* Expose this API to C++ code without name mangling */
 #ifdef __cplusplus

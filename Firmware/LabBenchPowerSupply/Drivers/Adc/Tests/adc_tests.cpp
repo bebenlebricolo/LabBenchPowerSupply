@@ -19,7 +19,7 @@ static adc_mux_t mux_lookup_table[ADC_MUX_COUNT] =
 TEST(adc_stack_tests, adc_stack_test_register_channels_until_full)
 {
     adc_stack_t registered_channels;
-    const auto clear_result = adc_stack_clear(&registered_channels);
+    const auto clear_result = adc_stack_reset(&registered_channels);
     ASSERT_EQ(clear_result, ADC_STACK_ERROR_OK);
     for (uint8_t i = 0 ; i < ADC_MUX_COUNT ; i++)
     {
@@ -33,7 +33,7 @@ TEST(adc_stack_tests, adc_stack_test_register_channels_until_full)
 TEST(adc_stack_tests, adc_stack_test_remove_channels_from_the_end_until_empty)
 {
     adc_stack_t registered_channels;
-    const auto clear_result = adc_stack_clear(&registered_channels);
+    const auto clear_result = adc_stack_reset(&registered_channels);
     ASSERT_EQ(clear_result, ADC_STACK_ERROR_OK);
     // First fill in registered_channels 
     for (uint8_t i = 0 ; i < ADC_MUX_COUNT ; i++)
@@ -56,7 +56,7 @@ TEST(adc_stack_tests, adc_stack_test_remove_channels_from_the_end_until_empty)
 TEST(adc_stack_tests, adc_stack_test_remove_channels_in_the_middle)
 {
     adc_stack_t registered_channels;
-    const auto clear_result = adc_stack_clear(&registered_channels);
+    const auto clear_result = adc_stack_reset(&registered_channels);
     ASSERT_EQ(clear_result, ADC_STACK_ERROR_OK);
     // First fill in registered_channels 
     for (uint8_t i = 0 ; i < ADC_MUX_COUNT ; i++)
@@ -72,6 +72,66 @@ TEST(adc_stack_tests, adc_stack_test_remove_channels_in_the_middle)
     }
     ASSERT_EQ(registered_channels.channels_pair[ADC_MUX_COUNT - 1].channel, ADC_MUX_GND);
 }
+
+TEST(adc_stack_tests, adc_stack_guard_null)
+{
+    adc_stack_t * registered_channels = NULL;
+    {
+        const auto result = adc_stack_reset(registered_channels);
+        ASSERT_EQ(result, ADC_STACK_ERROR_WRONG_POINTER);
+    }
+    {
+        const auto result = adc_stack_register_channel(registered_channels, ADC_MUX_GND);
+        ASSERT_EQ(result, ADC_STACK_ERROR_WRONG_POINTER);
+    }
+    {
+        const auto result = adc_stack_unregister_channel(registered_channels, ADC_MUX_GND);
+        ASSERT_EQ(result, ADC_STACK_ERROR_WRONG_POINTER);
+    }
+    {
+        adc_channel_pair_t * pair = NULL;
+        const auto result = adc_stack_get_next(registered_channels, &pair);
+        ASSERT_EQ(result, ADC_STACK_ERROR_WRONG_POINTER);
+    }
+    {
+        adc_channel_pair_t * pair = NULL;
+        const auto result = adc_stack_get_next(registered_channels , &pair);
+        ASSERT_EQ(result, ADC_STACK_ERROR_WRONG_POINTER);
+    }
+}
+
+TEST(adc_stack_tests, adc_stack_test_get_next)
+{
+    const uint8_t max_registered_values = 11U;
+    adc_stack_t registered_channels;
+    const auto clear_result = adc_stack_reset(&registered_channels);
+    ASSERT_EQ(clear_result, ADC_STACK_ERROR_OK);
+
+    adc_channel_pair_t * pair = NULL;
+    const auto empty_next_result = adc_stack_get_next(&registered_channels, &pair);
+    ASSERT_EQ(empty_next_result, ADC_STACK_ERROR_EMPTY);
+
+    // First fill in registered_channels 
+    for (uint8_t i = 0 ; i < max_registered_values ; i++)
+    {
+        adc_stack_register_channel(&registered_channels, mux_lookup_table[i]);
+    }
+
+    for (uint8_t i = 0; i < max_registered_values + 20 ; i++)
+    {
+        const auto result = adc_stack_get_next(&registered_channels, &pair);
+        EXPECT_EQ(result, ADC_STACK_ERROR_OK);
+        if ( (i % max_registered_values) < max_registered_values - 1)
+        {
+            EXPECT_EQ(pair, &registered_channels.channels_pair[ (i % max_registered_values) + 1]);
+        }
+        else 
+        {
+            EXPECT_EQ(pair, &registered_channels.channels_pair[0]);
+        }
+    }
+}
+
 
 
 int main(int argc, char **argv)
