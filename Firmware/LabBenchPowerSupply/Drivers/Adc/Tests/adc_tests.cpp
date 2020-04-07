@@ -132,7 +132,33 @@ TEST(adc_stack_tests, get_next)
     }
 }
 
+TEST(adc_stack_tests, get_current)
+{
+    const uint8_t max_registered_values = 11U;
+    adc_stack_t registered_channels;
+    const auto clear_result = adc_stack_reset(&registered_channels);
+    ASSERT_EQ(clear_result, ADC_STACK_ERROR_OK);
 
+    adc_channel_pair_t * next_pair = NULL;
+    const auto empty_next_result = adc_stack_get_next(&registered_channels, &next_pair);
+    ASSERT_EQ(empty_next_result, ADC_STACK_ERROR_EMPTY);
+
+    // First fill in registered_channels 
+    for (uint8_t i = 0 ; i < max_registered_values ; i++)
+    {
+        adc_stack_register_channel(&registered_channels, mux_lookup_table[i]);
+    }
+
+    for (uint8_t i = 0; i < max_registered_values + 20 ; i++)
+    {
+        const auto& result = adc_stack_get_next(&registered_channels,&next_pair);
+        EXPECT_EQ(result, ADC_STACK_ERROR_OK);
+        adc_channel_pair_t * current_pair = NULL;
+        const auto& current_result = adc_stack_get_current(&registered_channels, &current_pair);
+        EXPECT_EQ(next_pair, current_pair);
+        EXPECT_EQ(current_pair, &registered_channels.channels_pair[registered_channels.index]);
+    }
+}
 
 int main(int argc, char **argv)
 {
