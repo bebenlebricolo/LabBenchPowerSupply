@@ -25,10 +25,14 @@ extern "C"
 typedef uint16_t adc_result_t;
 typedef uint16_t adc_millivolts_t;
 
+/**
+ * @brief gives running modes of ADC driver
+*/
 typedef enum
 {
-    ADC_RUNNING_MODE_SINGLE_SHOT,
-    ADC_RUNNING_MODE_AUTOTRIGGERED
+    ADC_RUNNING_MODE_SINGLE_SHOT,   /**< If set, adc will require start() to be called repeateadly between each calls       */
+    ADC_RUNNING_MODE_AUTOTRIGGERED  /**< ADC is controlled by a trigger event, which my be set to free-running (software) 
+                                         in this particular case, ADC will be continuously triggered when a conversion ends  */
 }adc_running_mode_t;
 
 /**

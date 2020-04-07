@@ -18,7 +18,7 @@ static adc_mux_t mux_lookup_table[ADC_MUX_COUNT] =
 
 TEST(adc_stack_tests, register_channels_until_full)
 {
-    adc_stack_t registered_channels;
+    volatile adc_stack_t registered_channels;
     const auto clear_result = adc_stack_reset(&registered_channels);
     ASSERT_EQ(clear_result, ADC_STACK_ERROR_OK);
     for (uint8_t i = 0 ; i < ADC_MUX_COUNT ; i++)
@@ -32,7 +32,7 @@ TEST(adc_stack_tests, register_channels_until_full)
 
 TEST(adc_stack_tests, remove_channels_from_the_end_until_empty)
 {
-    adc_stack_t registered_channels;
+    volatile adc_stack_t registered_channels;
     const auto clear_result = adc_stack_reset(&registered_channels);
     ASSERT_EQ(clear_result, ADC_STACK_ERROR_OK);
     // First fill in registered_channels 
@@ -55,7 +55,7 @@ TEST(adc_stack_tests, remove_channels_from_the_end_until_empty)
 
 TEST(adc_stack_tests, remove_channels_in_the_middle)
 {
-    adc_stack_t registered_channels;
+    volatile adc_stack_t registered_channels;
     const auto clear_result = adc_stack_reset(&registered_channels);
     ASSERT_EQ(clear_result, ADC_STACK_ERROR_OK);
     // First fill in registered_channels 
@@ -75,7 +75,7 @@ TEST(adc_stack_tests, remove_channels_in_the_middle)
 
 TEST(adc_stack_tests, adc_stack_guard_null)
 {
-    adc_stack_t * registered_channels = NULL;
+    volatile adc_stack_t * registered_channels = NULL;
     {
         const auto result = adc_stack_reset(registered_channels);
         ASSERT_EQ(result, ADC_STACK_ERROR_NULL_POINTER);
@@ -89,12 +89,12 @@ TEST(adc_stack_tests, adc_stack_guard_null)
         ASSERT_EQ(result, ADC_STACK_ERROR_NULL_POINTER);
     }
     {
-        adc_channel_pair_t * pair = NULL;
+        volatile adc_channel_pair_t * pair = NULL;
         const auto result = adc_stack_get_next(registered_channels, &pair);
         ASSERT_EQ(result, ADC_STACK_ERROR_NULL_POINTER);
     }
     {
-        adc_channel_pair_t * pair = NULL;
+        volatile adc_channel_pair_t * pair = NULL;
         const auto result = adc_stack_get_next(registered_channels , &pair);
         ASSERT_EQ(result, ADC_STACK_ERROR_NULL_POINTER);
     }
@@ -103,11 +103,11 @@ TEST(adc_stack_tests, adc_stack_guard_null)
 TEST(adc_stack_tests, get_next)
 {
     const uint8_t max_registered_values = 11U;
-    adc_stack_t registered_channels;
+    volatile adc_stack_t registered_channels;
     const auto clear_result = adc_stack_reset(&registered_channels);
     ASSERT_EQ(clear_result, ADC_STACK_ERROR_OK);
 
-    adc_channel_pair_t * pair = NULL;
+    volatile adc_channel_pair_t * pair = NULL;
     const auto empty_next_result = adc_stack_get_next(&registered_channels, &pair);
     ASSERT_EQ(empty_next_result, ADC_STACK_ERROR_EMPTY);
 
@@ -135,11 +135,11 @@ TEST(adc_stack_tests, get_next)
 TEST(adc_stack_tests, get_current)
 {
     const uint8_t max_registered_values = 11U;
-    adc_stack_t registered_channels;
+    volatile adc_stack_t registered_channels;
     const auto clear_result = adc_stack_reset(&registered_channels);
     ASSERT_EQ(clear_result, ADC_STACK_ERROR_OK);
 
-    adc_channel_pair_t * next_pair = NULL;
+    volatile adc_channel_pair_t * next_pair = NULL;
     const auto empty_next_result = adc_stack_get_next(&registered_channels, &next_pair);
     ASSERT_EQ(empty_next_result, ADC_STACK_ERROR_EMPTY);
 
@@ -153,7 +153,7 @@ TEST(adc_stack_tests, get_current)
     {
         const auto& result = adc_stack_get_next(&registered_channels,&next_pair);
         EXPECT_EQ(result, ADC_STACK_ERROR_OK);
-        adc_channel_pair_t * current_pair = NULL;
+        volatile adc_channel_pair_t * current_pair = NULL;
         const auto& current_result = adc_stack_get_current(&registered_channels, &current_pair);
         EXPECT_EQ(next_pair, current_pair);
         EXPECT_EQ(current_pair, &registered_channels.channels_pair[registered_channels.index]);

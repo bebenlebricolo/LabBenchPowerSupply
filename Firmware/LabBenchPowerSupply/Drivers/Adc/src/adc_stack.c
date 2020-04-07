@@ -1,7 +1,7 @@
 #include <stddef.h>
 #include "adc_stack.h"
 
-adc_stack_error_t adc_stack_reset(adc_stack_t * const stack)
+adc_stack_error_t adc_stack_reset(volatile adc_stack_t * const stack)
 {
     adc_stack_error_t ret = ADC_STACK_ERROR_OK;
     if (NULL == stack)
@@ -22,7 +22,7 @@ adc_stack_error_t adc_stack_reset(adc_stack_t * const stack)
     return ret;
 }
 
-adc_stack_error_t adc_channel_pair_copy(adc_channel_pair_t * dest, adc_channel_pair_t * const src)
+adc_stack_error_t adc_channel_pair_copy(volatile adc_channel_pair_t * dest, volatile adc_channel_pair_t * const src)
 {
     adc_stack_error_t ret = ADC_STACK_ERROR_OK;
     if (NULL == dest || NULL == src)
@@ -38,7 +38,7 @@ adc_stack_error_t adc_channel_pair_copy(adc_channel_pair_t * dest, adc_channel_p
     return ret;
 }
 
-adc_stack_error_t adc_channel_pair_reset(adc_channel_pair_t * const pair)
+adc_stack_error_t adc_channel_pair_reset(volatile adc_channel_pair_t * const pair)
 {
     adc_stack_error_t ret = ADC_STACK_ERROR_OK;
     if (NULL == pair)
@@ -55,7 +55,7 @@ adc_stack_error_t adc_channel_pair_reset(adc_channel_pair_t * const pair)
 }
 
 
-adc_stack_error_t adc_stack_register_channel(adc_stack_t * const stack, const adc_mux_t mux)
+adc_stack_error_t adc_stack_register_channel(volatile adc_stack_t * const stack, volatile const adc_mux_t mux)
 {
     adc_stack_error_t ret = ADC_STACK_ERROR_OK;
     if (NULL == stack)
@@ -81,7 +81,7 @@ adc_stack_error_t adc_stack_register_channel(adc_stack_t * const stack, const ad
     return ret;
 }
 
-adc_stack_error_t adc_stack_unregister_channel(adc_stack_t * const stack, const adc_mux_t mux)
+adc_stack_error_t adc_stack_unregister_channel(volatile adc_stack_t * const stack, volatile const adc_mux_t mux)
 {
     adc_stack_error_t ret = ADC_STACK_ERROR_OK;
     if (NULL == stack)
@@ -136,7 +136,7 @@ adc_stack_error_t adc_stack_unregister_channel(adc_stack_t * const stack, const 
     return ret;
 }
 
-adc_stack_error_t adc_stack_find_channel(adc_stack_t * const stack, const adc_mux_t channel, adc_channel_pair_t ** pair)
+adc_stack_error_t adc_stack_find_channel(volatile adc_stack_t * const stack, volatile const adc_mux_t channel, volatile adc_channel_pair_t ** pair)
 {
     adc_stack_error_t ret = ADC_STACK_ERROR_OK;
     if (NULL == stack)
@@ -176,7 +176,7 @@ adc_stack_error_t adc_stack_find_channel(adc_stack_t * const stack, const adc_mu
 }
 
 
-adc_stack_error_t adc_stack_get_next(adc_stack_t * const stack, adc_channel_pair_t ** pair)
+adc_stack_error_t adc_stack_get_next(volatile adc_stack_t * const stack, volatile adc_channel_pair_t ** pair)
 {
     adc_stack_error_t ret = ADC_STACK_ERROR_OK;
     if (NULL == stack)
@@ -203,7 +203,7 @@ adc_stack_error_t adc_stack_get_next(adc_stack_t * const stack, adc_channel_pair
     return ret;
 }
 
-adc_stack_error_t adc_stack_get_current(adc_stack_t * const stack, adc_channel_pair_t ** pair)
+adc_stack_error_t adc_stack_get_current(volatile adc_stack_t * const stack, volatile adc_channel_pair_t ** pair)
 {
     adc_stack_error_t ret = ADC_STACK_ERROR_OK;
     if (NULL == stack)

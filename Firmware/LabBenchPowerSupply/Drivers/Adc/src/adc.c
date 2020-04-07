@@ -33,7 +33,7 @@ static inline uint16_t retrieve_result_from_registers(void)
     return (uint16_t)(low | high << 8U ); 
 }
 
-static inline peripheral_error_t set_mux_register(adc_channel_pair_t * const pair)
+static inline peripheral_error_t set_mux_register(volatile adc_channel_pair_t * const pair)
 {
     peripheral_error_t ret = PERIPHERAL_ERROR_OK;
     if (NULL == pair)
@@ -208,7 +208,7 @@ peripheral_error_t adc_read_raw(const adc_mux_t channel, adc_result_t * const re
     }
     else
     {
-        adc_channel_pair_t * pair = NULL;
+        volatile adc_channel_pair_t * pair = NULL;
         adc_stack_error_t find_error = adc_stack_find_channel(&registered_channels, channel, &pair);
         if (ADC_STACK_ERROR_OK == find_error && NULL != pair)
         {
@@ -229,7 +229,7 @@ peripheral_state_t adc_process(void)
     ret = check_initialisation();
     if (PERIPHERAL_STATE_READY == ret)
     {
-        static adc_channel_pair_t * pair = NULL;
+        static volatile adc_channel_pair_t * pair = NULL;
         if(conversion_is_finished() && NULL != pair)
         {
             uint16_t result = retrieve_result_from_registers();

@@ -62,7 +62,7 @@ typedef struct
  *      ADC_STACK_ERROR_OK              : operation succeeded
  *      ADC_STACK_ERROR_NULL_POINTER   : given pointer is NULL
 */
-adc_stack_error_t adc_channel_pair_copy(adc_channel_pair_t * dest, adc_channel_pair_t * const src);
+adc_stack_error_t adc_channel_pair_copy(volatile adc_channel_pair_t * dest, volatile adc_channel_pair_t * const src);
 
 /**
  * @brief initialises a newly created object with default data
@@ -71,13 +71,13 @@ adc_stack_error_t adc_channel_pair_copy(adc_channel_pair_t * dest, adc_channel_p
  *      ADC_STACK_ERROR_OK              : operation succeeded
  *      ADC_STACK_ERROR_NULL_POINTER   : given pointer is NULL
 */
-adc_stack_error_t adc_channel_pair_reset(adc_channel_pair_t * const pair);
+adc_stack_error_t adc_channel_pair_reset(volatile adc_channel_pair_t * const pair);
 
 /**
  * @brief Initialises all data structure to 0. Similar to a clear() action
  * @param[in] stack to be initialised
 */
-adc_stack_error_t adc_stack_reset(adc_stack_t * const stack);
+adc_stack_error_t adc_stack_reset(volatile adc_stack_t * const stack);
 
 /**
  * @brief Registers a channel in adc stack
@@ -88,7 +88,7 @@ adc_stack_error_t adc_stack_reset(adc_stack_t * const stack);
  *      ADC_STACK_ERROR_FULL    :   stack is full, could not add one more channel pair 
  *                                  (there might be several instances of the same channel inside) 
 */
-adc_stack_error_t adc_stack_register_channel(adc_stack_t * const stack, const adc_mux_t mux);
+adc_stack_error_t adc_stack_register_channel(volatile adc_stack_t * const stack, volatile const adc_mux_t mux);
 
 /**
  * @brief Removes a channel from adc stack
@@ -98,7 +98,7 @@ adc_stack_error_t adc_stack_register_channel(adc_stack_t * const stack, const ad
  *      ADC_STACK_ERROR_OK      :   action performed ok
  *      ADC_STACK_ERROR_EMPTY   :   stack is empty, could not remove one more 
 */
-adc_stack_error_t adc_stack_unregister_channel(adc_stack_t * const stack, const adc_mux_t mux);
+adc_stack_error_t adc_stack_unregister_channel(volatile adc_stack_t * const stack, volatile const adc_mux_t mux);
 
 
 /**
@@ -110,7 +110,7 @@ adc_stack_error_t adc_stack_unregister_channel(adc_stack_t * const stack, const 
  *      ADC_STACK_ERROR_OK      :   action performed ok
  *      ADC_STACK_ERROR_EMPTY   :   stack is empty, could not remove one more 
 */
-adc_stack_error_t adc_stack_find_channel(adc_stack_t * const stack, const adc_mux_t channel, adc_channel_pair_t ** pair);
+adc_stack_error_t adc_stack_find_channel(volatile adc_stack_t * const stack, volatile const adc_mux_t channel, volatile adc_channel_pair_t ** pair);
 
 /**
  * @brief returns next channel to be scanned (mainly called either by ISR or asynchronous code)
@@ -120,7 +120,7 @@ adc_stack_error_t adc_stack_find_channel(adc_stack_t * const stack, const adc_mu
  *      ADC_STACK_ERROR_OK      :   action performed ok
  *      ADC_STACK_ERROR_EMPTY   :   stack is empty, no next pair. Returned pair is unchanged 
 */
-adc_stack_error_t adc_stack_get_next(adc_stack_t * const stack, adc_channel_pair_t ** pair);
+adc_stack_error_t adc_stack_get_next(volatile adc_stack_t * const stack, volatile adc_channel_pair_t ** pair);
 
 /**
  * @brief returns currently scanned pair object
@@ -130,7 +130,7 @@ adc_stack_error_t adc_stack_get_next(adc_stack_t * const stack, adc_channel_pair
  *      ADC_STACK_ERROR_OK      :   action performed ok
  *      ADC_STACK_ERROR_EMPTY   :   stack is empty, no next pair. Returned pair is unchanged 
 */
-adc_stack_error_t adc_stack_get_current(adc_stack_t * const stack, adc_channel_pair_t ** pair);
+adc_stack_error_t adc_stack_get_current(volatile adc_stack_t * const stack, volatile adc_channel_pair_t ** pair);
 
 /* Expose this API to C++ code without name mangling */
 #ifdef __cplusplus
