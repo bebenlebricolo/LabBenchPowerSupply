@@ -4,6 +4,10 @@
         "stdexcept": "cpp",
         "ostream": "cpp",
         "limits": "cpp",
-        "stddef.h": "c"
+        "stddef.h": "c",
+        "adc.h": "c",
+        "adc_reg.h": "c",
+        "assert.h": "c",
+        "memory.h": "c"
     }
 }

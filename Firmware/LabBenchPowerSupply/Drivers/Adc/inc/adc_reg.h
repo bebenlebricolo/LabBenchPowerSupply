@@ -7,9 +7,56 @@ extern "C"
 {
 #endif /* __cplusplus */
 
+/* Masks that were taken from iom328p.h*/
+/* ADCLOW result register */
+#define ADCL0 0
+#define ADCL1 1
+#define ADCL2 2
+#define ADCL3 3
+#define ADCL4 4
+#define ADCL5 5
+#define ADCL6 6
+#define ADCL7 7
+
+/* ADCHIGH result register */
+#define ADCH0 0
+#define ADCH1 1
+#define ADCH2 2
+#define ADCH3 3
+#define ADCH4 4
+#define ADCH5 5
+#define ADCH6 6
+#define ADCH7 7
+
+/* ADCSRA register */
+#define ADPS0 0
+#define ADPS1 1
+#define ADPS2 2
+#define ADIE  3
+#define ADIF  4
+#define ADATE 5
+#define ADSC  6
+#define ADEN  7
+
+/* ADCSRB register */
+#define ADTS0 0
+#define ADTS1 1
+#define ADTS2 2
+#define ACME  6
+
+/* ADMUX register */
+#define MUX0  0
+#define MUX1  1
+#define MUX2  2
+#define MUX3  3
+#define ADLAR 5
+#define REFS0 6
+#define REFS1 7
+
 typedef enum {
-    ADC_VOLTAGE_REF_INTERNAL_1V1 = 0x0,
-    ADC_VOLTAGE_REF_AREF_PIN     = 0x1
+    ADC_VOLTAGE_REF_INTERNAL_1V1 = 0x00,
+    ADC_VOLTAGE_REF_AVCC         = 0x01,
+    ADC_VOLTAGE_REF_AREF_PIN     = 0x11
 } adc_voltage_ref_t;
 
 typedef enum {

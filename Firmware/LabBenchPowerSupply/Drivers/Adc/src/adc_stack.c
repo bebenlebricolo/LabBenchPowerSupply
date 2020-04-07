@@ -6,7 +6,7 @@ adc_stack_error_t adc_stack_reset(adc_stack_t * const stack)
     adc_stack_error_t ret = ADC_STACK_ERROR_OK;
     if (NULL == stack)
     {
-        ret = ADC_STACK_ERROR_WRONG_POINTER;
+        ret = ADC_STACK_ERROR_NULL_POINTER;
     }
     else
     {
@@ -27,7 +27,7 @@ adc_stack_error_t adc_channel_pair_copy(adc_channel_pair_t * dest, adc_channel_p
     adc_stack_error_t ret = ADC_STACK_ERROR_OK;
     if (NULL == dest || NULL == src)
     {
-        ret = ADC_STACK_ERROR_WRONG_POINTER;
+        ret = ADC_STACK_ERROR_NULL_POINTER;
     }
     else
     {
@@ -43,7 +43,7 @@ adc_stack_error_t adc_channel_pair_reset(adc_channel_pair_t * const pair)
     adc_stack_error_t ret = ADC_STACK_ERROR_OK;
     if (NULL == pair)
     {
-        ret = ADC_STACK_ERROR_WRONG_POINTER;
+        ret = ADC_STACK_ERROR_NULL_POINTER;
     }
     else
     {
@@ -60,7 +60,7 @@ adc_stack_error_t adc_stack_register_channel(adc_stack_t * const stack, const ad
     adc_stack_error_t ret = ADC_STACK_ERROR_OK;
     if (NULL == stack)
     {
-        ret = ADC_STACK_ERROR_WRONG_POINTER;
+        ret = ADC_STACK_ERROR_NULL_POINTER;
     }
     else
     {
@@ -86,7 +86,7 @@ adc_stack_error_t adc_stack_unregister_channel(adc_stack_t * const stack, const 
     adc_stack_error_t ret = ADC_STACK_ERROR_OK;
     if (NULL == stack)
     {
-        ret = ADC_STACK_ERROR_WRONG_POINTER;
+        ret = ADC_STACK_ERROR_NULL_POINTER;
     }
     else
     {
@@ -136,12 +136,52 @@ adc_stack_error_t adc_stack_unregister_channel(adc_stack_t * const stack, const 
     return ret;
 }
 
+adc_stack_error_t adc_stack_find_channel(adc_stack_t * const stack, const adc_mux_t channel, adc_channel_pair_t ** pair)
+{
+    adc_stack_error_t ret = ADC_STACK_ERROR_OK;
+    if (NULL == stack)
+    {
+        ret = ADC_STACK_ERROR_NULL_POINTER;
+    }
+    else
+    {
+        /* Check if we can remove an element */
+        if (0 == stack->count)
+        {
+            ret = ADC_STACK_ERROR_EMPTY;
+        }
+    }
+
+    /* Get element address */
+    if (ADC_STACK_ERROR_OK == ret)
+    {
+        uint8_t index = ADC_MUX_COUNT;
+        bool found_item = false;
+        for (uint8_t i = 0 ; i < stack->count ; i++ )
+        {
+            if (stack->channels_pair[i].channel == channel)
+            {
+                // Found first matching channel
+                *pair = &stack->channels_pair[i];
+                found_item = true;
+                break;
+            }
+        }
+        if (!found_item)
+        {
+            *pair = NULL;
+        }
+    }
+    return ret;
+}
+
+
 adc_stack_error_t adc_stack_get_next(adc_stack_t * const stack, adc_channel_pair_t ** pair)
 {
     adc_stack_error_t ret = ADC_STACK_ERROR_OK;
     if (NULL == stack)
     {
-        ret = ADC_STACK_ERROR_WRONG_POINTER;
+        ret = ADC_STACK_ERROR_NULL_POINTER;
     }
     else
     {
@@ -162,3 +202,29 @@ adc_stack_error_t adc_stack_get_next(adc_stack_t * const stack, adc_channel_pair
 
     return ret;
 }
+
+adc_stack_error_t adc_stack_get_current(adc_stack_t * const stack, adc_channel_pair_t ** pair)
+{
+    adc_stack_error_t ret = ADC_STACK_ERROR_OK;
+    if (NULL == stack)
+    {
+        ret = ADC_STACK_ERROR_NULL_POINTER;
+    }
+    else
+    {
+        /* Check that we can target at least one element of the array */
+        if (0 == stack->count)
+        {
+            ret = ADC_STACK_ERROR_EMPTY;
+        }
+    }  
+    
+    /* Move to next element and return its address */
+    if (ADC_STACK_ERROR_OK == ret)
+    {
+        *pair = &(stack->channels_pair[stack->index]);
+    }
+
+    return ret;
+}
+

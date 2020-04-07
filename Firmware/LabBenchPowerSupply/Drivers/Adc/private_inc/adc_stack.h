@@ -23,7 +23,7 @@ typedef enum
     ADC_STACK_ERROR_OK,                 /**< Action was successful                  */
     ADC_STACK_ERROR_FULL,               /**< Given stack is full                    */
     ADC_STACK_ERROR_EMPTY,              /**< Given stack is empty                   */
-    ADC_STACK_ERROR_WRONG_POINTER,      /**< Given pointer not initialised          */
+    ADC_STACK_ERROR_NULL_POINTER,      /**< Given pointer not initialised          */
     ADC_STACK_ERROR_ELEMENT_NOT_FOUND,   /**< Targeted element not found in stack    */
 } adc_stack_error_t;
 
@@ -60,7 +60,7 @@ typedef struct
  * @param[out] dest : pointer to destination object
  * @param[in]  src  : pointer to source object
  *      ADC_STACK_ERROR_OK              : operation succeeded
- *      ADC_STACK_ERROR_WRONG_POINTER   : given pointer is NULL
+ *      ADC_STACK_ERROR_NULL_POINTER   : given pointer is NULL
 */
 adc_stack_error_t adc_channel_pair_copy(adc_channel_pair_t * dest, adc_channel_pair_t * const src);
 
@@ -69,7 +69,7 @@ adc_stack_error_t adc_channel_pair_copy(adc_channel_pair_t * dest, adc_channel_p
  * @param[in]  pair  : pointer to object
  * @return 
  *      ADC_STACK_ERROR_OK              : operation succeeded
- *      ADC_STACK_ERROR_WRONG_POINTER   : given pointer is NULL
+ *      ADC_STACK_ERROR_NULL_POINTER   : given pointer is NULL
 */
 adc_stack_error_t adc_channel_pair_reset(adc_channel_pair_t * const pair);
 
@@ -100,6 +100,18 @@ adc_stack_error_t adc_stack_register_channel(adc_stack_t * const stack, const ad
 */
 adc_stack_error_t adc_stack_unregister_channel(adc_stack_t * const stack, const adc_mux_t mux);
 
+
+/**
+ * @brief finds first matching channel in stack and returns a pointer to the channel_pair
+ * @param[in] stack     :   adc stack object
+ * @param[in] channel   :   adc channel value
+ * @param[in] pair      :   pointer to found item, set to NULL if not found
+ * @return 
+ *      ADC_STACK_ERROR_OK      :   action performed ok
+ *      ADC_STACK_ERROR_EMPTY   :   stack is empty, could not remove one more 
+*/
+adc_stack_error_t adc_stack_find_channel(adc_stack_t * const stack, const adc_mux_t channel, adc_channel_pair_t ** pair);
+
 /**
  * @brief returns next channel to be scanned (mainly called either by ISR or asynchronous code)
  * @param[in] stack :   adc stack object
@@ -109,6 +121,16 @@ adc_stack_error_t adc_stack_unregister_channel(adc_stack_t * const stack, const 
  *      ADC_STACK_ERROR_EMPTY   :   stack is empty, no next pair. Returned pair is unchanged 
 */
 adc_stack_error_t adc_stack_get_next(adc_stack_t * const stack, adc_channel_pair_t ** pair);
+
+/**
+ * @brief returns currently scanned pair object
+ * @param[in] stack :   adc stack object
+ * @param[out] pair :   pointer to current pair
+ * @return 
+ *      ADC_STACK_ERROR_OK      :   action performed ok
+ *      ADC_STACK_ERROR_EMPTY   :   stack is empty, no next pair. Returned pair is unchanged 
+*/
+adc_stack_error_t adc_stack_get_current(adc_stack_t * const stack, adc_channel_pair_t ** pair);
 
 /* Expose this API to C++ code without name mangling */
 #ifdef __cplusplus

@@ -78,25 +78,25 @@ TEST(adc_stack_tests, adc_stack_guard_null)
     adc_stack_t * registered_channels = NULL;
     {
         const auto result = adc_stack_reset(registered_channels);
-        ASSERT_EQ(result, ADC_STACK_ERROR_WRONG_POINTER);
+        ASSERT_EQ(result, ADC_STACK_ERROR_NULL_POINTER);
     }
     {
         const auto result = adc_stack_register_channel(registered_channels, ADC_MUX_GND);
-        ASSERT_EQ(result, ADC_STACK_ERROR_WRONG_POINTER);
+        ASSERT_EQ(result, ADC_STACK_ERROR_NULL_POINTER);
     }
     {
         const auto result = adc_stack_unregister_channel(registered_channels, ADC_MUX_GND);
-        ASSERT_EQ(result, ADC_STACK_ERROR_WRONG_POINTER);
+        ASSERT_EQ(result, ADC_STACK_ERROR_NULL_POINTER);
     }
     {
         adc_channel_pair_t * pair = NULL;
         const auto result = adc_stack_get_next(registered_channels, &pair);
-        ASSERT_EQ(result, ADC_STACK_ERROR_WRONG_POINTER);
+        ASSERT_EQ(result, ADC_STACK_ERROR_NULL_POINTER);
     }
     {
         adc_channel_pair_t * pair = NULL;
         const auto result = adc_stack_get_next(registered_channels , &pair);
-        ASSERT_EQ(result, ADC_STACK_ERROR_WRONG_POINTER);
+        ASSERT_EQ(result, ADC_STACK_ERROR_NULL_POINTER);
     }
 }
 

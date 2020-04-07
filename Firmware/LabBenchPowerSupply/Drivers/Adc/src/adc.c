@@ -1,11 +1,12 @@
 #include "adc.h"
+#include "adc_reg.h"
 #include "adc_stack.h"
-#include "assert.h"
+
+#include <memory.h>
 
 /* 10 bits adc, full range */
 #define ADC_MAX_VALUE       1024U
 #define ADC_1V1_MILLIVOLT   1100U
-#define ADC_VCC_MILLIVOLT   (VCC_SUPPLY_VOLTAGE * 1000U)
 
 /* ADMUX register masks */
 #define ADC_MUX_MSK             (0x0F)
@@ -16,118 +17,263 @@
 #define ADC_PRESCALER_MSK       (0b111)
 
 
-static adc_channel_descriptor_t registered_channels[ADC_MUX_COUNT];
-
-static inline void set_mux(adc_mux_t mux);
-static inline bool is_adc_enabled(void);
-static inline bool adc_conversion_has_ended(void);
-
-
-
-
-static bool adc_is_adc_base_initsed = false;
-
-adc_state_t adc_base_init(adc_config_hal_t * const config, adc_handle_t const * const handle);
+/* Holds the current configuration of the ADC module */
+static struct 
 {
-    static_assert(handle != NULL, L"Handle cannot be NULL!");
-	/* Leave PORTC pins 0 1 2 as tristate pins (no IO functions) */
-	IN_ADC0_DDREG &= ~(1<<IN_ADC0_PIN);
-	IN_ADC0_PORT &= ~(1<<IN_ADC0_PIN);
-	IN_ADC1_DDREG &= ~(1<<IN_ADC1_PIN);
-	IN_ADC1_PORT &= ~(1<<IN_ADC1_PIN);
-	IN_ADC2_DDREG &= ~(1<<IN_ADC2_PIN);
-	IN_ADC2_PORT &= ~(1<<IN_ADC2_PIN);
+    adc_config_hal_t base_config;
+    bool is_initialised;
+} internal_configuration;
 
-	/* Configure ADMUX register */
-    ADMUX = (ADMUX & ~ADC_REF_VOLTAGE_MSK) | (adc_config_hal.ref << REFS0);         /* set reference voltage */
-    ADMUX = (ADMUX & ~ADC_RESULT_ADJUST_MSK) | (ADC_RIGT_ALIGNED_RESULT << ADLAR);  /* set result adjustment */
-    ADCSRA = (ADCSRA & ~ADC_PRESCALER_MSK) | adc_config_hal.prescaler;              /* set precaler */
-    ADCSRB = 0;
+static volatile adc_stack_t registered_channels;
 
-	/* enable adc peripheral and initialises analog circuitry
-	 (takes 25 clock cycles 1rst time */
-    ADCSRA |= 1U << ADEN | ADSC;
-    adc_is_initialised = true;
+static inline uint16_t retrieve_result_from_registers(void)
+{
+    uint8_t low = *internal_configuration.base_config.handle.readings.adclow_reg;
+    uint8_t high = *internal_configuration.base_config.handle.readings.adchigh_reg;
+    return (uint16_t)(low | high << 8U ); 
 }
 
-adc_state_t adc_process(void)
+static inline peripheral_error_t set_mux_register(adc_channel_pair_t * const pair)
 {
-    adc_state_t ret = ERROR_NONE;
-    if (!is_adc_enabled() || !adc_is_initialised)
+    peripheral_error_t ret = PERIPHERAL_ERROR_OK;
+    if (NULL == pair)
     {
-        ret = ERROR_CONFIG;
+        ret = PERIPHERAL_ERROR_NULL_POINTER;
     }
     else
     {
-        if(adc_conversion_has_ended())
+        *internal_configuration.base_config.handle.mux_reg = pair->channel;
+    }
+    return ret;
+}
+
+peripheral_error_t adc_config_hal_copy(adc_config_hal_t * dest, adc_config_hal_t * const src)
+{
+    peripheral_error_t ret = PERIPHERAL_ERROR_OK;
+    if (NULL == dest || NULL == src)
+    {
+        ret = PERIPHERAL_ERROR_NULL_POINTER;
+    }
+    else
+    {
+        memcpy(dest, src, sizeof(adc_config_hal_t));
+    }
+    return ret;
+}
+
+peripheral_error_t adc_config_hal_reset(adc_config_hal_t * config)
+{
+    peripheral_error_t ret = PERIPHERAL_ERROR_OK;
+    if (NULL == config)
+    {
+        ret = PERIPHERAL_ERROR_NULL_POINTER;
+    }
+    else
+    {
+        config->supply_voltage_mv = 0;
+        config->prescaler = ADC_PRESCALER_DEFAULT_2;
+        config->ref = ADC_VOLTAGE_REF_INTERNAL_1V1;
+        config->alignment = ADC_RIGT_ALIGNED_RESULT;
+        config->trigger_sources = ADC_TRIGGER_FREE_RUNNING;
+        config->running_mode = ADC_RUNNING_MODE_SINGLE_SHOT;
+        config->using_interrupt = false;
+        adc_handle_reset(&config->handle);
+    }
+    return ret;
+}
+
+peripheral_error_t adc_handle_copy(adc_handle_t * const dest, const adc_handle_t * const src)
+{
+    peripheral_error_t ret = PERIPHERAL_ERROR_OK;
+    if (NULL == dest || NULL == src)
+    {
+        ret = PERIPHERAL_ERROR_NULL_POINTER;
+    }
+    else
+    {
+        memcpy(dest, src, sizeof(adc_handle_t));
+    }
+    return ret;
+}
+
+peripheral_error_t adc_handle_reset(adc_handle_t * const handle)
+{
+    peripheral_error_t ret = PERIPHERAL_ERROR_OK;
+    if (NULL == handle)
+    {
+        ret = PERIPHERAL_ERROR_NULL_POINTER;
+    }
+    else
+    {
+        handle->adc_addr = NULL;
+        handle->mux_reg = NULL;
+        handle->adcsra_reg = NULL;
+        handle->adcsrb_reg = NULL;
+        handle->readings.adchigh_reg = NULL ;
+        handle->readings.adclow_reg = NULL ;
+    }
+    return ret;
+}
+
+
+
+peripheral_error_t adc_base_init(adc_config_hal_t * const config, adc_handle_t const * const p_handle)
+{
+    peripheral_error_t ret = PERIPHERAL_ERROR_OK;
+    if (NULL == config || NULL == p_handle)
+    {
+        ret = PERIPHERAL_ERROR_NULL_POINTER;
+    }
+    else
+    {
+        adc_stack_reset(&registered_channels);
+        /* First, copy configuration data to the internal cache */
+        adc_config_hal_copy(&(internal_configuration.base_config), config);
+        adc_handle_t * handle = &internal_configuration.base_config.handle;
+        *handle->mux_reg = (*handle->mux_reg & ~ADC_REF_VOLTAGE_MSK) | (config->ref << REFS0);            /* set reference voltage */
+        *handle->mux_reg = (*handle->mux_reg & ~ADC_RESULT_ADJUST_MSK) | (config->alignment << ADLAR);    /* set result adjustment */
+        *handle->adcsra_reg = (*handle->adcsra_reg & ~ADC_PRESCALER_MSK) | (config->prescaler);           /* set precaler */
+        *handle->adcsrb_reg = config->trigger_sources;
+        if (internal_configuration.base_config.using_interrupt)
         {
-            uint8_t low = ADCL;
-            uint16_t result = (uint16_t)(ADCH << 8U) | low;
+            *handle->adcsra_reg |= (1 << ADIE);
+        }
+        if (ADC_RUNNING_MODE_SINGLE_SHOT == config->running_mode)
+        {
+            *handle->adcsra_reg &= ~(1 << ADATE);
+        }
+        else
+        {
+            *handle->adcsra_reg |= 1 << ADATE;
+        }
+        
+        internal_configuration.is_initialised = true;
+    }
+    return ret;
+}
 
-            adc_buffer.results[adc_buffer.cur_index] = result;
-            adc_buffer.cur_index++;
-            adc_buffer.cur_index %= ANALOG_DEVICES_CNT;
-            /* Reset interrupt flag manually */
-            ADCSRA |= (1U << ADIF);
+static inline peripheral_state_t check_initialisation(void)
+{
+    return (!internal_configuration.is_initialised) ? PERIPHERAL_STATE_NOT_INITIALISED : PERIPHERAL_STATE_READY;
+}
 
-            /* Start next conversion */
-            set_mux(adc_config_hal.devices[adc_buffer.cur_index]);
-            ADCSRA |= 1U << ADSC ;
+peripheral_state_t adc_start(void)
+{
+    peripheral_state_t init_state = check_initialisation();
+    if (PERIPHERAL_STATE_READY == init_state)
+    {
+        peripheral_reg_t * reg = internal_configuration.base_config.handle.adcsra_reg;
+        /* Enable and start the ADC peripheral */
+        *reg |= (1 << ADEN) | (1 << ADSC);
+    }
+    
+    return init_state;
+}
+
+peripheral_state_t adc_stop(void)
+{
+    peripheral_state_t init_state = check_initialisation();
+    if (PERIPHERAL_STATE_READY == init_state)
+    {
+        peripheral_reg_t * reg = internal_configuration.base_config.handle.adcsra_reg;
+        /* Disable the ADC peripheral */
+        *reg &= ~((1 << ADEN) | (1 << ADSC));
+        /* Disable ADC interrupt mode */
+        *reg &= ~(1 << ADIE);
+    }
+    
+    return init_state;
+}
+
+peripheral_error_t adc_register_channel(const adc_mux_t channel)
+{
+    peripheral_error_t ret = PERIPHERAL_ERROR_OK;
+    ret = adc_stack_register_channel(&registered_channels, channel);
+    return ret;
+}
+
+peripheral_error_t adc_unregister_channel(const adc_mux_t channel)
+{
+    peripheral_error_t ret = PERIPHERAL_ERROR_OK;
+    ret = adc_stack_unregister_channel(&registered_channels, channel);
+    return ret;
+}
+
+peripheral_error_t adc_read_raw(const adc_mux_t channel, adc_result_t * const result)
+{
+    peripheral_error_t ret = PERIPHERAL_ERROR_OK;
+    if (NULL == result)
+    {
+        ret = PERIPHERAL_ERROR_NULL_POINTER;
+    }
+    else
+    {
+        adc_channel_pair_t * pair = NULL;
+        adc_stack_error_t find_error = adc_stack_find_channel(&registered_channels, channel, &pair);
+        if (ADC_STACK_ERROR_OK == find_error && NULL != pair)
+        {
+            *result = pair->result;
         }
     }
-
     return ret;
 }
 
-adc_state_t adc_get_result(const uint8_t index, adc_result_t * const result)
+static inline bool conversion_is_finished(void)
 {
-    adc_state_t ret = ERROR_NONE;
-    if (NULL == result || ANALOG_DEVICES_CNT <= index) {
-        ret = ERROR_ARGUMENT;
-    }
+    return ((*internal_configuration.base_config.handle.adcsra_reg) & 1 << ADIF) != 0;
+}
 
-    if (ERROR_NONE == ret && !adc_is_initialised)
+peripheral_state_t adc_process(void)
+{
+    peripheral_state_t ret = PERIPHERAL_STATE_READY;
+    ret = check_initialisation();
+    if (PERIPHERAL_STATE_READY == ret)
     {
-        ret = ERROR_NOT_INITIALISED;
-    }
+        static adc_channel_pair_t * pair = NULL;
+        if(conversion_is_finished() && NULL != pair)
+        {
+            uint16_t result = retrieve_result_from_registers();
+            pair->result = result;
+            /* Reset interrupt flag manually */
+            *internal_configuration.base_config.handle.adcsra_reg |= (1U << ADIF);
+            adc_stack_error_t find_next_error = adc_stack_get_next(&registered_channels, &pair);
+            if (ADC_STACK_ERROR_OK == find_next_error)
+            {
+                set_mux_register(pair);
+                /* Start next conversion */
+                *internal_configuration.base_config.handle.adcsra_reg |= 1U << ADSC ;
+            }
+        }
 
-    /* Extract last conversion result for this item */
-    if (ERROR_NONE == ret) {
-        *result = adc_buffer.results[index];
     }
-
     return ret;
 }
 
-adc_state_t adc_read_millivolt(const uint8_t index, adc_millivolts_t * const reading)
+peripheral_error_t adc_read_millivolt(const adc_mux_t channel, adc_millivolts_t * const reading)
 {
-    adc_state_t ret = ERROR_NONE;
-    if (NULL == reading || ANALOG_DEVICES_CNT <= index)
+    peripheral_error_t ret = PERIPHERAL_ERROR_OK;
+    if (NULL == reading )
     {
-        ret = ERROR_ARGUMENT;
-    }
-
-    if (ERROR_NONE == ret && !adc_is_initialised)
-    {
-        ret = ERROR_NOT_INITIALISED;
+        ret = PERIPHERAL_ERROR_NULL_POINTER;
     }
     else
     {
         adc_result_t result = 0;
-        ret = adc_get_result(index, &result);
-        if (ERROR_NONE == ret)
+        ret = adc_read_raw(channel, &result);
+        if (PERIPHERAL_ERROR_OK == ret)
         {
-            switch (adc_config_hal.ref)
+            switch (internal_configuration.base_config.ref)
             {
                 case ADC_VOLTAGE_REF_INTERNAL_1V1:
                     *reading =  (uint16_t)(((uint32_t)result * (uint32_t)ADC_1V1_MILLIVOLT) / ADC_MAX_VALUE);
                     break;
                 case ADC_VOLTAGE_REF_AREF_PIN:
-                    *reading = (uint16_t)(((uint32_t)result * (uint32_t)ADC_AREF_VOLTAGE_MILLIVOLT) / ADC_MAX_VALUE);
+                case ADC_VOLTAGE_REF_AVCC:
+                    *reading = (uint16_t)(((uint32_t)result * (uint32_t)internal_configuration.base_config.supply_voltage_mv) / ADC_MAX_VALUE);
                     break;
                 default:
                     *reading = 0;
-                    ret = ERROR_ARGUMENT;
+                    ret = PERIPHERAL_ERROR_FAILED;
                     break;
             }
         }
@@ -137,27 +283,3 @@ adc_state_t adc_read_millivolt(const uint8_t index, adc_millivolts_t * const rea
     return ret;
 }
 
-
-
-static inline void set_mux(adc_mux_t mux)
-{
-    ADMUX = (ADMUX & ~ADC_MUX_MSK) | mux;
-}
-
-static inline bool is_adc_enabled(void)
-{
-    return (bool)((ADCSRA & (1U << ADEN)) >> ADEN);
-}
-
-
-static inline bool adc_conversion_has_ended(void)
-{
-    bool ret = false;
-    /* Check if interrupt flag is set or if no conversion is running*/
-    if ((ADCSRA & (1U << ADIF ))
-    ||  !(ADCSRA & (1U << ADSC)))
-    {
-        ret = true;
-    }
-    return ret;
-}
