@@ -117,10 +117,10 @@ peripheral_error_t adc_handle_reset(adc_handle_t * const handle)
 
 
 
-peripheral_error_t adc_base_init(adc_config_hal_t * const config, adc_handle_t const * const p_handle)
+peripheral_error_t adc_base_init(adc_config_hal_t * const config)
 {
     peripheral_error_t ret = PERIPHERAL_ERROR_OK;
-    if (NULL == config || NULL == p_handle)
+    if (NULL == config)
     {
         ret = PERIPHERAL_ERROR_NULL_POINTER;
     }
@@ -133,7 +133,7 @@ peripheral_error_t adc_base_init(adc_config_hal_t * const config, adc_handle_t c
         *handle->mux_reg = (*handle->mux_reg & ~ADC_REF_VOLTAGE_MSK) | (config->ref << REFS0);            /* set reference voltage */
         *handle->mux_reg = (*handle->mux_reg & ~ADC_RESULT_ADJUST_MSK) | (config->alignment << ADLAR);    /* set result adjustment */
         *handle->adcsra_reg = (*handle->adcsra_reg & ~ADC_PRESCALER_MSK) | (config->prescaler);           /* set precaler */
-        *handle->adcsrb_reg = config->trigger_sources;
+        *handle->adcsrb_reg |= config->trigger_sources;
         if (internal_configuration.base_config.using_interrupt)
         {
             *handle->adcsra_reg |= (1 << ADIE);

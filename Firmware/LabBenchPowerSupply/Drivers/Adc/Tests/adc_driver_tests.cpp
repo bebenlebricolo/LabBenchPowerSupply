@@ -17,8 +17,6 @@ static adc_mux_t mux_lookup_table[ADC_MUX_COUNT] =
     ADC_MUX_1v1_REF
 };
 
-
-
 TEST(adc_driver_tests, check_config_copy_ok)
 {
     adc_config_hal_t config_default;
@@ -39,6 +37,29 @@ TEST(adc_driver_tests, check_config_copy_ok)
     adc_register_stub_init_adc_handle(&config_default.handle, &adc_register_stub);
     const auto& copy_result = adc_config_hal_copy(&config_copy, &config_default);
     ASSERT_EQ(0,memcmp(&config_copy, &config_default, sizeof(adc_config_hal_t)));
+}
+
+TEST(adc_driver_tests, adc_base_init_check0)
+{
+    adc_config_hal_t config_default;
+    adc_register_stub_erase(&adc_register_stub);
+    adc_register_stub_init_adc_handle(&config_default.handle, &adc_register_stub);
+    /* dummy configuration */
+    config_default.alignment = ADC_LEFT_ALIGNED_RESULT;
+    config_default.prescaler = ADC_PRESCALER_4;
+    config_default.ref = ADC_VOLTAGE_REF_AREF_PIN;
+    config_default.running_mode = ADC_RUNNING_MODE_SINGLE_SHOT;
+    config_default.supply_voltage_mv = 1203;
+    config_default.trigger_sources = ADC_TRIGGER_EXT_INT_REQUEST_0;
+    config_default.using_interrupt = true;
+
+    /* test initialisation of registers */
+    const auto& init_result = adc_base_init(&config_default);
+    ASSERT_EQ(init_result, PERIPHERAL_ERROR_OK);
+    ASSERT_NE(0 , adc_register_stub.adcsra_reg & (config_default.alignment << ADLAR));
+    ASSERT_EQ(adc_register_stub.adcsra_reg & 0b111, config_default.prescaler);
+    ASSERT_NE(0 , adc_register_stub.mux_reg & (config_default.ref << REFS0));
+    ASSERT_EQ(adc_register_stub.adcsrb_reg & 0xF , config_default.trigger_sources );
 }
 /*
 TEST(adc_stack_tests, adc_stack_guard_null)

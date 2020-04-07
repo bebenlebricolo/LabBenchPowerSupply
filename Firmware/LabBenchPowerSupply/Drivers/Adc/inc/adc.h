@@ -115,7 +115,7 @@ peripheral_error_t adc_handle_reset(adc_handle_t * const handle);
 /**
  * @brief adc module initialisation function
 */
-peripheral_error_t adc_base_init(adc_config_hal_t * const config, const adc_handle_t  * const handle);
+peripheral_error_t adc_base_init(adc_config_hal_t * const config);
 
 /**
  * @brief starts the adc in normal mode, no interrupt set
