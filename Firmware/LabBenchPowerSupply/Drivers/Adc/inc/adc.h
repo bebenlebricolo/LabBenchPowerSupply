@@ -18,6 +18,12 @@ extern "C"
 #include "adc_reg.h"
 #include "generic_peripheral.h"
 
+#ifdef UNIT_TESTING
+    #include "test_isr_wrapper.h"
+#else
+    #include "avr/interrupt.h"
+#endif
+
 /* ############################################################################################
    ################################## Data types declaration ##################################
    ############################################################################################ */

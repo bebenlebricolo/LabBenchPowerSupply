@@ -13,6 +13,7 @@ target_include_directories(adc_stack_tests PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../inc
     ${CMAKE_CURRENT_SOURCE_DIR}/../private_inc
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Peripheral/inc
+    ${CMAKE_CURRENT_SOURCE_DIR}/Stub
     ${GTEST_INCLUDE_DIRS}
 )
 target_link_libraries(adc_stack_tests ${GTEST_LIBRARIES} pthread)

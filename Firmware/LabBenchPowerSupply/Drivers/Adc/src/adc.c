@@ -27,6 +27,9 @@ static struct
 
 static volatile adc_stack_t registered_channels;
 
+static inline uint16_t retrieve_result_from_registers(void);
+static inline void isr_helper_extract_data_from_adc_regs(void);
+
 static inline uint16_t retrieve_result_from_registers(void)
 {
     uint8_t low = *internal_configuration.base_config.handle.readings.adclow_reg;
@@ -246,32 +249,42 @@ static inline bool conversion_is_finished(void)
     return ((*internal_configuration.base_config.handle.adcsra_reg) & 1 << ADIF) != 0;
 }
 
+static inline void isr_helper_extract_data_from_adc_regs(void)
+{
+    static volatile adc_channel_pair_t * pair = NULL;
+    adc_stack_error_t stack_error = ADC_STACK_ERROR_OK;
+    if (NULL == pair)
+    {
+        stack_error = adc_stack_get_current(&registered_channels, &pair);
+    }
+    if (ADC_STACK_ERROR_OK == stack_error && conversion_is_finished())
+    {
+        uint16_t result = retrieve_result_from_registers();
+        pair->result = result;
+        
+        #ifdef UNIT_TESTING
+            /* Reset interrupt flag manually */
+            *internal_configuration.base_config.handle.adcsra_reg &= ~ADIF_MSK;
+        #else
+            /* Reset interrupt flag manually */
+            *internal_configuration.base_config.handle.adcsra_reg |= (1U << ADIF);
+        #endif
+        stack_error = adc_stack_get_next(&registered_channels, &pair);
+        if (ADC_STACK_ERROR_OK == stack_error)
+        {
+            set_mux_register(pair);
+        }
+    }
+}
+
 peripheral_state_t adc_process(void)
 {
     peripheral_state_t ret = check_initialisation();
     if (PERIPHERAL_STATE_READY == ret)
     {
-        static volatile adc_channel_pair_t * pair = NULL;
-        adc_stack_error_t stack_error = ADC_STACK_ERROR_OK;
-        if (NULL == pair)
-        {
-            stack_error = adc_stack_get_current(&registered_channels, &pair);
-        }
-        if (ADC_STACK_ERROR_OK == stack_error && conversion_is_finished())
-        {
-            uint16_t result = retrieve_result_from_registers();
-            pair->result = result;
-            /* Reset interrupt flag manually */
-            *internal_configuration.base_config.handle.adcsra_reg |= (1U << ADIF);
-            stack_error = adc_stack_get_next(&registered_channels, &pair);
-            if (ADC_STACK_ERROR_OK == stack_error)
-            {
-                set_mux_register(pair);
-                /* Start next conversion */
-                *internal_configuration.base_config.handle.adcsra_reg |= 1U << ADSC ;
-            }
-        }
-
+       isr_helper_extract_data_from_adc_regs();
+        /* Start next conversion */
+        *internal_configuration.base_config.handle.adcsra_reg |= 1U << ADSC ;
     }
     return ret;
 }
@@ -310,3 +323,35 @@ peripheral_error_t adc_read_millivolt(const adc_mux_t channel, adc_millivolts_t 
     return ret;
 }
 
+
+#ifdef UNIT_TESTING
+ISR(ADC_VEC)
+{
+    if (internal_configuration.is_initialised)
+    {
+        /* if using interrupt AND interrupt enable bit is ON
+         AND Start Conversion bit is SET 
+         AND Interrupt Flag is SET
+         -> read values from ADC registers and store them in local buffer
+         */
+        if(internal_configuration.base_config.using_interrupt == true 
+        && (0 != (*internal_configuration.base_config.handle.adcsra_reg & ADIE_MSK))
+        && (0 == (*internal_configuration.base_config.handle.adcsra_reg & ADSC_MSK))
+        && (0 != (*internal_configuration.base_config.handle.adcsra_reg & ADIF_MSK))
+        )
+        {
+            isr_helper_extract_data_from_adc_regs();
+            
+            /* Start next conversion */
+            *internal_configuration.base_config.handle.adcsra_reg |= 1U << ADSC ;
+        }
+    }
+}
+#else
+ISR(ADC_VEC)
+{
+    isr_helper_extract_data_from_adc_regs();
+    /* Start next conversion */
+    *internal_configuration.base_config.handle.adcsra_reg |= 1U << ADSC ;
+}
+#endif

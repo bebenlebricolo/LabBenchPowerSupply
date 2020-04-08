@@ -26,7 +26,8 @@
                 "/usr/include/c++/9.3.0/**"
             ],
             "defines": [
-                "__AVR_ATmega328__"
+                "__AVR_ATmega328__",
+                "UNIT_TESTING"
             ],
             "compilerPath": "/usr/bin/avr-gcc",
             "cStandard": "c11",

@@ -172,6 +172,59 @@ TEST_F(AdcTestFixture, adc_process_test)
     }
 }
 
+TEST_F(AdcTestFixture, adc_isr_test)
+{
+    const uint8_t channels = 3U;
+    const uint8_t max_readings = 4U;
+    const uint8_t max_values = channels * max_readings;
+    const uint16_t values[max_values] = {856, 412, 12,
+                                         547, 985, 11,
+                                         25 , 14 , 54,
+                                         412, 23 , 18};
+    /* test initialisation of registers */
+    config.using_interrupt = true;
+    const auto& init_result = adc_base_init(&config);
+    ASSERT_EQ(init_result, PERIPHERAL_ERROR_OK);
+
+    /* Will fail because no channels has been registered yet */
+    {
+        adc_result_t adcresult;
+        const auto& result = adc_read_raw(ADC_MUX_ADC0, &adcresult);
+        ASSERT_EQ(result, PERIPHERAL_ERROR_FAILED);
+    }
+
+    // Register 3 channels
+    ASSERT_EQ(adc_register_channel(ADC_MUX_ADC0), PERIPHERAL_ERROR_OK);
+    ASSERT_EQ(adc_register_channel(ADC_MUX_ADC1), PERIPHERAL_ERROR_OK);
+    ASSERT_EQ(adc_register_channel(ADC_MUX_ADC2), PERIPHERAL_ERROR_OK);
+
+    /* This read shall not fail */
+    {
+        adc_result_t adcresult;
+        const auto& result = adc_read_raw(ADC_MUX_ADC0, &adcresult);
+        ASSERT_EQ(result, PERIPHERAL_ERROR_OK);
+        ASSERT_EQ(0, adcresult);
+    }
+
+    /* Simulate the adc's internal register thanks to the stub object */
+    for (uint8_t i = 0; i < max_values ; i++)
+    {
+        adc_register_stub.readings.adclow_reg = (uint8_t) values[i] & 0xFF;
+        adc_register_stub.readings.adchigh_reg = (uint8_t) ((values[i] & 0x0300) >> 8U);
+        
+        /* reset ADSC flag as if conversion was finished and set interrupt flag */
+        adc_register_stub.adcsra_reg &= ~(ADSC_MSK);
+        adc_register_stub.adcsra_reg |= (ADIF_MSK);
+        test_isr_implementation();
+
+        adc_result_t result;
+        const auto& read_result = adc_read_raw(mux_lookup_table[i % channels], &result);
+        EXPECT_EQ(read_result, PERIPHERAL_ERROR_OK);
+        EXPECT_EQ(values[i], result);
+    }
+}
+
+
 int main(int argc, char **argv)
 {
     ::testing::InitGoogleTest(&argc, argv);

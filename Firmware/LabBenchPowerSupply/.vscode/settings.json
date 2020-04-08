@@ -8,6 +8,8 @@
         "adc.h": "c",
         "adc_reg.h": "c",
         "assert.h": "c",
-        "memory.h": "c"
+        "memory.h": "c",
+        "interrupt.h": "c",
+        "test_isr_wrapper.h": "c"
     }
 }

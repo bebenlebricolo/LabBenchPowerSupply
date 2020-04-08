@@ -7,11 +7,11 @@ enable_testing()
 # Set definitions
 add_definitions(
     -D__AVR_ATmega328__
+    -DUNIT_TESTING
 )
 
-
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Og -g -fno-exceptions")
-set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Og -g")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g -fno-exceptions")
+set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -g")
 set (CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -flto")
 
 set (AVR_INCLUDES
