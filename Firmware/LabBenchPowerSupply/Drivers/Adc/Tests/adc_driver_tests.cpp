@@ -209,10 +209,10 @@ TEST_F(AdcTestFixture, adc_isr_test)
     }
 
     /* Simulate the adc's internal register thanks to the stub object */
-    for (uint8_t i = 0; i < max_values ; i++)
+    for (uint8_t i = 0; i < max_values * 10; i++)
     {
-        adc_register_stub.readings.adclow_reg = (uint8_t) values[i] & 0xFF;
-        adc_register_stub.readings.adchigh_reg = (uint8_t) ((values[i] & 0x0300) >> 8U);
+        adc_register_stub.readings.adclow_reg = (uint8_t) values[i % (max_values - 1)] & 0xFF;
+        adc_register_stub.readings.adchigh_reg = (uint8_t) ((values[i % (max_values - 1)] & 0x0300) >> 8U);
         
         /* reset ADSC flag as if conversion was finished and set interrupt flag */
         adc_register_stub.adcsra_reg &= ~(ADSC_MSK);
@@ -222,7 +222,7 @@ TEST_F(AdcTestFixture, adc_isr_test)
         adc_result_t result;
         const auto& read_result = adc_read_raw(mux_lookup_table[i % channels], &result);
         EXPECT_EQ(read_result, PERIPHERAL_ERROR_OK);
-        EXPECT_EQ(values[i], result);
+        EXPECT_EQ(values[i % (max_values - 1)] , result);
     }
 }
 

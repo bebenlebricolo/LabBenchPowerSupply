@@ -40,7 +40,7 @@ static inline uint16_t retrieve_result_from_registers(void)
 {
     uint8_t low = *internal_configuration.base_config.handle.readings.adclow_reg;
     uint8_t high = *internal_configuration.base_config.handle.readings.adchigh_reg;
-    return (uint16_t)(low | high << 8U ); 
+    return (uint16_t)(low | (high << 8U) ); 
 }
 
 static inline peripheral_error_t set_mux_register(volatile adc_channel_pair_t * const pair)
@@ -330,9 +330,9 @@ peripheral_error_t adc_read_millivolt(const adc_mux_t channel, adc_millivolts_t 
 }
 
 
-#ifdef UNIT_TESTING
-ISR(ADC_VEC)
+ISR(ADC_vect)
 {
+#ifdef UNIT_TESTING
     if (internal_configuration.is_initialised)
     {
         /* if using interrupt AND interrupt enable bit is ON
@@ -354,7 +354,6 @@ ISR(ADC_VEC)
     }
 }
 #else
-ISR(ADC_VEC)
 {
     isr_helper_extract_data_from_adc_regs();
     /* Start next conversion */
