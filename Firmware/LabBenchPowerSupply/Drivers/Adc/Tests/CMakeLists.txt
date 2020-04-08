@@ -44,4 +44,7 @@ target_include_directories(adc_driver_tests PUBLIC
 )
 target_link_libraries(adc_driver_tests ${GTEST_LIBRARIES} pthread)
 
-
+set_target_properties(adc_driver_tests adc_stack_tests
+    PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/Tests/Adc/bin
+)
