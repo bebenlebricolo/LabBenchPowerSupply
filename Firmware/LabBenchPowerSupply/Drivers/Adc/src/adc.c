@@ -4,6 +4,12 @@
 
 #include <memory.h>
 
+#ifdef UNIT_TESTING
+    #include "test_isr_wrapper.h"
+#else
+    #include "avr/interrupt.h"
+#endif
+
 /* 10 bits adc, full range */
 #define ADC_MAX_VALUE       1024U
 #define ADC_1V1_MILLIVOLT   1100U

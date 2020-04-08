@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "adc.h"
 #include "adc_reg.h"
+#include "test_isr_wrapper.h"
 #include "adc_register_stub.h"
 
 static adc_mux_t mux_lookup_table[ADC_MUX_COUNT] = 
