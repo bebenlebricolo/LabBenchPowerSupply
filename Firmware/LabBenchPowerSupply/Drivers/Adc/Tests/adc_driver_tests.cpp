@@ -88,6 +88,7 @@ TEST_F(AdcTestFixture, check_config_copy_ok)
     }
     adc_register_stub_erase(&adc_register_stub);
     const auto& copy_result = adc_config_hal_copy(&config_copy, &config);
+    ASSERT_EQ(PERIPHERAL_ERROR_OK, copy_result);
     ASSERT_EQ(0,memcmp(&config_copy, &config, sizeof(adc_config_hal_t)));
 }
 

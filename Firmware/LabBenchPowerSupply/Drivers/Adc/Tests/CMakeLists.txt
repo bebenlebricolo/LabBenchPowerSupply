@@ -1,12 +1,16 @@
 cmake_minimum_required(VERSION 3.0)
 
 project(adc_tests)
+enable_testing()
 
 ########## Adc stack tests ##########
-
 add_executable(adc_stack_tests
     adc_stack_tests.cpp
     ../src/adc_stack.c
+)
+
+target_compile_definitions(adc_stack_tests PRIVATE
+    -DUNIT_TESTING
 )
 
 target_include_directories(adc_stack_tests PUBLIC
@@ -26,6 +30,11 @@ add_executable(adc_driver_tests
     ../src/adc_stack.c
     Stub/adc_register_stub.c
 )
+
+target_compile_definitions(adc_driver_tests PRIVATE
+    -DUNIT_TESTING
+)
+
 target_include_directories(adc_driver_tests PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../inc
     ${CMAKE_CURRENT_SOURCE_DIR}/../private_inc

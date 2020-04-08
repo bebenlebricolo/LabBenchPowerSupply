@@ -155,7 +155,6 @@ adc_stack_error_t adc_stack_find_channel(volatile adc_stack_t * const stack, vol
     /* Get element address */
     if (ADC_STACK_ERROR_OK == ret)
     {
-        uint8_t index = ADC_MUX_COUNT;
         bool found_item = false;
         for (uint8_t i = 0 ; i < stack->count ; i++ )
         {

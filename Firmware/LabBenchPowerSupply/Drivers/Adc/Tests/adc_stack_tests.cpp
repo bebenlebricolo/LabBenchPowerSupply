@@ -155,6 +155,7 @@ TEST(adc_stack_tests, get_current)
         EXPECT_EQ(result, ADC_STACK_ERROR_OK);
         volatile adc_channel_pair_t * current_pair = NULL;
         const auto& current_result = adc_stack_get_current(&registered_channels, &current_pair);
+        EXPECT_EQ(current_result, ADC_STACK_ERROR_OK);
         EXPECT_EQ(next_pair, current_pair);
         EXPECT_EQ(current_pair, &registered_channels.channels_pair[registered_channels.index]);
     }
