@@ -10,7 +10,6 @@ void adc_register_stub_erase(adc_register_stub_t * stub)
 
 void adc_register_stub_init_adc_handle(adc_handle_t * handle, adc_register_stub_t * const stub)
 {
-    handle->adc_addr = &stub->adc_addr;
     handle->adcsra_reg = &stub->adcsra_reg;
     handle->adcsrb_reg = &stub->adcsrb_reg;
     handle->mux_reg = &stub->mux_reg;

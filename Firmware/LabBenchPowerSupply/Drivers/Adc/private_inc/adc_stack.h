@@ -23,8 +23,8 @@ typedef enum
     ADC_STACK_ERROR_OK,                 /**< Action was successful                  */
     ADC_STACK_ERROR_FULL,               /**< Given stack is full                    */
     ADC_STACK_ERROR_EMPTY,              /**< Given stack is empty                   */
-    ADC_STACK_ERROR_NULL_POINTER,      /**< Given pointer not initialised          */
-    ADC_STACK_ERROR_ELEMENT_NOT_FOUND,   /**< Targeted element not found in stack    */
+    ADC_STACK_ERROR_NULL_POINTER,       /**< Given pointer not initialised          */
+    ADC_STACK_ERROR_ELEMENT_NOT_FOUND,  /**< Targeted element not found in stack    */
 } adc_stack_error_t;
 
 /**

@@ -8,7 +8,7 @@
             "name": "(gdb) Launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/Drivers/Adc/Tests/adc_tests",
+            "program": "${workspaceFolder}/build/Drivers/Adc/Tests/adc_driver_tests",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

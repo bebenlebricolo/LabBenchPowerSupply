@@ -22,7 +22,8 @@ static struct
 {
     adc_config_hal_t base_config;
     bool is_initialised;
-} internal_configuration;
+} internal_configuration = {.base_config = {0},
+                            .is_initialised = false};
 
 static volatile adc_stack_t registered_channels;
 
@@ -105,7 +106,6 @@ peripheral_error_t adc_handle_reset(adc_handle_t * const handle)
     }
     else
     {
-        handle->adc_addr = NULL;
         handle->mux_reg = NULL;
         handle->adcsra_reg = NULL;
         handle->adcsrb_reg = NULL;
@@ -114,7 +114,6 @@ peripheral_error_t adc_handle_reset(adc_handle_t * const handle)
     }
     return ret;
 }
-
 
 
 peripheral_error_t adc_base_init(adc_config_hal_t * const config)
@@ -130,9 +129,9 @@ peripheral_error_t adc_base_init(adc_config_hal_t * const config)
         /* First, copy configuration data to the internal cache */
         adc_config_hal_copy(&(internal_configuration.base_config), config);
         adc_handle_t * handle = &internal_configuration.base_config.handle;
-        *handle->mux_reg = (*handle->mux_reg & ~ADC_REF_VOLTAGE_MSK) | (config->ref << REFS0);            /* set reference voltage */
-        *handle->mux_reg = (*handle->mux_reg & ~ADC_RESULT_ADJUST_MSK) | (config->alignment << ADLAR);    /* set result adjustment */
-        *handle->adcsra_reg = (*handle->adcsra_reg & ~ADC_PRESCALER_MSK) | (config->prescaler);           /* set precaler */
+        *handle->mux_reg = (*handle->mux_reg & ~REF_MSK) | (config->ref << REFS0);            /* set reference voltage */
+        *handle->mux_reg = (*handle->mux_reg & ~ADLAR_MSK) | (config->alignment << ADLAR);    /* set result adjustment */
+        *handle->adcsra_reg = (*handle->adcsra_reg & ~ADPS_MSK) | (config->prescaler);        /* set precaler */
         *handle->adcsrb_reg |= config->trigger_sources;
         if (internal_configuration.base_config.using_interrupt)
         {
@@ -152,9 +151,29 @@ peripheral_error_t adc_base_init(adc_config_hal_t * const config)
     return ret;
 }
 
+void adc_base_deinit(void)
+{
+    internal_configuration.is_initialised = false;
+    adc_stack_reset(&registered_channels);
+    {
+        adc_handle_t * handle = &internal_configuration.base_config.handle;
+        if (handle->mux_reg != NULL)
+        {
+            /* reset configured channels */
+            *(handle->mux_reg) = 0;
+            *(handle->adcsra_reg) = 0;
+            *(handle->adcsrb_reg) = 0;
+            *(handle->readings.adchigh_reg) = 0;
+            *(handle->readings.adclow_reg) = 0;
+        }
+    }
+    adc_config_hal_reset(&internal_configuration.base_config);
+}
+
+
 static inline peripheral_state_t check_initialisation(void)
 {
-    return (!internal_configuration.is_initialised) ? PERIPHERAL_STATE_NOT_INITIALISED : PERIPHERAL_STATE_READY;
+    return (internal_configuration.is_initialised) ? PERIPHERAL_STATE_READY : PERIPHERAL_STATE_NOT_INITIALISED;
 }
 
 peripheral_state_t adc_start(void)
@@ -210,9 +229,13 @@ peripheral_error_t adc_read_raw(const adc_mux_t channel, adc_result_t * const re
     {
         volatile adc_channel_pair_t * pair = NULL;
         adc_stack_error_t find_error = adc_stack_find_channel(&registered_channels, channel, &pair);
-        if (ADC_STACK_ERROR_OK == find_error && NULL != pair)
+        if (ADC_STACK_ERROR_OK == find_error)
         {
             *result = pair->result;
+        }
+        else 
+        {
+            ret = PERIPHERAL_ERROR_FAILED;
         }
     }
     return ret;
@@ -225,19 +248,23 @@ static inline bool conversion_is_finished(void)
 
 peripheral_state_t adc_process(void)
 {
-    peripheral_state_t ret = PERIPHERAL_STATE_READY;
-    ret = check_initialisation();
+    peripheral_state_t ret = check_initialisation();
     if (PERIPHERAL_STATE_READY == ret)
     {
         static volatile adc_channel_pair_t * pair = NULL;
-        if(conversion_is_finished() && NULL != pair)
+        adc_stack_error_t stack_error = ADC_STACK_ERROR_OK;
+        if (NULL == pair)
+        {
+            stack_error = adc_stack_get_current(&registered_channels, &pair);
+        }
+        if (ADC_STACK_ERROR_OK == stack_error && conversion_is_finished())
         {
             uint16_t result = retrieve_result_from_registers();
             pair->result = result;
             /* Reset interrupt flag manually */
             *internal_configuration.base_config.handle.adcsra_reg |= (1U << ADIF);
-            adc_stack_error_t find_next_error = adc_stack_get_next(&registered_channels, &pair);
-            if (ADC_STACK_ERROR_OK == find_next_error)
+            stack_error = adc_stack_get_next(&registered_channels, &pair);
+            if (ADC_STACK_ERROR_OK == stack_error)
             {
                 set_mux_register(pair);
                 /* Start next conversion */

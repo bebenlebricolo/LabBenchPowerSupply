@@ -170,6 +170,7 @@ adc_stack_error_t adc_stack_find_channel(volatile adc_stack_t * const stack, vol
         if (!found_item)
         {
             *pair = NULL;
+            ret = ADC_STACK_ERROR_ELEMENT_NOT_FOUND;
         }
     }
     return ret;

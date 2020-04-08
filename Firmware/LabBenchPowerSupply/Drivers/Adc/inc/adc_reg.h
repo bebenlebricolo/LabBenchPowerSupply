@@ -38,11 +38,21 @@ extern "C"
 #define ADSC  6
 #define ADEN  7
 
+#define ADPS_MSK    0b00000111
+#define ADIE_MSK    (1 << ADIE)
+#define ADIF_MSK    (1 << ADIF)
+#define ADATE_MSK   (1 << ADATE)
+#define ADSC_MSK    (1 << ADSC)
+#define ADEN_MSK    (1 << ADEN)
+
 /* ADCSRB register */
 #define ADTS0 0
 #define ADTS1 1
 #define ADTS2 2
 #define ACME  6
+
+#define ADTS_MSK 0b00000111
+#define ACME_MSK (1 << ACME)
 
 /* ADMUX register */
 #define MUX0  0
@@ -53,10 +63,15 @@ extern "C"
 #define REFS0 6
 #define REFS1 7
 
+#define MUX_MSK     0x0F
+#define ADLAR_MSK   (1 << ADLAR)
+#define REF_MSK     0b11000000
+
+
 typedef enum {
     ADC_VOLTAGE_REF_INTERNAL_1V1 = 0x00,
     ADC_VOLTAGE_REF_AVCC         = 0x01,
-    ADC_VOLTAGE_REF_AREF_PIN     = 0x11
+    ADC_VOLTAGE_REF_AREF_PIN     = 0x03
 } adc_voltage_ref_t;
 
 typedef enum {
@@ -65,17 +80,17 @@ typedef enum {
 } adc_result_align_t;
 
 typedef enum {
-    ADC_MUX_ADC0                 = 0x0,
-    ADC_MUX_ADC1                 = 0x1,
-    ADC_MUX_ADC2                 = 0x2,
-    ADC_MUX_ADC3                 = 0x3,
-    ADC_MUX_ADC4                 = 0x4,
-    ADC_MUX_ADC5                 = 0x5,
-    ADC_MUX_ADC6                 = 0x6,
-    ADC_MUX_ADC7                 = 0x7,
-    ADC_MUX_INTERNAL_TEMPERATURE = 0x8,
-    ADC_MUX_1v1_REF              = 0b1110,
-    ADC_MUX_GND                  = 0xF,
+    ADC_MUX_ADC0                 = 0U,
+    ADC_MUX_ADC1                 = 1U,
+    ADC_MUX_ADC2                 = 2U,
+    ADC_MUX_ADC3                 = 3U,
+    ADC_MUX_ADC4                 = 4U,
+    ADC_MUX_ADC5                 = 5U,
+    ADC_MUX_ADC6                 = 6U,
+    ADC_MUX_ADC7                 = 7U,
+    ADC_MUX_INTERNAL_TEMPERATURE = 8U,
+    ADC_MUX_1v1_REF              = 0x0E,
+    ADC_MUX_GND                  = 0x0F,
     ADC_MUX_COUNT                = 11
 } adc_mux_t;
 

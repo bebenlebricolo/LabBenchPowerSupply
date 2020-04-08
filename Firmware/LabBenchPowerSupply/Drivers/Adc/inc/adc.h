@@ -39,10 +39,9 @@ typedef enum
  * @brief this structure mimics ADC peripheral registers. It is passed when configuring ADC peripheral.
  */
 typedef struct {
-    peripheral_addr_t *  adc_addr;   /**< Refers to adc base peripheral address          */
-    peripheral_reg_t  *  mux_reg;       /**< Refers to adc multiplexing register (ADCMUX)   */
-    peripheral_reg_t  *  adcsra_reg;        /**< Refers to ADC Control and Status Register A    */
-    peripheral_reg_t  *  adcsrb_reg;        /**< Refers to ADC Control and Status Register B    */
+    peripheral_reg_t  *  mux_reg;    /**< Refers to adc multiplexing register (ADCMUX)   */
+    peripheral_reg_t  *  adcsra_reg; /**< Refers to ADC Control and Status Register A    */
+    peripheral_reg_t  *  adcsrb_reg; /**< Refers to ADC Control and Status Register B    */
     
     /* Packs result registers in one */
     struct {
@@ -116,6 +115,11 @@ peripheral_error_t adc_handle_reset(adc_handle_t * const handle);
  * @brief adc module initialisation function
 */
 peripheral_error_t adc_base_init(adc_config_hal_t * const config);
+
+/**
+ * @brief module deinitialisation
+*/
+void adc_base_deinit(void);
 
 /**
  * @brief starts the adc in normal mode, no interrupt set
