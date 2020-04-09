@@ -14,10 +14,10 @@
         {
             "name": "LabBenchPowerSupply",
             "includePath": [
-                "${workspaceFolder}/Firmware/LabBenchPowerSupply/Firmware/Drivers/Adc/inc",
-                "${workspaceFolder}/Firmware/LabBenchPowerSupply/Firmware/Drivers/Adc/private_inc",
-                "${workspaceFolder}/Firmware/LabBenchPowerSupply/Firmware/Drivers/Adc/Tests/Stub",
-                "${workspaceFolder}/Firmware/LabBenchPowerSupply/Firmware/Drivers/Peripheral/inc",
+                "${workspaceFolder}/Drivers/Adc/inc",
+                "${workspaceFolder}/Drivers/Adc/private_inc",
+                "${workspaceFolder}/Drivers/Adc/Tests/Stub",
+                "${workspaceFolder}/Drivers/Peripheral/inc",
                 "${workspaceFolder}/**",
                 "/usr/avr/include",
                 "/usr/include",
