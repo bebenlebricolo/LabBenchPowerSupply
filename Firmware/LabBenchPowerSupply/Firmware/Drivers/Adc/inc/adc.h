@@ -155,6 +155,11 @@ peripheral_state_t adc_stop(void);
 peripheral_state_t adc_process(void);
 
 /**
+ * @brief isr handler that might be called from within an ISR function
+*/
+void adc_isr_handler(void);
+
+/**
  * @brief explicitely adds a channel to scanned channels configuration
  * @param[in]   channel : channel to be configured and scanned */
 peripheral_error_t adc_register_channel(const adc_mux_t channel);

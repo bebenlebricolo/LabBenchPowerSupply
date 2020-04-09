@@ -27,6 +27,7 @@ fp-info-cache
 *.csv
 
 # Build directories
+.*[Bb]uild/
 [Bb]uild/
 
 

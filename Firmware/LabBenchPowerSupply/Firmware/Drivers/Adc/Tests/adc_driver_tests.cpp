@@ -217,7 +217,7 @@ TEST_F(AdcTestFixture, adc_isr_test)
         /* reset ADSC flag as if conversion was finished and set interrupt flag */
         adc_register_stub.adcsra_reg &= ~(ADSC_MSK);
         adc_register_stub.adcsra_reg |= (ADIF_MSK);
-        test_isr_implementation();
+        adc_isr_handler();
 
         adc_result_t result;
         const auto& read_result = adc_read_raw(mux_lookup_table[i % channels], &result);

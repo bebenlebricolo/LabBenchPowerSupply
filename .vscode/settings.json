@@ -10,6 +10,7 @@
         "assert.h": "c",
         "memory.h": "c",
         "interrupt.h": "c",
-        "test_isr_wrapper.h": "c"
+        "test_isr_wrapper.h": "c",
+        "io.h": "c"
     }
 }

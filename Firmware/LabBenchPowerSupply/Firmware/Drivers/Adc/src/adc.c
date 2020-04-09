@@ -2,13 +2,7 @@
 #include "adc_reg.h"
 #include "adc_stack.h"
 
-#include <memory.h>
-
-#ifdef UNIT_TESTING
-    #include "test_isr_wrapper.h"
-#else
-    #include "avr/interrupt.h"
-#endif
+#include <string.h>
 
 /* 10 bits adc, full range */
 #define ADC_MAX_VALUE       1024U
@@ -330,7 +324,7 @@ peripheral_error_t adc_read_millivolt(const adc_mux_t channel, adc_millivolts_t 
 }
 
 
-ISR(ADC_vect)
+void adc_isr_handler(void)
 {
 #ifdef UNIT_TESTING
     if (internal_configuration.is_initialised)
@@ -354,7 +348,6 @@ ISR(ADC_vect)
     }
 }
 #else
-{
     isr_helper_extract_data_from_adc_regs();
     /* Start next conversion */
     *internal_configuration.base_config.handle.adcsra_reg |= 1U << ADSC ;

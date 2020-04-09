@@ -14,10 +14,10 @@
         {
             "name": "LabBenchPowerSupply",
             "includePath": [
-                "${workspaceFolder}/Drivers/Adc/inc",
-                "${workspaceFolder}/Drivers/Adc/private_inc",
-                "${workspaceFolder}/Drivers/Adc/Tests/Stub",
-                "${workspaceFolder}/Drivers/Peripheral/inc",
+                "${workspaceFolder}/Firmware/LabBenchPowerSupply/Firmware/Drivers/Adc/inc",
+                "${workspaceFolder}/Firmware/LabBenchPowerSupply/Firmware/Drivers/Adc/private_inc",
+                "${workspaceFolder}/Firmware/LabBenchPowerSupply/Firmware/Drivers/Adc/Tests/Stub",
+                "${workspaceFolder}/Firmware/LabBenchPowerSupply/Firmware/Drivers/Peripheral/inc",
                 "${workspaceFolder}/**",
                 "/usr/avr/include",
                 "/usr/include",
@@ -26,8 +26,7 @@
                 "/usr/include/c++/9.3.0/**"
             ],
             "defines": [
-                "__AVR_ATmega328__",
-                "UNIT_TESTING"
+                "__AVR_ATmega328__"
             ],
             "compilerPath": "/usr/bin/avr-gcc",
             "cStandard": "c11",

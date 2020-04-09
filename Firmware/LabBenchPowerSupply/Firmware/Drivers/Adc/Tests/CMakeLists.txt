@@ -22,6 +22,11 @@ target_include_directories(adc_stack_tests PUBLIC
 )
 target_link_libraries(adc_stack_tests ${GTEST_LIBRARIES} pthread)
 
+set_target_properties(adc_stack_tests 
+    PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
 ########## Adc driver tests ##########
 
 add_executable(adc_driver_tests
@@ -44,7 +49,7 @@ target_include_directories(adc_driver_tests PUBLIC
 )
 target_link_libraries(adc_driver_tests ${GTEST_LIBRARIES} pthread)
 
-set_target_properties(adc_driver_tests adc_stack_tests
+set_target_properties(adc_driver_tests 
     PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/Tests/Adc/bin
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
