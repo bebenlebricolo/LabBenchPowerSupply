@@ -18,7 +18,7 @@
 
 
 /* Holds the current configuration of the ADC module */
-static struct 
+static struct
 {
     adc_config_hal_t base_config;
     bool is_initialised;
@@ -34,7 +34,7 @@ static inline uint16_t retrieve_result_from_registers(void)
 {
     uint8_t low = *internal_configuration.base_config.handle.readings.adclow_reg;
     uint8_t high = *internal_configuration.base_config.handle.readings.adchigh_reg;
-    return (uint16_t)(low | (high << 8U) ); 
+    return (uint16_t)(low | (high << 8U) );
 }
 
 static inline peripheral_error_t set_mux_register(volatile adc_channel_pair_t * const pair)
@@ -148,7 +148,7 @@ peripheral_error_t adc_base_init(adc_config_hal_t * const config)
         {
             *handle->adcsra_reg |= 1 << ADATE;
         }
-        
+
         internal_configuration.is_initialised = true;
     }
     return ret;
@@ -188,7 +188,7 @@ peripheral_state_t adc_start(void)
         /* Enable and start the ADC peripheral */
         *reg |= (1 << ADEN) | (1 << ADSC);
     }
-    
+
     return init_state;
 }
 
@@ -203,7 +203,7 @@ peripheral_state_t adc_stop(void)
         /* Disable ADC interrupt mode */
         *reg &= ~(1 << ADIE);
     }
-    
+
     return init_state;
 }
 
@@ -236,7 +236,7 @@ peripheral_error_t adc_read_raw(const adc_mux_t channel, adc_result_t * const re
         {
             *result = pair->result;
         }
-        else 
+        else
         {
             ret = PERIPHERAL_ERROR_FAILED;
         }
@@ -261,7 +261,7 @@ static inline void isr_helper_extract_data_from_adc_regs(void)
     {
         uint16_t result = retrieve_result_from_registers();
         pair->result = result;
-        
+
         #ifdef UNIT_TESTING
             /* Reset interrupt flag manually */
             *internal_configuration.base_config.handle.adcsra_reg &= ~ADIF_MSK;
@@ -325,29 +325,30 @@ peripheral_error_t adc_read_millivolt(const adc_mux_t channel, adc_millivolts_t 
 
 
 void adc_isr_handler(void)
-{
 #ifdef UNIT_TESTING
+{
     if (internal_configuration.is_initialised)
     {
         /* if using interrupt AND interrupt enable bit is ON
-         AND Start Conversion bit is SET 
+         AND Start Conversion bit is SET
          AND Interrupt Flag is SET
          -> read values from ADC registers and store them in local buffer
          */
-        if(internal_configuration.base_config.using_interrupt == true 
+        if(internal_configuration.base_config.using_interrupt == true
         && (0 != (*internal_configuration.base_config.handle.adcsra_reg & ADIE_MSK))
         && (0 == (*internal_configuration.base_config.handle.adcsra_reg & ADSC_MSK))
         && (0 != (*internal_configuration.base_config.handle.adcsra_reg & ADIF_MSK))
         )
         {
             isr_helper_extract_data_from_adc_regs();
-            
+
             /* Start next conversion */
             *internal_configuration.base_config.handle.adcsra_reg |= 1U << ADSC ;
         }
     }
 }
 #else
+{
     isr_helper_extract_data_from_adc_regs();
     /* Start next conversion */
     *internal_configuration.base_config.handle.adcsra_reg |= 1U << ADSC ;

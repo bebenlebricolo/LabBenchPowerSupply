@@ -9,7 +9,7 @@ ISR(ADC_vect)
     adc_isr_handler();
 }
 
-static adc_mux_t mux_table[MAX_MUX] = 
+static adc_mux_t mux_table[MAX_MUX] =
 {
     ADC_MUX_ADC0,
     ADC_MUX_ADC1,
@@ -28,6 +28,13 @@ int main(void)
     config.supply_voltage_mv = 5000;
     config.using_interrupt = true;
 
+    // Configuring handle to point to actual ADC registers
+    config.handle.adcsra_reg = &ADCSRA;
+    config.handle.adcsrb_reg = &ADCSRB;
+    config.handle.mux_reg = &ADMUX;
+    config.handle.readings.adchigh_reg = &ADCH;
+    config.handle.readings.adclow_reg = &ADCH;
+
     adc_base_init(&config);
     adc_start();
     sei();
@@ -38,7 +45,7 @@ int main(void)
         static uint8_t idx = 0;
         adc_result_t results[5];
         adc_read_raw(mux_table[idx % MAX_MUX], &results[idx]);
-        
+
         idx++;
         idx %= MAX_MUX;
     }

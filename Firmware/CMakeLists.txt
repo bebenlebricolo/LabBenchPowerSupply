@@ -12,6 +12,7 @@ set( CMAKE_C_COMPILER ${AVR_CC} )
 set( CMAKE_CXX_COMPILER ${AVR_CXX} )
 
 project(firmware C CXX)
+set(PRODUCT_NAME LabBenchPowerSupply)
 
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fno-exceptions ${WARNING_FLAGS}")
 set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 ${WARNING_FLAGS}")
