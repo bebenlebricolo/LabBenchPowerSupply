@@ -1,22 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
-
-find_program( AVR_CC avr-gcc )
-find_program( AVR_CXX avr-g++ )
-find_program( AVR_OBJCOPY avr-objcopy )
-find_program( AVR_SIZE_TOOL avr-size )
-find_program( AVR_OBJDUMP avr-objdump )
-
-set( CMAKE_SYSTEM_NAME Generic )
-set( CMAKE_SYSTEM_PROCESSOR avr )
-set( CMAKE_C_COMPILER ${AVR_CC} )
-set( CMAKE_CXX_COMPILER ${AVR_CXX} )
+set (CMAKE_TOOLCHAIN_FILE ${CMAKE_SOURCE_DIR}/Toolchain/avr-gcc-toolchain.cmake)
 
 project(firmware C CXX)
-set(PRODUCT_NAME LabBenchPowerSupply)
-
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fno-exceptions ${WARNING_FLAGS}")
-set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 ${WARNING_FLAGS}")
-set (CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -flto")
 
 set(AVR_MCU "atmega328p")
 set(AVR_MCU_SPEED 16000000)
