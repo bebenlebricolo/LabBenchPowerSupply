@@ -46,7 +46,7 @@ static inline peripheral_error_t set_mux_register(volatile adc_channel_pair_t * 
     }
     else
     {
-        *internal_configuration.base_config.handle.mux_reg = pair->channel;
+        *internal_configuration.base_config.handle.mux_reg =  (*internal_configuration.base_config.handle.mux_reg & ~MUX_MSK) | pair->channel;
     }
     return ret;
 }
@@ -246,7 +246,7 @@ peripheral_error_t adc_read_raw(const adc_mux_t channel, adc_result_t * const re
 
 static inline bool conversion_is_finished(void)
 {
-    return ((*internal_configuration.base_config.handle.adcsra_reg) & 1 << ADIF) != 0;
+    return ((*internal_configuration.base_config.handle.adcsra_reg) & 1 << ADSC) == 0;
 }
 
 static inline void isr_helper_extract_data_from_adc_regs(void)
@@ -267,7 +267,7 @@ static inline void isr_helper_extract_data_from_adc_regs(void)
             *internal_configuration.base_config.handle.adcsra_reg &= ~ADIF_MSK;
         #else
             /* Reset interrupt flag manually */
-            *internal_configuration.base_config.handle.adcsra_reg |= (1U << ADIF);
+            //*internal_configuration.base_config.handle.adcsra_reg |= (1U << ADIF);
         #endif
         stack_error = adc_stack_get_next(&registered_channels, &pair);
         if (ADC_STACK_ERROR_OK == stack_error)

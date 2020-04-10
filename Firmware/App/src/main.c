@@ -33,9 +33,15 @@ int main(void)
     config.handle.adcsrb_reg = &ADCSRB;
     config.handle.mux_reg = &ADMUX;
     config.handle.readings.adchigh_reg = &ADCH;
-    config.handle.readings.adclow_reg = &ADCH;
+    config.handle.readings.adclow_reg = &ADCL;
 
     adc_base_init(&config);
+    for (uint8_t i = 0; i < MAX_MUX ; i++)
+    {
+        peripheral_error_t ret = adc_register_channel(mux_table[i]);
+        (void)ret;
+    }
+
     adc_start();
     sei();
 
