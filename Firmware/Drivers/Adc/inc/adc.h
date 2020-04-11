@@ -49,12 +49,6 @@ typedef struct {
     } readings;
 } adc_handle_t;
 
-typedef enum
-{
-    ADC_INTERRUPT_UNUSED = 0,
-    ADC_INTERRUPT_USED   = 1,
-} adc_interrupt_t;
-
 /* Configuration structure of ADC module */
 typedef struct {
     uint16_t                    supply_voltage_mv;  /**< MCU supply voltage in millivolts                       */
@@ -65,7 +59,7 @@ typedef struct {
     adc_autotrigger_sources_t   trigger_sources;    /**< ADC trigger mode                                       */
     adc_handle_t                handle;             /**< Packs pointers to base ADC registers. Particularly
                                                          useful when performing Dependency Injection & testing  */
-    adc_interrupt_t using_interrupt;                /**< uses interrupts for data fetch process or not          */
+    bool_t using_interrupt;                /**< uses interrupts for data fetch process or not          */
 } adc_config_hal_t;
 
 

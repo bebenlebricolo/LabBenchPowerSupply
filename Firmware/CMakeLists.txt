@@ -17,8 +17,8 @@ add_definitions(
 )
 
 set (AVR_INCLUDES
-    "/usr/avr/include"
-    "/usr/lib/gcc/avr/9.3.0/include"
+    /usr/avr/include
+    /usr/lib/gcc/avr/9.3.0/include
 )
 
 # Adding sources

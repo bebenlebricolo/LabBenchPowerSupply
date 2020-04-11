@@ -34,16 +34,3 @@ target_compile_options( ${FIRMWARE_NAME} PUBLIC
 )
 
 add_extra_avr_targets(${FIRMWARE_NAME})
-
-## Rename the output to .elf as we will create multiple files
-#set_target_properties(${FIRMWARE_NAME} PROPERTIES CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-#set_target_properties(${FIRMWARE_NAME} PROPERTIES EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
-#set_target_properties(${FIRMWARE_NAME} PROPERTIES OUTPUT_NAME ${FIRMWARE_NAME}.elf )
-#
-## Strip binary for upload
-#add_custom_target(strip ALL avr-strip ${FIRMWARE_NAME}.elf DEPENDS ${FIRMWARE_NAME})
-#
-## Transform binary into hex file, we ignore the eeprom segments in the step
-#add_custom_target(hex ALL avr-objcopy -R .eeprom -O ihex ${FIRMWARE_NAME}.elf ${FIRMWARE_NAME}.hex DEPENDS strip)
-#
-#add_custom_target(size ALL avr-size ${FIRMWARE_NAME}.elf DEPENDS ${FIRMWARE_NAME})

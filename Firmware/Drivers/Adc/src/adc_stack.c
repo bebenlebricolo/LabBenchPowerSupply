@@ -1,5 +1,5 @@
 #include <stddef.h>
-#include <stdbool.h>
+#include "generic_peripheral.h"
 #include "adc_stack.h"
 
 adc_stack_error_t adc_stack_reset(volatile adc_stack_t * const stack)
@@ -154,7 +154,7 @@ adc_stack_error_t adc_stack_find_channel(volatile adc_stack_t * const stack, vol
     /* Get element address */
     if (ADC_STACK_ERROR_OK == ret)
     {
-        bool found_item = false;
+        bool_t found_item = false;
         for (uint8_t i = 0 ; i < stack->count ; i++ )
         {
             if (stack->channels_pair[i].channel == channel)

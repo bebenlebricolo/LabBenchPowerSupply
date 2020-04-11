@@ -1,6 +1,5 @@
 #include "adc.h"
 #include "adc_reg.h"
-#include <stdbool.h>
 #include <avr/interrupt.h>
 
 #define MAX_MUX 5
@@ -26,7 +25,7 @@ int main(void)
     config.ref = ADC_VOLTAGE_REF_AVCC;
     config.running_mode = ADC_RUNNING_MODE_SINGLE_SHOT;
     config.supply_voltage_mv = 5000;
-    config.using_interrupt = ADC_INTERRUPT_USED;
+    config.using_interrupt = true;
 
     adc_base_init(&config);
     for (uint8_t i = 0; i < MAX_MUX ; i++)

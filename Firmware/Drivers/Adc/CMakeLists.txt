@@ -16,3 +16,14 @@ target_include_directories(adc_driver PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../Peripheral/inc
     ${AVR_INCLUDES}
 )
+
+target_compile_options( adc_driver PUBLIC
+    -ffunction-sections
+    -fdata-sections
+    -fpack-struct
+    -fshort-enums
+    -funsigned-char
+    -funsigned-bitfields
+    -mmcu=${AVR_MCU}
+    -DF_CPU=${AVR_MCU_SPEED}
+)

@@ -3,7 +3,6 @@
 #include "adc_stack.h"
 
 #include <string.h>
-#include <stdbool.h>
 
 /* 10 bits adc, full range */
 #define ADC_MAX_VALUE       1024U
@@ -22,7 +21,7 @@
 static struct
 {
     adc_config_hal_t base_config;
-    bool is_initialised;
+    bool_t is_initialised;
 } internal_configuration = {.base_config = {0},
                             .is_initialised = false};
 
@@ -103,7 +102,7 @@ peripheral_error_t adc_config_hal_get_default(adc_config_hal_t * config)
         config->alignment = ADC_RIGT_ALIGNED_RESULT;
         config->trigger_sources = ADC_TRIGGER_FREE_RUNNING;
         config->running_mode = ADC_RUNNING_MODE_SINGLE_SHOT;
-        config->using_interrupt = ADC_INTERRUPT_UNUSED;
+        config->using_interrupt = false;
         adc_handle_get_default(&config->handle);
     }
     return ret;
@@ -289,7 +288,7 @@ peripheral_error_t adc_read_raw(const adc_mux_t channel, adc_result_t * const re
     return ret;
 }
 
-static inline bool conversion_is_finished(void)
+static inline bool_t conversion_is_finished(void)
 {
     return ((*internal_configuration.base_config.handle.adcsra_reg) & 1 << ADSC) == 0;
 }
@@ -379,7 +378,7 @@ void adc_isr_handler(void)
          AND Interrupt Flag is SET
          -> read values from ADC registers and store them in local buffer
          */
-        if((internal_configuration.base_config.using_interrupt == ADC_INTERRUPT_USED)
+        if((internal_configuration.base_config.using_interrupt == true)
         && (0 != (*internal_configuration.base_config.handle.adcsra_reg & ADIE_MSK))
         && (0 == (*internal_configuration.base_config.handle.adcsra_reg & ADSC_MSK))
         && (0 != (*internal_configuration.base_config.handle.adcsra_reg & ADIF_MSK))
