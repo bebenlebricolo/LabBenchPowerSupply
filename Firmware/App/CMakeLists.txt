@@ -16,10 +16,12 @@ target_include_directories(${FIRMWARE_NAME} PUBLIC
 
 target_link_directories( ${FIRMWARE_NAME} PUBLIC
     ${CMAKE_SYSTEM_LIBRARY_PATH}
+    /usr/lib/gcc/avr/9.3.0/avr5
 )
 
 target_link_libraries(${FIRMWARE_NAME}
     adc_driver
+    /usr/avr/lib/avr5/crtatmega328p.o
 )
 
 target_compile_options( ${FIRMWARE_NAME} PUBLIC
