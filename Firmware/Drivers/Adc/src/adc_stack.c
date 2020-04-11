@@ -1,4 +1,5 @@
 #include <stddef.h>
+#include <stdbool.h>
 #include "adc_stack.h"
 
 adc_stack_error_t adc_stack_reset(volatile adc_stack_t * const stack)
@@ -18,7 +19,7 @@ adc_stack_error_t adc_stack_reset(volatile adc_stack_t * const stack)
             adc_channel_pair_reset(&stack->channels_pair[i]);
         }
     }
-    
+
     return ret;
 }
 
@@ -32,7 +33,6 @@ adc_stack_error_t adc_channel_pair_copy(volatile adc_channel_pair_t * dest, vola
     else
     {
         dest->channel = src->channel;
-        dest->locked = src->locked;
         dest->result = src->result;
     }
     return ret;
@@ -48,7 +48,6 @@ adc_stack_error_t adc_channel_pair_reset(volatile adc_channel_pair_t * const pai
     else
     {
         pair->channel = ADC_MUX_GND;
-        pair->locked = false;
         pair->result = 0;
     }
     return ret;
@@ -77,7 +76,7 @@ adc_stack_error_t adc_stack_register_channel(volatile adc_stack_t * const stack,
         stack->count++;
         stack->channels_pair[stack->count - 1].channel = mux;
     }
-    
+
     return ret;
 }
 
@@ -116,7 +115,7 @@ adc_stack_error_t adc_stack_unregister_channel(volatile adc_stack_t * const stac
         {
             ret = ADC_STACK_ERROR_ELEMENT_NOT_FOUND;
         }
-        else 
+        else
         {
             for (uint8_t i = index ; i < stack->count - 1 ; i++)
             {
@@ -190,8 +189,8 @@ adc_stack_error_t adc_stack_get_next(volatile adc_stack_t * const stack, volatil
         {
             ret = ADC_STACK_ERROR_EMPTY;
         }
-    }  
-    
+    }
+
     /* Move to next element and return its address */
     if (ADC_STACK_ERROR_OK == ret)
     {
@@ -217,8 +216,8 @@ adc_stack_error_t adc_stack_get_current(volatile adc_stack_t * const stack, vola
         {
             ret = ADC_STACK_ERROR_EMPTY;
         }
-    }  
-    
+    }
+
     /* Move to next element and return its address */
     if (ADC_STACK_ERROR_OK == ret)
     {

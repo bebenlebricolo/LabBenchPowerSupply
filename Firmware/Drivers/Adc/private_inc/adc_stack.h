@@ -18,8 +18,8 @@ extern "C"
 /**
  * @brief lists available error types for this ADC stack object
 */
-typedef enum 
-{   
+typedef enum
+{
     ADC_STACK_ERROR_OK,                 /**< Action was successful                  */
     ADC_STACK_ERROR_FULL,               /**< Given stack is full                    */
     ADC_STACK_ERROR_EMPTY,              /**< Given stack is empty                   */
@@ -30,12 +30,10 @@ typedef enum
 /**
  * @brief packs both a channel and its result
 */
-typedef struct 
-{    
+typedef struct
+{
     adc_mux_t    channel;   /**< Adc configured channel (uses a ADC_MUX type)                     */
     adc_result_t result;    /**< Adc result type, last value read by ADC                          */
-    bool         locked;    /**< Pair lock value (to prevent ISR to post new value while reading) */
-                            /**< ISR value posting will be discarded                              */
 } adc_channel_pair_t;
 
 /**
@@ -46,8 +44,8 @@ typedef struct
 typedef struct
 {
     uint8_t   count;
-    uint8_t   index; 
-    adc_channel_pair_t channels_pair[ADC_MUX_COUNT];    
+    uint8_t   index;
+    adc_channel_pair_t channels_pair[ADC_MUX_COUNT];
 } adc_stack_t;
 
 
@@ -67,7 +65,7 @@ adc_stack_error_t adc_channel_pair_copy(volatile adc_channel_pair_t * dest, vola
 /**
  * @brief initialises a newly created object with default data
  * @param[in]  pair  : pointer to object
- * @return 
+ * @return
  *      ADC_STACK_ERROR_OK              : operation succeeded
  *      ADC_STACK_ERROR_NULL_POINTER   : given pointer is NULL
 */
@@ -83,10 +81,10 @@ adc_stack_error_t adc_stack_reset(volatile adc_stack_t * const stack);
  * @brief Registers a channel in adc stack
  * @param[in] stack :   adc stack object
  * @param[in] mux   :   adc multiplexing value
- * @return 
+ * @return
  *      ADC_STACK_ERROR_OK      :   action performed ok
- *      ADC_STACK_ERROR_FULL    :   stack is full, could not add one more channel pair 
- *                                  (there might be several instances of the same channel inside) 
+ *      ADC_STACK_ERROR_FULL    :   stack is full, could not add one more channel pair
+ *                                  (there might be several instances of the same channel inside)
 */
 adc_stack_error_t adc_stack_register_channel(volatile adc_stack_t * const stack, volatile const adc_mux_t mux);
 
@@ -94,9 +92,9 @@ adc_stack_error_t adc_stack_register_channel(volatile adc_stack_t * const stack,
  * @brief Removes a channel from adc stack
  * @param[in] stack :   adc stack object
  * @param[in] mux   :   adc multiplexing value
- * @return 
+ * @return
  *      ADC_STACK_ERROR_OK      :   action performed ok
- *      ADC_STACK_ERROR_EMPTY   :   stack is empty, could not remove one more 
+ *      ADC_STACK_ERROR_EMPTY   :   stack is empty, could not remove one more
 */
 adc_stack_error_t adc_stack_unregister_channel(volatile adc_stack_t * const stack, volatile const adc_mux_t mux);
 
@@ -106,9 +104,9 @@ adc_stack_error_t adc_stack_unregister_channel(volatile adc_stack_t * const stac
  * @param[in] stack     :   adc stack object
  * @param[in] channel   :   adc channel value
  * @param[in] pair      :   pointer to found item, set to NULL if not found
- * @return 
+ * @return
  *      ADC_STACK_ERROR_OK      :   action performed ok
- *      ADC_STACK_ERROR_EMPTY   :   stack is empty, could not remove one more 
+ *      ADC_STACK_ERROR_EMPTY   :   stack is empty, could not remove one more
 */
 adc_stack_error_t adc_stack_find_channel(volatile adc_stack_t * const stack, volatile const adc_mux_t channel, volatile adc_channel_pair_t ** pair);
 
@@ -116,9 +114,9 @@ adc_stack_error_t adc_stack_find_channel(volatile adc_stack_t * const stack, vol
  * @brief returns next channel to be scanned (mainly called either by ISR or asynchronous code)
  * @param[in] stack :   adc stack object
  * @param[out] pair :   pointer to next pair
- * @return 
+ * @return
  *      ADC_STACK_ERROR_OK      :   action performed ok
- *      ADC_STACK_ERROR_EMPTY   :   stack is empty, no next pair. Returned pair is unchanged 
+ *      ADC_STACK_ERROR_EMPTY   :   stack is empty, no next pair. Returned pair is unchanged
 */
 adc_stack_error_t adc_stack_get_next(volatile adc_stack_t * const stack, volatile adc_channel_pair_t ** pair);
 
@@ -126,9 +124,9 @@ adc_stack_error_t adc_stack_get_next(volatile adc_stack_t * const stack, volatil
  * @brief returns currently scanned pair object
  * @param[in] stack :   adc stack object
  * @param[out] pair :   pointer to current pair
- * @return 
+ * @return
  *      ADC_STACK_ERROR_OK      :   action performed ok
- *      ADC_STACK_ERROR_EMPTY   :   stack is empty, no next pair. Returned pair is unchanged 
+ *      ADC_STACK_ERROR_EMPTY   :   stack is empty, no next pair. Returned pair is unchanged
 */
 adc_stack_error_t adc_stack_get_current(volatile adc_stack_t * const stack, volatile adc_channel_pair_t ** pair);
 

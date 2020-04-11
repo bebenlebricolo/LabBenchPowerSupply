@@ -3,6 +3,7 @@
 #include "adc_stack.h"
 
 #include <string.h>
+#include <stdbool.h>
 
 /* 10 bits adc, full range */
 #define ADC_MAX_VALUE       1024U
@@ -60,12 +61,34 @@ peripheral_error_t adc_config_hal_copy(adc_config_hal_t * dest, adc_config_hal_t
     }
     else
     {
-        memcpy(dest, src, sizeof(adc_config_hal_t));
+        dest->alignment = src->alignment;
+        dest->prescaler = src->prescaler;
+        dest->ref = src->ref;
+        dest->running_mode = src->running_mode;
+        dest->supply_voltage_mv = src->supply_voltage_mv;
+        dest->trigger_sources = src->trigger_sources;
+        dest->using_interrupt = src->using_interrupt;
+        adc_handle_copy(&dest->handle, &src->handle);
     }
     return ret;
 }
 
 peripheral_error_t adc_config_hal_reset(adc_config_hal_t * config)
+{
+    peripheral_error_t ret = PERIPHERAL_ERROR_OK;
+    if (NULL == config)
+    {
+        ret = PERIPHERAL_ERROR_NULL_POINTER;
+    }
+    else
+    {
+        adc_config_hal_get_default(config);
+        adc_handle_reset(&config->handle);
+    }
+    return ret;
+}
+
+peripheral_error_t adc_config_hal_get_default(adc_config_hal_t * config)
 {
     peripheral_error_t ret = PERIPHERAL_ERROR_OK;
     if (NULL == config)
@@ -80,11 +103,12 @@ peripheral_error_t adc_config_hal_reset(adc_config_hal_t * config)
         config->alignment = ADC_RIGT_ALIGNED_RESULT;
         config->trigger_sources = ADC_TRIGGER_FREE_RUNNING;
         config->running_mode = ADC_RUNNING_MODE_SINGLE_SHOT;
-        config->using_interrupt = false;
-        adc_handle_reset(&config->handle);
+        config->using_interrupt = ADC_INTERRUPT_UNUSED;
+        adc_handle_get_default(&config->handle);
     }
     return ret;
 }
+
 
 peripheral_error_t adc_handle_copy(adc_handle_t * const dest, const adc_handle_t * const src)
 {
@@ -95,7 +119,10 @@ peripheral_error_t adc_handle_copy(adc_handle_t * const dest, const adc_handle_t
     }
     else
     {
-        memcpy(dest, src, sizeof(adc_handle_t));
+        dest->adcsra_reg = src->adcsra_reg;
+        dest->adcsrb_reg = src->adcsrb_reg;
+        dest->mux_reg = src->mux_reg;
+        dest->readings = src->readings;
     }
     return ret;
 }
@@ -114,6 +141,24 @@ peripheral_error_t adc_handle_reset(adc_handle_t * const handle)
         handle->adcsrb_reg = NULL;
         handle->readings.adchigh_reg = NULL ;
         handle->readings.adclow_reg = NULL ;
+    }
+    return ret;
+}
+
+peripheral_error_t adc_handle_get_default(adc_handle_t * const handle)
+{
+    peripheral_error_t ret = PERIPHERAL_ERROR_OK;
+    if (NULL == handle)
+    {
+        ret = PERIPHERAL_ERROR_NULL_POINTER;
+    }
+    else
+    {
+        handle->mux_reg = &ADMUX;
+        handle->adcsra_reg = &ADCSRA;
+        handle->adcsrb_reg = &ADCSRB;
+        handle->readings.adchigh_reg = &ADCH ;
+        handle->readings.adclow_reg = &ADCL ;
     }
     return ret;
 }
@@ -324,8 +369,8 @@ peripheral_error_t adc_read_millivolt(const adc_mux_t channel, adc_millivolts_t 
 }
 
 
-void adc_isr_handler(void)
 #ifdef UNIT_TESTING
+void adc_isr_handler(void)
 {
     if (internal_configuration.is_initialised)
     {
@@ -334,7 +379,7 @@ void adc_isr_handler(void)
          AND Interrupt Flag is SET
          -> read values from ADC registers and store them in local buffer
          */
-        if(internal_configuration.base_config.using_interrupt == true
+        if((internal_configuration.base_config.using_interrupt == ADC_INTERRUPT_USED)
         && (0 != (*internal_configuration.base_config.handle.adcsra_reg & ADIE_MSK))
         && (0 == (*internal_configuration.base_config.handle.adcsra_reg & ADSC_MSK))
         && (0 != (*internal_configuration.base_config.handle.adcsra_reg & ADIF_MSK))
@@ -343,14 +388,15 @@ void adc_isr_handler(void)
             isr_helper_extract_data_from_adc_regs();
 
             /* Start next conversion */
-            *internal_configuration.base_config.handle.adcsra_reg |= 1U << ADSC ;
+            (*internal_configuration.base_config.handle.adcsra_reg) |= 1U << ADSC ;
         }
     }
 }
 #else
+void adc_isr_handler(void)
 {
     isr_helper_extract_data_from_adc_regs();
     /* Start next conversion */
-    *internal_configuration.base_config.handle.adcsra_reg |= 1U << ADSC ;
+    *(internal_configuration.base_config.handle.adcsra_reg) |= (1 << ADSC) ;
 }
 #endif

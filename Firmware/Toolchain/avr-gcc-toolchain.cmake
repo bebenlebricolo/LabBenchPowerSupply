@@ -12,14 +12,37 @@ set( CMAKE_C_COMPILER ${AVR_CC} )
 set( CMAKE_CXX_COMPILER ${AVR_CXX} )
 
 set(WARNING_FLAGS "-Wall -Wextra")
+set(LINKER_OPTIONS_FLAGS "")
 
 set (CMAKE_CXX_FLAGS_RELEASE "-O3 -fno-exceptions ${WARNING_FLAGS}")
 set (CMAKE_C_FLAGS_RELEASE "-O3 ${WARNING_FLAGS}")
-set (CMAKE_LINKER_FLAGS_RELEASE "-flto")
+set (CMAKE_LINKER_FLAGS_RELEASE "${LINKER_OPTIONS_FLAGS}")
 
-set (CMAKE_CXX_FLAGS_DEBUG "-Og  -g -fno-exceptions ${WARNING_FLAGS}")
-set (CMAKE_C_FLAGS_DEBUG " -Og  -g ${WARNING_FLAGS}")
-set (CMAKE_LINKER_FLAGS_DEBUG "-flto")
+set (CMAKE_CXX_FLAGS_DEBUG "-O0  -g -fno-exceptions ${WARNING_FLAGS}")
+set (CMAKE_C_FLAGS_DEBUG " -O0  -g ${WARNING_FLAGS} ${LINKER_OPTIONS_FLAGS}")
+set (CMAKE_LINKER_FLAGS_DEBUG "${LINKER_OPTIONS_FLAGS}")
+
+
+##########################################################################
+# check build types:
+# - Debug
+# - Release
+# - MinSizeRel
+# - RelWithDebInfo
+#
+# Release is chosen, because of some optimized functions in the
+# AVR toolchain, e.g. _delay_ms().
+##########################################################################
+if( NOT ( (CMAKE_BUILD_TYPE MATCHES Release) OR
+        (CMAKE_BUILD_TYPE MATCHES Debug)))
+   set(
+      CMAKE_BUILD_TYPE Release
+      CACHE STRING "Choose cmake build type: Debug Release RelWithDebInfo MinSizeRel"
+      FORCE
+   )
+endif( NOT ( (CMAKE_BUILD_TYPE MATCHES Release) OR
+           (CMAKE_BUILD_TYPE MATCHES Debug)))
+
 
 
 ###########################################################################

@@ -11,7 +11,6 @@ extern "C"
 #endif /* __cplusplus */
 
 /* Generic includes */
-#include <stdbool.h>
 #include <stddef.h>
 
 /* Application drivers */
@@ -31,7 +30,7 @@ typedef uint16_t adc_millivolts_t;
 typedef enum
 {
     ADC_RUNNING_MODE_SINGLE_SHOT,   /**< If set, adc will require start() to be called repeateadly between each calls       */
-    ADC_RUNNING_MODE_AUTOTRIGGERED  /**< ADC is controlled by a trigger event, which my be set to free-running (software) 
+    ADC_RUNNING_MODE_AUTOTRIGGERED  /**< ADC is controlled by a trigger event, which my be set to free-running (software)
                                          in this particular case, ADC will be continuously triggered when a conversion ends  */
 }adc_running_mode_t;
 
@@ -42,13 +41,19 @@ typedef struct {
     peripheral_reg_t  *  mux_reg;    /**< Refers to adc multiplexing register (ADCMUX)   */
     peripheral_reg_t  *  adcsra_reg; /**< Refers to ADC Control and Status Register A    */
     peripheral_reg_t  *  adcsrb_reg; /**< Refers to ADC Control and Status Register B    */
-    
+
     /* Packs result registers in one */
     struct {
         peripheral_reg_t *  adclow_reg;  /**< Refers to the low value register of ADC peripheral  (first 8 bits)*/
         peripheral_reg_t *  adchigh_reg; /**< Refers to the high value register of ADC peripheral (last 2 bits) */
     } readings;
 } adc_handle_t;
+
+typedef enum
+{
+    ADC_INTERRUPT_UNUSED = 0,
+    ADC_INTERRUPT_USED   = 1,
+} adc_interrupt_t;
 
 /* Configuration structure of ADC module */
 typedef struct {
@@ -57,10 +62,10 @@ typedef struct {
     adc_voltage_ref_t           ref;                /**< ADC reference voltage                                  */
     adc_result_align_t          alignment;          /**< ADC data alignment                                     */
     adc_running_mode_t          running_mode;       /**< Select the mode between continous or single shot       */
-    adc_autotrigger_sources_t   trigger_sources;    /**< ADC trigger mode                                       */ 
-    adc_handle_t                handle;             /**< Packs pointers to base ADC registers. Particularly 
+    adc_autotrigger_sources_t   trigger_sources;    /**< ADC trigger mode                                       */
+    adc_handle_t                handle;             /**< Packs pointers to base ADC registers. Particularly
                                                          useful when performing Dependency Injection & testing  */
-    bool using_interrupt;                           /**< uses interrupts for data fetch process or not          */                   
+    adc_interrupt_t using_interrupt;                /**< uses interrupts for data fetch process or not          */
 } adc_config_hal_t;
 
 
@@ -72,7 +77,7 @@ typedef struct {
  * @brief copies a configuration from a source pointer to a destination pointer
  * @param[in]   src     : pointer to source object
  * @param[out]  dest    : pointer to destination object
- * @return 
+ * @return
  *      PERIPHERAL_ERROR_OK             : operation succeeded
  *      PERIPHERAL_ERROR_NULL_POINTER   : null pointer guarded
 */
@@ -81,17 +86,26 @@ peripheral_error_t adc_config_hal_copy(adc_config_hal_t * dest, adc_config_hal_t
 /**
  * @brief resets config to default
  * @param[in]   config : pointer to configuration object
- * @return 
+ * @return
  *      PERIPHERAL_ERROR_OK             : operation succeeded
  *      PERIPHERAL_ERROR_NULL_POINTER   : null pointer guarded
 */
 peripheral_error_t adc_config_hal_reset(adc_config_hal_t * config);
 
 /**
+ * @brief returns a default configuration for the ADC driver
+ * @param[out]  config : pointer to configuration object
+ * @return
+ *      PERIPHERAL_ERROR_OK             : operation succeeded
+ *      PERIPHERAL_ERROR_NULL_POINTER   : null pointer guarded
+*/
+peripheral_error_t adc_config_hal_get_default(adc_config_hal_t * config);
+
+/**
  * @brief copies handle data from a source object to destination object
  * @param[in]   src     : pointer to source object
  * @param[out]  dest    : pointer to destination object
- * @return 
+ * @return
  *      PERIPHERAL_ERROR_OK             : operation succeeded
  *      PERIPHERAL_ERROR_NULL_POINTER   : null pointer guarded
 */
@@ -100,12 +114,20 @@ peripheral_error_t adc_handle_copy(adc_handle_t * const dest, const adc_handle_t
 /**
  * @brief resets handle to default
  * @param[in]   handle : pointer to handle object
- * @return 
+ * @return
  *      PERIPHERAL_ERROR_OK             : operation succeeded
  *      PERIPHERAL_ERROR_NULL_POINTER   : null pointer guarded
 */
 peripheral_error_t adc_handle_reset(adc_handle_t * const handle);
 
+/**
+ * @brief returns a default handle, set to target avr registers
+ * @param[in]   handle : pointer to handle object
+ * @return
+ *      PERIPHERAL_ERROR_OK             : operation succeeded
+ *      PERIPHERAL_ERROR_NULL_POINTER   : null pointer guarded
+*/
+peripheral_error_t adc_handle_get_default(adc_handle_t * const handle);
 
 /* ############################################################################################
    ################################## Function declarations ###################################

@@ -7,66 +7,24 @@ extern "C"
 {
 #endif /* __cplusplus */
 
-/* Masks that were taken from iom328p.h*/
-/* ADCLOW result register */
-#define ADCL0 0
-#define ADCL1 1
-#define ADCL2 2
-#define ADCL3 3
-#define ADCL4 4
-#define ADCL5 5
-#define ADCL6 6
-#define ADCL7 7
+#include <avr/io.h>
 
-/* ADCHIGH result register */
-#define ADCH0 0
-#define ADCH1 1
-#define ADCH2 2
-#define ADCH3 3
-#define ADCH4 4
-#define ADCH5 5
-#define ADCH6 6
-#define ADCH7 7
-
-/* ADCSRA register */
-#define ADPS0 0
-#define ADPS1 1
-#define ADPS2 2
-#define ADIE  3
-#define ADIF  4
-#define ADATE 5
-#define ADSC  6
-#define ADEN  7
-
-#define ADPS_MSK    0b00000111
+/* ADCSRA register masks */
+#define ADPS_MSK    0x03
 #define ADIE_MSK    (1 << ADIE)
 #define ADIF_MSK    (1 << ADIF)
 #define ADATE_MSK   (1 << ADATE)
 #define ADSC_MSK    (1 << ADSC)
 #define ADEN_MSK    (1 << ADEN)
 
-/* ADCSRB register */
-#define ADTS0 0
-#define ADTS1 1
-#define ADTS2 2
-#define ACME  6
-
-#define ADTS_MSK 0b00000111
+/* ADCSRB register masks */
+#define ADTS_MSK 0x03
 #define ACME_MSK (1 << ACME)
 
-/* ADMUX register */
-#define MUX0  0
-#define MUX1  1
-#define MUX2  2
-#define MUX3  3
-#define ADLAR 5
-#define REFS0 6
-#define REFS1 7
-
+/* ADMUX regsister masks */
 #define MUX_MSK     0x0F
 #define ADLAR_MSK   (1 << ADLAR)
-#define REF_MSK     0b11000000
-
+#define REF_MSK     0xC0
 
 typedef enum {
     ADC_VOLTAGE_REF_INTERNAL_1V1 = 0x00,

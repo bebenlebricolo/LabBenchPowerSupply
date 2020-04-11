@@ -21,19 +21,12 @@ static adc_mux_t mux_table[MAX_MUX] =
 int main(void)
 {
     adc_config_hal_t config;
-    adc_config_hal_reset(&config);
+    adc_config_hal_get_default(&config);
     config.prescaler = ADC_PRESCALER_64;
     config.ref = ADC_VOLTAGE_REF_AVCC;
     config.running_mode = ADC_RUNNING_MODE_SINGLE_SHOT;
     config.supply_voltage_mv = 5000;
-    config.using_interrupt = true;
-
-    // Configuring handle to point to actual ADC registers
-    config.handle.adcsra_reg = &ADCSRA;
-    config.handle.adcsrb_reg = &ADCSRB;
-    config.handle.mux_reg = &ADMUX;
-    config.handle.readings.adchigh_reg = &ADCH;
-    config.handle.readings.adclow_reg = &ADCL;
+    config.using_interrupt = ADC_INTERRUPT_USED;
 
     adc_base_init(&config);
     for (uint8_t i = 0; i < MAX_MUX ; i++)
