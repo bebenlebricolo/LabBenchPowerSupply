@@ -3,25 +3,18 @@
 #include "adc_stack.h"
 
 #include <string.h>
+#include <avr/io.h>
 
 /* 10 bits adc, full range */
 #define ADC_MAX_VALUE       1024U
 #define ADC_1V1_MILLIVOLT   1100U
-
-/* ADMUX register masks */
-#define ADC_MUX_MSK             (0x0F)
-#define ADC_REF_VOLTAGE_MSK     (1U << 6U)
-#define ADC_RESULT_ADJUST_MSK   (1U << 5U)
-
-/* ADCSRA register masks */
-#define ADC_PRESCALER_MSK       (0b111)
 
 
 /* Holds the current configuration of the ADC module */
 static struct
 {
     adc_config_hal_t base_config;
-    bool_t is_initialised;
+    bool is_initialised;
 } internal_configuration = {.base_config = {0},
                             .is_initialised = false};
 
@@ -60,14 +53,7 @@ peripheral_error_t adc_config_hal_copy(adc_config_hal_t * dest, adc_config_hal_t
     }
     else
     {
-        dest->alignment = src->alignment;
-        dest->prescaler = src->prescaler;
-        dest->ref = src->ref;
-        dest->running_mode = src->running_mode;
-        dest->supply_voltage_mv = src->supply_voltage_mv;
-        dest->trigger_sources = src->trigger_sources;
-        dest->using_interrupt = src->using_interrupt;
-        adc_handle_copy(&dest->handle, &src->handle);
+        memcpy(dest,src,sizeof(adc_config_hal_t));
     }
     return ret;
 }
@@ -118,10 +104,7 @@ peripheral_error_t adc_handle_copy(adc_handle_t * const dest, const adc_handle_t
     }
     else
     {
-        dest->adcsra_reg = src->adcsra_reg;
-        dest->adcsrb_reg = src->adcsrb_reg;
-        dest->mux_reg = src->mux_reg;
-        dest->readings = src->readings;
+        memcpy(dest,src,sizeof(adc_handle_t));
     }
     return ret;
 }
@@ -288,7 +271,7 @@ peripheral_error_t adc_read_raw(const adc_mux_t channel, adc_result_t * const re
     return ret;
 }
 
-static inline bool_t conversion_is_finished(void)
+static inline bool conversion_is_finished(void)
 {
     return ((*internal_configuration.base_config.handle.adcsra_reg) & 1 << ADSC) == 0;
 }

@@ -13,6 +13,8 @@
         "test_isr_wrapper.h": "c",
         "io.h": "c",
         "stdbool.h": "c",
-        "generic_peripheral.h": "c"
+        "generic_peripheral.h": "c",
+        "iom328p.h": "c",
+        "string.h": "c"
     }
 }

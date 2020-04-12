@@ -9,6 +9,9 @@ enable_testing()
 add_definitions(
     -D__AVR_ATmega328__
 )
+
+set(AVR_INCLUDES /usr/avr/include)
+
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 add_subdirectory(
     ${CMAKE_SOURCE_DIR}/../Drivers/Adc/Tests

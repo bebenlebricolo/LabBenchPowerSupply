@@ -6,12 +6,6 @@ typedef volatile uint16_t peripheral_addr_t;
 typedef volatile uint8_t  peripheral_reg_t;
 //typedef (volatile uint8_t *) PERIPHERAL_ADDR;
 
-typedef enum
-{
-    true = 1,
-    false = 0
-}bool_t;
-
 /**
  * @brief gives a restricted set of available errors
 */

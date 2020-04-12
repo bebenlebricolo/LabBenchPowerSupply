@@ -4,7 +4,7 @@
 #include "test_isr_wrapper.h"
 #include "adc_register_stub.h"
 
-static adc_mux_t mux_lookup_table[ADC_MUX_COUNT] = 
+static adc_mux_t mux_lookup_table[ADC_MUX_COUNT] =
 {
     ADC_MUX_ADC0,
     ADC_MUX_ADC1,
@@ -98,7 +98,7 @@ TEST_F(AdcTestFixture, adc_base_init_check)
     /* test initialisation of registers */
     const auto& init_result = adc_base_init(&config);
     ASSERT_EQ(init_result, PERIPHERAL_ERROR_OK);
-    
+
     // No channels should be set at this moment
     ASSERT_EQ(0, adc_register_stub.mux_reg & MUX_MSK);
     ASSERT_EQ(config.alignment       , (adc_register_stub.mux_reg & ADLAR_MSK) >> ADLAR);
@@ -158,11 +158,11 @@ TEST_F(AdcTestFixture, adc_process_test)
     {
         adc_register_stub.readings.adclow_reg = (uint8_t) values[i] & 0xFF;
         adc_register_stub.readings.adchigh_reg = (uint8_t) ((values[i] & 0x0300) >> 8U);
-        
+
         /* set the conversion finished flag and "stop" the adc manually */
         adc_register_stub.adcsra_reg |= (1 << ADIF);
         adc_register_stub.adcsra_reg &= ~(1 << ADSC);
-        
+
         // Shall be ok now
         const auto& process_result = adc_process();
         EXPECT_EQ(process_result, PERIPHERAL_STATE_READY);
@@ -213,7 +213,7 @@ TEST_F(AdcTestFixture, adc_isr_test)
     {
         adc_register_stub.readings.adclow_reg = (uint8_t) values[i % (max_values - 1)] & 0xFF;
         adc_register_stub.readings.adchigh_reg = (uint8_t) ((values[i % (max_values - 1)] & 0x0300) >> 8U);
-        
+
         /* reset ADSC flag as if conversion was finished and set interrupt flag */
         adc_register_stub.adcsra_reg &= ~(ADSC_MSK);
         adc_register_stub.adcsra_reg |= (ADIF_MSK);

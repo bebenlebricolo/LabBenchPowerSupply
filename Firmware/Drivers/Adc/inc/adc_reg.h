@@ -7,7 +7,35 @@ extern "C"
 {
 #endif /* __cplusplus */
 
-#include <avr/io.h>
+#ifdef UNIT_TESTING
+    /* ADCSRA register */
+    #define ADPS0 0
+    #define ADPS1 1
+    #define ADPS2 2
+    #define ADIE  3
+    #define ADIF  4
+    #define ADATE 5
+    #define ADSC  6
+    #define ADEN  7
+
+    /* ADCSRB register */
+    #define ADTS0 0
+    #define ADTS1 1
+    #define ADTS2 2
+    #define ACME  6
+
+    /* ADMUX register */
+    #define MUX0  0
+    #define MUX1  1
+    #define MUX2  2
+    #define MUX3  3
+    #define ADLAR 5
+    #define REFS0 6
+    #define REFS1 7
+#else
+    #include <avr/io.h>
+#endif
+
 
 /* ADCSRA register masks */
 #define ADPS_MSK    0x03
@@ -25,6 +53,7 @@ extern "C"
 #define MUX_MSK     0x0F
 #define ADLAR_MSK   (1 << ADLAR)
 #define REF_MSK     0xC0
+
 
 typedef enum {
     ADC_VOLTAGE_REF_INTERNAL_1V1 = 0x00,
