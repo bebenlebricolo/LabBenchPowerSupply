@@ -61,23 +61,55 @@ message( STATUS "Set CMAKE_SYSTEM_LIBRARY_PATH to ${CMAKE_SYSTEM_LIBRARY_PATH}" 
 # AVR toolchain, e.g. _delay_ms().
 ##########################################################################
 if( NOT ( (CMAKE_BUILD_TYPE MATCHES Release) OR
-        (CMAKE_BUILD_TYPE MATCHES Debug)))
+        (CMAKE_BUILD_TYPE MATCHES RelWithDebInfo) OR
+        (CMAKE_BUILD_TYPE MATCHES Debug) OR
+        (CMAKE_BUILD_TYPE MATCHES MinSizeRel) ) )
    set(
       CMAKE_BUILD_TYPE Release
       CACHE STRING "Choose cmake build type: Debug Release RelWithDebInfo MinSizeRel"
       FORCE
    )
 endif( NOT ( (CMAKE_BUILD_TYPE MATCHES Release) OR
-           (CMAKE_BUILD_TYPE MATCHES Debug)))
+           (CMAKE_BUILD_TYPE MATCHES RelWithDebInfo) OR
+           (CMAKE_BUILD_TYPE MATCHES Debug) OR
+           (CMAKE_BUILD_TYPE MATCHES MinSizeRel) ) )
 
 
-set(WARNING_FLAGS "-Wall -Wextra")
+####################
+# Build configurations with long list of flags
+####################
+set(COMPILE_OPTIONS "-funsigned-char \
+-funsigned-bitfields \
+-fpack-struct \
+-fshort-enums \
+-ffunction-sections \
+-fdata-sections \
+-fno-split-wide-types \
+-fno-tree-scev-cprop "
+)
+set(COMPILER_WARNINGS "-Wall \
+-Wextra \
+-Wno-main \
+-Wundef \
+-pedantic \
+-Wstrict-prototypes \
+-Werror \
+-Wfatal-errors ")
 
-set (CMAKE_CXX_FLAGS_RELEASE "-O3 -fno-exceptions ${WARNING_FLAGS}")
-set (CMAKE_C_FLAGS_RELEASE "-O3 ${WARNING_FLAGS}")
+set(COMPILER_LINKER_FORWARD_OPTIONS "-Wl,--relax,--gc-sections")
+set(FULL_OPTIONS "${COMPILE_OPTIONS} ${COMPILER_WARNINGS} ${COMPILER_LINKER_FORWARD_OPTIONS}")
 
-set (CMAKE_CXX_FLAGS_DEBUG "-O0 -g -fno-exceptions ${WARNING_FLAGS}")
-set (CMAKE_C_FLAGS_DEBUG " -O0 -g ${WARNING_FLAGS}")
+set (CMAKE_CXX_FLAGS_RELEASE "-O3 -fno-exceptions ${FULL_OPTIONS}" CACHE STRING "Default C++ flags for release" FORCE )
+set (CMAKE_C_FLAGS_RELEASE "-O3 ${FULL_OPTIONS}" CACHE STRING "Default C flags for release" FORCE )
+
+set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -gdwarf-2 -fno-exceptions ${FULL_OPTIONS}" CACHE STRING "Default C++ flags for release with debug info" FORCE )
+set (CMAKE_C_FLAGS_RELWITHDEBINFO "-O3 -g -gdwarf-2 ${FULL_OPTIONS}" CACHE STRING "Default C flags for release with debug info" FORCE )
+
+set( CMAKE_C_FLAGS_MINSIZEREL "-Os -mcall-prologues ${FULL_OPTIONS}" CACHE STRING "Default C flags for minimum size release" FORCE )
+set( CMAKE_CXX_FLAGS_MINSIZEREL "-Os -mcall-prologues ${FULL_OPTIONS}" CACHE STRING "Default C++ flags for minimum size release" FORCE )
+
+set (CMAKE_CXX_FLAGS_DEBUG "-Og -g -gdwarf-2 -fno-exceptions ${FULL_OPTIONS}")
+set (CMAKE_C_FLAGS_DEBUG " -Og -g -gdwarf-2 ${FULL_OPTIONS}")
 
 
 ### Function to add an avr executable

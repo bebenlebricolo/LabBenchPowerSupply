@@ -13,25 +13,6 @@ set(AVR_MCU_SPEED 16000000)
 add_definitions(-DF_CPU=${AVR_MCU_SPEED})
 add_compile_options(
     -mmcu=${AVR_MCU} # MCU
-    -Og # optimize
-    -Wall # enable warnings
-    -Wno-main
-    -Wundef
-    -pedantic
-    -Wstrict-prototypes
-    -Werror
-    -Wfatal-errors
-    -Wl,--relax,--gc-sections
-    -g
-    -gdwarf-2
-    -funsigned-char # a few optimizations
-    -funsigned-bitfields
-    -fpack-struct
-    -fshort-enums
-    -ffunction-sections
-    -fdata-sections
-    -fno-split-wide-types
-    -fno-tree-scev-cprop
 )
 
 set(CMAKE_SYSTEM_LIBRARY_PATH /usr/avr/lib)
