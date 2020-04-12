@@ -1,0 +1,20 @@
+{
+    "files.associations": {
+        "adc_stack.h": "c",
+        "stdexcept": "cpp",
+        "ostream": "cpp",
+        "limits": "cpp",
+        "stddef.h": "c",
+        "adc.h": "c",
+        "adc_reg.h": "c",
+        "assert.h": "c",
+        "memory.h": "c",
+        "interrupt.h": "c",
+        "test_isr_wrapper.h": "c",
+        "io.h": "c",
+        "stdbool.h": "c",
+        "generic_peripheral.h": "c",
+        "iom328p.h": "c",
+        "string.h": "c"
+    }
+}
