@@ -18,6 +18,10 @@
                 "${workspaceFolder}/Drivers/Adc/private_inc",
                 "${workspaceFolder}/Drivers/Adc/Tests/Stub",
                 "${workspaceFolder}/Drivers/Peripheral/inc",
+                "${workspaceFolder}/Drivers/Timers/Timer_generic/inc",
+                "${workspaceFolder}/Drivers/Timers/Timer_8_bit/inc",
+                "${workspaceFolder}/Drivers/Timers/Timer_8_bit_async/inc",
+                "${workspaceFolder}/Drivers/Timers/Timer_16_bit/inc",
                 "${workspaceFolder}/**",
                 "/usr/avr/include",
                 "/usr/lib/gcc/avr/9.3.0/include"
