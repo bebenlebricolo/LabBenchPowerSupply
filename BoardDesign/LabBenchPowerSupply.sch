@@ -1309,7 +1309,7 @@ Vcc(5v)
 Text Notes 7575 2200 0    50   ~ 0
 OC1A
 Text Notes 7575 2300 0    50   ~ 0
-OC2A
+OC1B
 Text Notes 7575 1900 0    50   ~ 0
 OC0A
 Wire Notes Line
