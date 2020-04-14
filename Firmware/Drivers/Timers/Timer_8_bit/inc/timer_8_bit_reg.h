@@ -1,7 +1,47 @@
 #ifndef TIMER_8_BIT_REG_HEADER
 #define TIMER_8_BIT_REG_HEADER
 
+#include <stdbool.h>
 #include "timer_generic.h"
+
+/* TCCRA register bit mapping */
+#define COMB_BIT   4
+#define COMA_BIT   6
+
+/* TCCRB register bit mapping */
+#define WGM2_BIT    3
+#define FOCB_BIT    6
+#define FOCA_BIT    7
+
+/* TIMSLK register bit mapping */
+#define OCIEA_BIT   1
+#define OCIEB_BIT   2
+
+/* TIFR register bit mapping */
+#define OCFA_BIT    1
+#define OCFB_BIT    2
+
+/* TCCRA register masks */
+#define COMA_MSK   0xC0
+#define COMB_MSK   0x30
+#define WGM0_MSK   0x00
+#define WGM1_MSK   0x01
+
+/* TCCRB register masks */
+#define FOCA_MSK   0x80
+#define FOCB_MSK   0x40
+#define WGM2_MSK   0x08
+#define CS_MSK     0x07
+
+/* TIMSK register masks */
+#define TOIE_MSK   0x01
+#define OCIEA_MSK  0x02
+#define OCIEB_MSK  0x04
+
+/* TIMSK register masks */
+#define TOV_MSK   0x01
+#define OCFA_MSK  0x02
+#define OCFB_MSK  0x04
 
 /* #########################################################################################
    ############################## 8 bits regular timers ####################################

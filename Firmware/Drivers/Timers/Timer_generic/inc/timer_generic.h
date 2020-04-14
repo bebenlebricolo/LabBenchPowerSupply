@@ -1,9 +1,23 @@
 #ifndef TIMER_GENERIC_REG_HEADER
 #define TIMER_GENERIC_REG_HEADER
 
+#include <stdbool.h>
+
 /* #########################################################################################
    ############################## Generic types for timers #################################
    ######################################################################################### */
+
+/**
+ * @brief generic structure which holds timer error types
+*/
+typedef enum
+{
+    TIMER_ERROR_OK,             /**< Everything went well so far                            */
+    TIMER_ERROR_CONFIG,         /**< Given configuration is not well-formed                 */
+    TIMER_ERROR_NULL_POINTER,   /**< One or more parameters were set to NULL                */
+    TIMER_ERROR_NULL_HANDLE,    /**< Timer handle still points to NULL                      */
+    TIMER_ERROR_UNKNOWN_TIMER  /**< Given timer id exceeds the range of registered timers  */
+} timer_error_t;
 
 /**
  * @brief generic prescaler selection bits
