@@ -6,7 +6,7 @@
 
 #ifndef TIMER_8_BIT_COUNT
     #error "TIMER_8_BIT_COUNT is not defined. Please add #define TIMER_8_BIT_COUNT n in config.h to use this timer"
-#else if TIMER_8_BIT_COUNT == 0
+#elif TIMER_8_BIT_COUNT == 0
     #warning "TIMER_8_BIT_COUNT is set to 0. If you don't project to use this timer, refer to not compile this file instead of setting this define to 0"
 #endif
 
@@ -39,6 +39,27 @@ static inline bool handle_points_to_null(timer_8_bit_handle_t * const handle)
     return found_null;
 }
 
+timer_error_t timer_8_bit_set_handle(uint8_t id, timer_8_bit_handle_t * const handle)
+{
+    timer_error_t ret = TIMER_ERROR_OK;
+    if (id >= TIMER_8_BIT_COUNT)
+    {
+        ret = TIMER_ERROR_UNKNOWN_TIMER;
+    }
+
+    if (TIMER_ERROR_OK == ret)
+    {
+        if (NULL == handle)
+        {
+            ret = TIMER_ERROR_NULL_POINTER;
+        }
+        else
+        {
+            memcpy(&internal_config[id].handle, handle, sizeof(timer_8_bit_handle_t));
+        }
+    }
+    return ret;
+}
 
 timer_error_t timer_8_bit_get_default_config(uint8_t id, timer_8_bit_config_t * config)
 {
@@ -60,10 +81,15 @@ timer_error_t timer_8_bit_get_default_config(uint8_t id, timer_8_bit_config_t * 
             config->interrupt_config.it_comp_match_a = false;
             config->interrupt_config.it_comp_match_b = false;
             config->interrupt_config.it_timer_overflow = false;
+
+            config->timing_config.counter = 0U;
+            config->timing_config.ocra_val = 0U;
+            config->timing_config.ocrb_val = 0U;
             config->timing_config.prescaler = TIMERxBIT_CLK_NO_CLOCK;
             config->timing_config.waveform_mode = TIMER8BIT_WG_NORMAL;
             config->timing_config.comp_match_a = TIMER8BIT_CMOD_NORMAL;
             config->timing_config.comp_match_b = TIMER8BIT_CMOD_NORMAL;
+
             config->force_compare.force_comp_match_a = false;
             config->force_compare.force_comp_match_b = false;
 
@@ -77,6 +103,7 @@ timer_error_t timer_8_bit_get_default_config(uint8_t id, timer_8_bit_config_t * 
             config->handle.TIMSK = NULL;
         }
     }
+    return ret;
 }
 
 timer_error_t timer_8_bit_set_force_compare_config(uint8_t id, timer_x_bit_force_compare_config_t * const force_comp_config)
@@ -382,7 +409,7 @@ timer_error_t timer_8_bit_get_compare_match_A(uint8_t id, timer_8_bit_compare_ou
     return ret;
 }
 
-timer_error_t timer_8_bit_set_compare_match_A(uint8_t id, const timer_8_bit_compare_output_mode_t compB)
+timer_error_t timer_8_bit_set_compare_match_B(uint8_t id, const timer_8_bit_compare_output_mode_t compB)
 {
     timer_error_t ret = TIMER_ERROR_OK;
     if (id >= TIMER_8_BIT_COUNT)
@@ -498,7 +525,7 @@ timer_error_t timer_8_bit_set_counter_value(uint8_t id, const uint8_t ticks)
     if (TIMER_ERROR_OK == ret)
     {
         /* Not fully configured handle, do not attempt to write to it until configured !*/
-        if(false == handle_points_to_null(&internal_config[id].handle))
+        if(true == handle_points_to_null(&internal_config[id].handle))
         {
             ret = TIMER_ERROR_NULL_HANDLE;
         }
@@ -539,6 +566,106 @@ timer_error_t timer_8_bit_get_counter_value(uint8_t id, uint8_t * ticks)
     return ret;
 }
 
+timer_error_t timer_8_bit_set_ocra_register_value(uint8_t id, uint8_t ocra)
+{
+    timer_error_t ret = TIMER_ERROR_OK;
+    if (id >= TIMER_8_BIT_COUNT)
+    {
+        ret = TIMER_ERROR_UNKNOWN_TIMER;
+    }
+
+    if (TIMER_ERROR_OK == ret)
+    {
+        /* Not fully configured handle, do not attempt to write to it until configured !*/
+        if(true == handle_points_to_null(&internal_config[id].handle))
+        {
+            ret = TIMER_ERROR_NULL_HANDLE;
+        }
+        else
+        {
+            *internal_config[id].handle.OCRA = ocra;
+        }
+    }
+    return ret;
+}
+
+timer_error_t timer_8_bit_get_ocra_register_value(uint8_t id, uint8_t * ocra)
+{
+    timer_error_t ret = TIMER_ERROR_OK;
+    if (id >= TIMER_8_BIT_COUNT)
+    {
+        ret = TIMER_ERROR_UNKNOWN_TIMER;
+    }
+
+    if (TIMER_ERROR_OK == ret)
+    {
+        if ( NULL == ocra)
+        {
+            ret = TIMER_ERROR_NULL_POINTER;
+        }
+        /* Not fully configured handle, do not attempt to write to it until configured !*/
+        else if(true == handle_points_to_null(&internal_config[id].handle))
+        {
+            ret = TIMER_ERROR_NULL_HANDLE;
+        }
+        else
+        {
+            *ocra = *internal_config[id].handle.OCRA;
+        }
+    }
+    return ret;
+}
+
+timer_error_t timer_8_bit_set_ocrb_register_value(uint8_t id, uint8_t ocrb)
+{
+    timer_error_t ret = TIMER_ERROR_OK;
+    if (id >= TIMER_8_BIT_COUNT)
+    {
+        ret = TIMER_ERROR_UNKNOWN_TIMER;
+    }
+
+    if (TIMER_ERROR_OK == ret)
+    {
+        /* Not fully configured handle, do not attempt to write to it until configured !*/
+        if(true == handle_points_to_null(&internal_config[id].handle))
+        {
+            ret = TIMER_ERROR_NULL_HANDLE;
+        }
+        else
+        {
+            *internal_config[id].handle.OCRB = ocrb;
+        }
+    }
+    return ret;
+}
+
+timer_error_t timer_8_bit_get_ocrb_register_value(uint8_t id, uint8_t * ocrb)
+{
+    timer_error_t ret = TIMER_ERROR_OK;
+    if (id >= TIMER_8_BIT_COUNT)
+    {
+        ret = TIMER_ERROR_UNKNOWN_TIMER;
+    }
+
+    if (TIMER_ERROR_OK == ret)
+    {
+        if ( NULL == ocrb)
+        {
+            ret = TIMER_ERROR_NULL_POINTER;
+        }
+        /* Not fully configured handle, do not attempt to write to it until configured !*/
+        else if(true == handle_points_to_null(&internal_config[id].handle))
+        {
+            ret = TIMER_ERROR_NULL_HANDLE;
+        }
+        else
+        {
+            *ocrb = *internal_config[id].handle.OCRB;
+        }
+    }
+    return ret;
+}
+
 
 timer_error_t timer_8_bit_init(uint8_t id, timer_8_bit_config_t * const config)
 {
@@ -558,7 +685,12 @@ timer_error_t timer_8_bit_init(uint8_t id, timer_8_bit_config_t * const config)
         {
             timer_8_bit_handle_t * handle = &internal_config[id].handle;
 
+            /* Initialise counter as well */
+            *(handle->TCNT) = config->timing_config.counter;
+
             /* TCCRA register */
+            *(handle->OCRA) = config->timing_config.ocra_val;
+            *(handle->OCRB) = config->timing_config.ocrb_val;
             *(handle->TCCRA) = (*(handle->TCCRA) & ~COMA_MSK) | (config->timing_config.comp_match_a << COMA_BIT);
             *(handle->TCCRA) = (*(handle->TCCRA) & ~COMB_MSK) | (config->timing_config.comp_match_b << COMB_BIT);
             *(handle->TCCRA) = (*(handle->TCCRA) & ~(WGM0_MSK | WGM1_MSK)) | (config->timing_config.waveform_mode & (WGM0_MSK | WGM1_MSK));

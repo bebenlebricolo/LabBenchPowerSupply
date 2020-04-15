@@ -5,6 +5,11 @@
 #include "timer_generic.h"
 #include "timer_8_bit_reg.h"
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 /* #########################################################################################
    ################################## Timer handle types ###################################
    ######################################################################################### */
@@ -56,6 +61,16 @@ typedef struct
 */
 timer_error_t timer_8_bit_get_default_config(uint8_t id, timer_8_bit_config_t * config);
 
+/**
+ * @brief sets the handle of timer_8_bit driver
+ * @param[in]   id     : targeted timer id (used to fetch internal configuration based on ids)
+ * @param[in]   handle : handle to be copied into internal configuration
+ * @return
+ *      TIMER_ERROR_OK             :   operation succeeded
+ *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
+ *      TIMER_ERROR_NULL_POINTER   :   given force_comp_config parameter points to NULL
+*/
+timer_error_t timer_8_bit_set_handle(uint8_t id, timer_8_bit_handle_t * const handle);
 
 /* ################################ Force compare flags configuration ############################### */
 
@@ -177,7 +192,7 @@ timer_error_t timer_8_bit_get_compare_match_A(uint8_t id, timer_8_bit_compare_ou
  *      TIMER_ERROR_OK             :   operation succeeded
  *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
 */
-timer_error_t timer_8_bit_set_compare_match_B(uint8_t id, timer_8_bit_compare_output_mode_t * const compB);
+timer_error_t timer_8_bit_set_compare_match_B(uint8_t id, timer_8_bit_compare_output_mode_t compB);
 
 /**
  * @brief reads targeted timer output compare configuration for channel B from internal configuration
@@ -247,9 +262,45 @@ timer_error_t timer_8_bit_set_counter_value(uint8_t id, const uint8_t ticks);
 */
 timer_error_t timer_8_bit_get_counter_value(uint8_t id, uint8_t * ticks);
 
+/**
+ * @brief sets the targeted timer Output Compare A register value
+ * @param[in]   id    : targeted timer id (used to fetch internal configuration based on ids)
+ * @param[in]   ocra  : actual OCRA value to be set
+ * @return
+ *      TIMER_ERROR_OK             :   operation succeeded
+ *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
+*/
+timer_error_t timer_8_bit_set_ocra_register_value(uint8_t id, uint8_t ocra);
 
+/**
+ * @brief fetches given timer Output Compare A register value
+ * @param[in]   id    : targeted timer id (used to fetch internal configuration based on ids)
+ * @param[in]   ocra  : pointer to ocra value
+ * @return
+ *      TIMER_ERROR_OK             :   operation succeeded
+ *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
+*/
+timer_error_t timer_8_bit_get_ocra_register_value(uint8_t id, uint8_t * ocra);
 
+/**
+ * @brief sets the targeted timer Output Compare B register value
+ * @param[in]   id    : targeted timer id (used to fetch internal configuration based on ids)
+ * @param[in]   ocrb  : actual OCRB value to be set
+ * @return
+ *      TIMER_ERROR_OK             :   operation succeeded
+ *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
+*/
+timer_error_t timer_8_bit_set_ocrb_register_value(uint8_t id, uint8_t ocrb);
 
+/**
+ * @brief fetches the targeted timer Output Compare B register value
+ * @param[in]   id    : targeted timer id (used to fetch internal configuration based on ids)
+ * @param[in]   ocrb  : actual OCRB value to be fetched
+ * @return
+ *      TIMER_ERROR_OK             :   operation succeeded
+ *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
+*/
+timer_error_t timer_8_bit_get_ocrb_register_value(uint8_t id, uint8_t * ocrb);
 
 
 
@@ -287,5 +338,9 @@ timer_error_t timer_8_bit_start(uint8_t id);
  *      TIMER_ERROR_NULL_POINTER   :   given config parameter points to NULL
 */
 timer_error_t timer_8_bit_stop(uint8_t id);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* TIMER_8_BIT_HEADER */

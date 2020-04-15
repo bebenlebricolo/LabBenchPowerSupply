@@ -4,6 +4,11 @@
 #include <stdbool.h>
 #include "timer_generic.h"
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 /* TCCRA register bit mapping */
 #define COMB_BIT   4
 #define COMA_BIT   6
@@ -82,10 +87,13 @@ typedef enum
 */
 typedef struct
 {
-    timer_8_bit_compare_output_mode_t comp_match_a;  /**< Equivalent to TCCRnA COMnA0 and COMnA1 bits                            */
-    timer_8_bit_compare_output_mode_t comp_match_b;  /**< Equivalent to TCCRnA COMnB0 and COMnB1 bits                            */
-    timer_8_bit_waveform_generation_t waveform_mode; /**< Selects the right waveform mode and dispatch it to the right registers */
-    timer_x_bit_prescaler_selection_t prescaler;     /**< Selects the right prescaler to be fed in the timer                     */
+    uint8_t                           counter;          /**< Main Counter value used to start the timer                             */
+    uint8_t                           ocra_val;         /**< Value to be set inside OCRA register to control PWM for instance       */
+    uint8_t                           ocrb_val;         /**< Value to be set inside OCRB register to control PWM for instance       */
+    timer_8_bit_compare_output_mode_t comp_match_a;     /**< Equivalent to TCCRnA COMnA0 and COMnA1 bits                            */
+    timer_8_bit_compare_output_mode_t comp_match_b;     /**< Equivalent to TCCRnA COMnB0 and COMnB1 bits                            */
+    timer_8_bit_waveform_generation_t waveform_mode;    /**< Selects the right waveform mode and dispatch it to the right registers */
+    timer_x_bit_prescaler_selection_t prescaler;        /**< Selects the right prescaler to be fed in the timer                     */
 } timer_8_bit_timing_config_t;
 
 /**
@@ -97,5 +105,9 @@ typedef struct
     bool it_comp_match_b;   /**< Enables (or not) the OCIEnB flag (interrupt on compare match B, or not)*/
     bool it_timer_overflow; /**< Enables (or not) the TOEIn flag (interrupt on timer overflow, or not)  */
 } timer_8_bit_interrupt_config_t;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* TIMER_8_BIT_REG_HEADER */
