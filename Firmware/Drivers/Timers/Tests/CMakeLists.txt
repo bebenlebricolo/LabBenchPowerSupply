@@ -9,11 +9,15 @@ enable_testing()
 add_library(timer_8_bit_driver STATIC
     ../Timer_8_bit/src/timer_8_bit.c
 )
+
 target_include_directories(timer_8_bit_driver PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../Timer_8_bit/inc
     ${CMAKE_CURRENT_SOURCE_DIR}/../Timer_generic/inc
     ${CMAKE_CURRENT_SOURCE_DIR}/
 )
+
+message("CMAKE_CXX_FLAGS_DEBUG = ${CMAKE_CXX_FLAGS_DEBUG}")
+message("CMAKE_C_FLAGS_DEBUG = ${CMAKE_C_FLAGS_DEBUG}")
 
 ########## Timer 8 bit driver tests ##########
 

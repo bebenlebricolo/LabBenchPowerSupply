@@ -12,6 +12,12 @@ add_definitions(
 
 set(AVR_INCLUDES /usr/avr/include)
 
+set(CMAKE_CXX_FLAGS_DEBUG "-Og -g")
+set(CMAKE_C_FLAGS_DEBUG "-Og -g")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+set(CMAKE_C_FLAGS_RELEASE "-O3")
+
+
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 add_subdirectory( ${CMAKE_SOURCE_DIR}/../Drivers/Adc/Tests
     ${CMAKE_BINARY_DIR}/Tests/Adc
