@@ -46,31 +46,6 @@ typedef struct
 /* ################################ Global configuration ############################### */
 
 /**
- * @brief writes given configuration to internal configuration of targeted timer instance
- * @param[in]   id      : targeted timer id (used to fetch internal configuration based on ids)
- * @param[in]   config  : holds configuration to be written to targeted device
- * @return
- *      TIMER_ERROR_OK             :   operation succeeded
- *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
- *      TIMER_ERROR_NULL_POINTER   :   given config parameter points to NULL
-*/
-timer_error_t timer_8_bit_set_config( uint8_t id, timer_8_bit_config_t * const config);
-
-/**
- * @brief copies internal configuration of targeted timer to given storage object
- * @param[in]   id      : targeted timer id (used to fetch internal configuration based on ids)
- * @param[in]   config  : container object which will receive internal device configuration
- * This allows to use it this way :
- * timer_8_bit_config_t config;
- * timer_8_bit_get_config(&config); // will copy internal configuration to input container
- * @return
- *      TIMER_ERROR_OK             :   operation succeeded
- *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
- *      TIMER_ERROR_NULL_POINTER   :   given config parameter points to NULL
-*/
-timer_error_t timer_8_bit_get_config( uint8_t id, timer_8_bit_config_t * config);
-
-/**
  * @brief returns a default configuration for 8 bit timer
  * @param[in]   id      : targeted timer id (used to fetch internal configuration based on ids)
  * @param[in]   config  : container object which will receive internal device configuration
@@ -80,19 +55,6 @@ timer_error_t timer_8_bit_get_config( uint8_t id, timer_8_bit_config_t * config)
  *      TIMER_ERROR_NULL_POINTER   :   given config parameter points to NULL
 */
 timer_error_t timer_8_bit_get_default_config(uint8_t id, timer_8_bit_config_t * config);
-
-/**
- * @brief copies a config structure from one location to another
- * @param[in]   dest : destiunation object
- * @param[in]   src  : source object
- * @return
- *      TIMER_ERROR_OK             :   operation succeeded
- *      TIMER_ERROR_NULL_POINTER   :   one of the two parameters were set to NULL
-*/
-timer_error_t timer_8_bit_config_copy(timer_8_bit_config_t * dest, timer_8_bit_config_t * const src);
-
-
-
 
 
 /* ################################ Force compare flags configuration ############################### */
@@ -303,16 +265,7 @@ timer_error_t timer_8_bit_get_counter_value(uint8_t id, uint8_t * ticks);
  *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
  *      TIMER_ERROR_NULL_HANDLE    :   targeted timer's handle is still NULL (unitialised). Operation failed
 */
-timer_error_t timer_8_bit_init(uint8_t id);
-
-/**
- * @brief synchronises all changes in internal configuration to physical device's registers
- * @param[in]   id     : targeted timer id (used to fetch internal configuration based on ids)
- * @return
- *      TIMER_ERROR_OK             :   operation succeeded
- *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
-*/
-timer_error_t timer_8_bit_sync_config(uint8_t id);
+timer_error_t timer_8_bit_init(uint8_t id, timer_8_bit_config_t * const config);
 
 /**
  * @brief starts selected timer based on its internal configuration. Basically, this function sets the adequate prescaler to internal registers to start it.
