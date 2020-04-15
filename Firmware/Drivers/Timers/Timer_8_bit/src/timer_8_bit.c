@@ -401,6 +401,26 @@ timer_error_t timer_8_bit_init(uint8_t id)
         ret = TIMER_ERROR_UNKNOWN_TIMER;
     }
 
+    if (TIMER_ERROR_OK == ret)
+    {
+        ret = timer_8_bit_sync_config(id);
+        if (TIMER_ERROR_OK == ret)
+        {
+            internal_config[id].is_initialised = true;
+        }
+    }
+
+    return ret;
+}
+
+timer_error_t timer_8_bit_sync_config(uint8_t id)
+{
+    timer_error_t ret = TIMER_ERROR_OK;
+    if (id >= TIMER_8_BIT_COUNT)
+    {
+        ret = TIMER_ERROR_UNKNOWN_TIMER;
+    }
+
     if (TIMER_ERROR_OK == ret && false == handle_points_to_null(&internal_config[id].config.handle))
     {
         timer_8_bit_config_t * config = &internal_config[id].config;
@@ -435,7 +455,7 @@ timer_error_t timer_8_bit_init(uint8_t id)
             *(handle->TCCRB) &=  ~(1 << FOCB_BIT) ;
         }
 
-        *(handle->TCCRB) = (*(handle->TCCRB) & ~CS_MSK) | config->timing_config.prescaler;
+        /* NOTE : Do not handle prescaler until timer is manually started using timer_8_bit_start(id)*/
 
         /* TIMSK register */
         if (true == config->interrupt_config.it_comp_match_a)
@@ -467,5 +487,53 @@ timer_error_t timer_8_bit_init(uint8_t id)
         }
     }
 
+    return ret;
+}
+
+timer_error_t timer_8_bit_start(uint8_t id)
+{
+    timer_error_t ret = TIMER_ERROR_OK;
+    if (id >= TIMER_8_BIT_COUNT)
+    {
+        ret = TIMER_ERROR_UNKNOWN_TIMER;
+    }
+
+    if (TIMER_ERROR_OK == ret)
+    {
+        if (false == internal_config[id].is_initialised)
+        {
+            ret = TIMER_ERROR_NOT_INITIALISED;
+        }
+        else
+        {
+            timer_8_bit_config_t * config = &internal_config[id].config;
+            timer_8_bit_handle_t * handle = &config->handle;
+            /* This time, set the prescaler to start the timer, unless prescaler is set to NO_CLOCK source */
+            *handle->TCCRB = (*handle->TCCRB & ~CS_MSK) | config->timing_config.prescaler;
+        }
+    }
+    return ret;
+}
+
+timer_error_t timer_8_bit_stop(uint8_t id)
+{
+    timer_error_t ret = TIMER_ERROR_OK;
+    if (id >= TIMER_8_BIT_COUNT)
+    {
+        ret = TIMER_ERROR_UNKNOWN_TIMER;
+    }
+
+    if (TIMER_ERROR_OK == ret)
+    {
+        if (false == internal_config[id].is_initialised)
+        {
+            ret = TIMER_ERROR_NOT_INITIALISED;
+        }
+        else
+        {
+            /* Reset prescaler to NO_CLOCK*/
+            *internal_config[id].config.handle.TCCRB = (*internal_config[id].config.handle.TCCRB & ~CS_MSK) | TIMERxBIT_CLK_NO_CLOCK;
+        }
+    }
     return ret;
 }

@@ -12,11 +12,12 @@
 */
 typedef enum
 {
-    TIMER_ERROR_OK,             /**< Everything went well so far                            */
-    TIMER_ERROR_CONFIG,         /**< Given configuration is not well-formed                 */
-    TIMER_ERROR_NULL_POINTER,   /**< One or more parameters were set to NULL                */
-    TIMER_ERROR_NULL_HANDLE,    /**< Timer handle still points to NULL                      */
-    TIMER_ERROR_UNKNOWN_TIMER  /**< Given timer id exceeds the range of registered timers  */
+    TIMER_ERROR_OK,              /**< Everything went well so far                            */
+    TIMER_ERROR_CONFIG,          /**< Given configuration is not well-formed                 */
+    TIMER_ERROR_NULL_POINTER,    /**< One or more parameters were set to NULL                */
+    TIMER_ERROR_NULL_HANDLE,     /**< Timer handle still points to NULL                      */
+    TIMER_ERROR_UNKNOWN_TIMER,   /**< Given timer id exceeds the range of registered timers  */
+    TIMER_ERROR_NOT_INITIALISED, /**< Given configuration is not well-formed                 */
 } timer_error_t;
 
 /**
