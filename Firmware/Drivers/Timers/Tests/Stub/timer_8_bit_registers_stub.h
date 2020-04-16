@@ -3,6 +3,11 @@
 
 #include "timer_8_bit.h"
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 /**
  * @brief provides a stub interface representing 8 bit timers registers
 */
@@ -21,5 +26,9 @@ extern timer_8_bit_registers_stub_t timer_8_bit_registers_stub;
 
 void timer_8_bit_registers_stub_erase(void);
 void timer_8_bit_registers_stub_init_handle(timer_8_bit_handle_t * handle);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* TIMER_8_BIT_REGISTERS_STUB */

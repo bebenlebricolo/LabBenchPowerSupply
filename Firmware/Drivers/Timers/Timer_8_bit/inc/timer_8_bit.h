@@ -126,7 +126,20 @@ timer_error_t timer_8_bit_set_interrupt_config(uint8_t id, timer_8_bit_interrupt
 */
 timer_error_t timer_8_bit_get_interrupt_config(uint8_t id, timer_8_bit_interrupt_config_t * it_config);
 
-
+#ifdef UNIT_TESTING
+/**
+ * @brief reads the actual interrupt flags from internal memory and returns a copy of it
+ * @param[in]   id       : targeted timer id (used to fetch internal configuration based on ids)
+ * @param[in]   it_flags : container which holds the interrupt configuration
+ * Note : this function reuses the interrupt configuration structure as it is only relevant for debugging
+ * purposes and both interrupt enable flags and raised interrupt flags share the same register layout
+ * @return
+ *      TIMER_ERROR_OK             :   operation succeeded
+ *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
+ *      TIMER_ERROR_NULL_POINTER   :   given it_config parameter points to NULL
+*/
+timer_error_t timer_8_bit_get_interrupt_flags(uint8_t id, timer_8_bit_interrupt_config_t * it_flags);
+#endif
 
 
 

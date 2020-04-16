@@ -308,6 +308,66 @@ timer_error_t timer_8_bit_get_interrupt_config(uint8_t id, timer_8_bit_interrupt
     return ret;
 }
 
+#ifdef UNIT_TESTING
+timer_error_t timer_8_bit_get_interrupt_flags(uint8_t id, timer_8_bit_interrupt_config_t * it_flags)
+{
+    timer_error_t ret = TIMER_ERROR_OK;
+    if (id >= TIMER_8_BIT_COUNT)
+    {
+        ret = TIMER_ERROR_UNKNOWN_TIMER;
+    }
+
+    if (TIMER_ERROR_OK == ret)
+    {
+        if (NULL == it_flags)
+        {
+            ret = TIMER_ERROR_NULL_POINTER;
+        }
+        /* Not fully configured handle, do not attempt to write to it until configured !*/
+        else if(true == handle_points_to_null(&internal_config[id].handle))
+        {
+            ret = TIMER_ERROR_NULL_HANDLE;
+        }
+        else
+        {
+            /* Output Compare Match A Interrupt Flag */
+            if (0U == (*(internal_config[id].handle.TIFR) & OCIEA_MSK))
+            {
+                it_flags->it_comp_match_a = false;
+            }
+            else
+            {
+                it_flags->it_comp_match_a = true;
+            }
+
+            /* Output Compare Match B Interrupt Flag */
+            if (0U == (*(internal_config[id].handle.TIFR) & OCIEB_MSK))
+            {
+                it_flags->it_comp_match_b = false;
+            }
+            else
+            {
+                it_flags->it_comp_match_b = true;
+            }
+
+            /* Timer Overflow Interrupt Flag */
+            if (0U == (*(internal_config[id].handle.TIFR) & 1U))
+            {
+                it_flags->it_timer_overflow = false;
+            }
+            else
+            {
+                it_flags->it_timer_overflow = true;
+            }
+        }
+    }
+    return ret;
+
+}
+#endif
+
+
+
 timer_error_t timer_8_bit_set_prescaler(uint8_t id, const timer_x_bit_prescaler_selection_t prescaler)
 {
     timer_error_t ret = TIMER_ERROR_OK;

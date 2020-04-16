@@ -8,6 +8,7 @@ enable_testing()
 # Set definitions
 add_definitions(
     -D__AVR_ATmega328__
+    -DUNIT_TESTING
 )
 
 set(AVR_INCLUDES /usr/avr/include)

@@ -14,16 +14,9 @@ protected:
     void SetUp() override
     {
         timer_8_bit_registers_stub_erase();
-        config.force_compare.force_comp_match_a = false;
-        config.force_compare.force_comp_match_b = false;
-        config.interrupt_config.it_comp_match_a = false;
-        config.interrupt_config.it_comp_match_b = false;
-        config.interrupt_config.it_timer_overflow = false;
-        config.timing_config.comp_match_a = TIMER8BIT_CMOD_NORMAL;
-        config.timing_config.comp_match_b = TIMER8BIT_CMOD_NORMAL;
-        config.timing_config.prescaler = TIMERxBIT_CLK_NO_CLOCK;
-        config.timing_config.waveform_mode = TIMER8BIT_WG_NORMAL;
+        (void) timer_8_bit_get_default_config(DT_ID , &config);
         timer_8_bit_registers_stub_init_handle(&config.handle);
+        (void) timer_8_bit_set_handle(DT_ID, &config.handle);
     }
     void TearDown() override
     {
@@ -156,6 +149,79 @@ TEST(timer_8_bit_driver_tests, guard_null_pointer)
     timer_8_bit_waveform_generation_t * nullptr_waveform_mode = NULL;
     ret = timer_8_bit_get_waveform_generation(DT_ID, nullptr_waveform_mode);
     ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
+}
+
+TEST_F(Timer8BitFixture, test_handle_is_set_correctly)
+{
+    // Test a subset of setters to see if values are set correctly within targeted stub registers
+    timer_error_t ret = TIMER_ERROR_OK;
+    // Data should be reset to its default state when we begin
+
+    // Testing TCCRA register
+    config.timing_config.comp_match_a = TIMER8BIT_CMOD_SET_OCnX; // 11
+    ASSERT_EQ(timer_8_bit_registers_stub.TCCRA & COMA_MSK, 0U);
+    ret = timer_8_bit_set_compare_match_A(DT_ID, config.timing_config.comp_match_a);
+    ASSERT_EQ(TIMER_ERROR_OK, ret);
+    ASSERT_EQ(timer_8_bit_registers_stub.TCCRA & COMA_MSK, 0x3 << COMA_BIT);
+
+    // Testing TCCRB register
+    config.timing_config.prescaler = TIMERxBIT_CLK_PRESCALER_256; // 11
+    ASSERT_EQ(timer_8_bit_registers_stub.TCCRB & CS_MSK, (uint8_t)TIMERxBIT_CLK_NO_CLOCK);
+    ret = timer_8_bit_set_prescaler(DT_ID, config.timing_config.prescaler);
+    ASSERT_EQ(TIMER_ERROR_OK, ret);
+    ASSERT_EQ(timer_8_bit_registers_stub.TCCRB & CS_MSK, (uint8_t) config.timing_config.prescaler);
+
+    // Testing TCNT register
+    uint8_t tcnt_value = 144U;
+    ASSERT_EQ(timer_8_bit_registers_stub.TCNT , 0U);
+    ret = timer_8_bit_set_counter_value(DT_ID, tcnt_value);
+    ASSERT_EQ(TIMER_ERROR_OK, ret);
+    ASSERT_EQ(timer_8_bit_registers_stub.TCNT , tcnt_value);
+
+    // Testing OCRA register
+    uint8_t ocra_value = 100U;
+    ASSERT_EQ(timer_8_bit_registers_stub.OCRA , 0U);
+    ret = timer_8_bit_set_ocra_register_value(DT_ID, ocra_value);
+    ASSERT_EQ(TIMER_ERROR_OK, ret);
+    ASSERT_EQ(timer_8_bit_registers_stub.OCRA , ocra_value);
+
+    // Testing OCRB register
+    uint8_t ocrb_value = 60U;
+    ASSERT_EQ(timer_8_bit_registers_stub.OCRB , 0U);
+    ret = timer_8_bit_set_ocrb_register_value(DT_ID, ocrb_value);
+    ASSERT_EQ(TIMER_ERROR_OK, ret);
+    ASSERT_EQ(timer_8_bit_registers_stub.OCRB , ocrb_value);
+
+    // Testing TIMSK register
+    config.interrupt_config.it_comp_match_a = true;
+    config.interrupt_config.it_comp_match_b = true;
+    config.interrupt_config.it_timer_overflow = true;
+
+    ASSERT_EQ(timer_8_bit_registers_stub.TIMSK, 0U);
+    ret = timer_8_bit_set_interrupt_config(DT_ID, &config.interrupt_config);
+    ASSERT_EQ(TIMER_ERROR_OK, ret);
+    ASSERT_EQ(timer_8_bit_registers_stub.TIMSK & OCIEA_MSK, (uint8_t) 1U << OCIEA_BIT);
+    ASSERT_EQ(timer_8_bit_registers_stub.TIMSK & OCIEB_MSK, (uint8_t) 1U << OCIEB_BIT);
+    ASSERT_EQ(timer_8_bit_registers_stub.TIMSK & TOIE_MSK, (uint8_t) 1U);
+
+    // Testing TIFR register
+    config.interrupt_config.it_comp_match_a = false;
+    config.interrupt_config.it_comp_match_b = false;
+    config.interrupt_config.it_timer_overflow = false;
+    ASSERT_EQ(timer_8_bit_registers_stub.TIFR , 0U);
+    timer_8_bit_registers_stub.TIFR |= 0x7; // set 3 first bits to 1
+    ret = timer_8_bit_get_interrupt_flags(DT_ID, &config.interrupt_config);
+    ASSERT_EQ(TIMER_ERROR_OK, ret);
+    ASSERT_EQ(timer_8_bit_registers_stub.TIFR & OCIEA_MSK, 1U << OCIEA_BIT);
+    ASSERT_EQ(timer_8_bit_registers_stub.TIFR & OCIEB_MSK, 1U << OCIEB_BIT);
+    ASSERT_EQ(timer_8_bit_registers_stub.TIFR & TOIE_MSK, 1U );
+}
+
+
+TEST_F(Timer8BitFixture, test_timing_configuration)
+{
+
+
 }
 
 
