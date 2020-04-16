@@ -222,6 +222,21 @@ TEST_F(Timer8BitFixture, test_timing_configuration_unitary_functions)
 {
     auto ret = TIMER_ERROR_OK;
     // Random configuration, with bits set everywhere
+    timer_8_bit_compare_output_mode_t received_compare_mode_a;
+    timer_8_bit_compare_output_mode_t received_compare_mode_b;
+    uint8_t received_ocra_val;
+    uint8_t received_ocrb_val;
+    uint8_t received_counter_val;
+    timer_x_bit_prescaler_selection_t received_prescaler;
+    timer_8_bit_waveform_generation_t received_waveform;
+    memcpy(&received_compare_mode_a, &config.timing_config.comp_match_a, sizeof(timer_8_bit_compare_output_mode_t));
+    memcpy(&received_compare_mode_b, &config.timing_config.comp_match_b, sizeof(timer_8_bit_compare_output_mode_t));
+    memcpy(&received_ocra_val, &config.timing_config.ocra_val, sizeof(uint8_t));
+    memcpy(&received_ocrb_val, &config.timing_config.ocrb_val, sizeof(uint8_t));
+    memcpy(&received_counter_val, &config.timing_config.counter, sizeof(uint8_t));
+    memcpy(&received_prescaler, &config.timing_config.prescaler, sizeof(timer_x_bit_prescaler_selection_t));
+    memcpy(&received_waveform, &config.timing_config.waveform_mode, sizeof(timer_8_bit_waveform_generation_t));
+
     config.timing_config.comp_match_a = TIMER8BIT_CMOD_TOGGLE_OCnX;
     config.timing_config.comp_match_b = TIMER8BIT_CMOD_SET_OCnX;
     config.timing_config.ocra_val = 33U;
@@ -234,12 +249,20 @@ TEST_F(Timer8BitFixture, test_timing_configuration_unitary_functions)
     ret = timer_8_bit_set_compare_match_A(DT_ID, config.timing_config.comp_match_a);
     ASSERT_EQ(TIMER_ERROR_OK, ret);
     ASSERT_EQ(timer_8_bit_registers_stub.TCCRA & COMA_MSK, config.timing_config.comp_match_a << COMA_BIT);
+    // Counter check value can also be read back from registers ...
+    ret = timer_8_bit_get_compare_match_A(DT_ID,&received_compare_mode_a);
+    ASSERT_EQ(TIMER_ERROR_OK, ret);
+    ASSERT_EQ(0, memcmp(&received_compare_mode_a, &config.timing_config.comp_match_a, sizeof(timer_8_bit_compare_output_mode_t)));
 
     // Compare match B mode
     ASSERT_EQ(timer_8_bit_registers_stub.TCCRA & COMB_MSK, 0U);
     ret = timer_8_bit_set_compare_match_B(DT_ID, config.timing_config.comp_match_b);
     ASSERT_EQ(TIMER_ERROR_OK, ret);
     ASSERT_EQ(timer_8_bit_registers_stub.TCCRA & COMB_MSK, config.timing_config.comp_match_b << COMB_BIT);
+    // Counter check value can also be read back from registers ...
+    ret = timer_8_bit_get_compare_match_B(DT_ID,&received_compare_mode_b);
+    ASSERT_EQ(TIMER_ERROR_OK, ret);
+    ASSERT_EQ(0, memcmp(&received_compare_mode_b, &config.timing_config.comp_match_b, sizeof(timer_8_bit_compare_output_mode_t)));
 
     // Waveform modes
     ASSERT_EQ(timer_8_bit_registers_stub.TCCRA & (WGM0_MSK | WGM1_MSK), 0U);
@@ -248,30 +271,102 @@ TEST_F(Timer8BitFixture, test_timing_configuration_unitary_functions)
     ASSERT_EQ(TIMER_ERROR_OK, ret);
     ASSERT_EQ(timer_8_bit_registers_stub.TCCRA & (WGM0_MSK | WGM1_MSK), config.timing_config.waveform_mode);
     ASSERT_EQ(timer_8_bit_registers_stub.TCCRB & WGM2_MSK, (config.timing_config.waveform_mode & (1 << 2U)) << 1U);
+    // Counter check value can also be read back from registers ...
+    ret = timer_8_bit_get_waveform_generation(DT_ID, &received_waveform);
+    ASSERT_EQ(TIMER_ERROR_OK, ret);
+    ASSERT_EQ(0, memcmp(&received_waveform, &config.timing_config.waveform_mode, sizeof(timer_8_bit_waveform_generation_t)));
+
 
     // Prescaler settings
     ASSERT_EQ(timer_8_bit_registers_stub.TCCRB & CS_MSK, 0U);
     ret = timer_8_bit_set_prescaler(DT_ID, config.timing_config.prescaler);
     ASSERT_EQ(TIMER_ERROR_OK, ret);
     ASSERT_EQ(timer_8_bit_registers_stub.TCCRB & CS_MSK, config.timing_config.prescaler);
+    ret = timer_8_bit_get_prescaler(DT_ID, &received_prescaler);
+    ASSERT_EQ(TIMER_ERROR_OK, ret);
+    ASSERT_EQ(0, memcmp(&received_prescaler, &config.timing_config.prescaler, sizeof(timer_x_bit_prescaler_selection_t)));
+
 
     // Timer counter main register value
     ASSERT_EQ(timer_8_bit_registers_stub.TCNT, 0U);
     ret = timer_8_bit_set_counter_value(DT_ID, config.timing_config.counter);
     ASSERT_EQ(TIMER_ERROR_OK, ret);
     ASSERT_EQ(timer_8_bit_registers_stub.TCNT, config.timing_config.counter);
+    ret = timer_8_bit_get_counter_value(DT_ID, &received_counter_val);
+    ASSERT_EQ(TIMER_ERROR_OK, ret);
+    ASSERT_EQ(0, memcmp(&received_counter_val, &config.timing_config.counter, sizeof(uint8_t)));
+
 
     // OCRA register value
     ASSERT_EQ(timer_8_bit_registers_stub.OCRA, 0U);
     ret = timer_8_bit_set_ocra_register_value(DT_ID, config.timing_config.ocra_val);
     ASSERT_EQ(TIMER_ERROR_OK, ret);
     ASSERT_EQ(timer_8_bit_registers_stub.OCRA, config.timing_config.ocra_val);
+    ret = timer_8_bit_get_ocra_register_value(DT_ID, &received_ocra_val);
+    ASSERT_EQ(TIMER_ERROR_OK, ret);
+    ASSERT_EQ(0, memcmp(&received_ocra_val, &config.timing_config.ocra_val, sizeof(uint8_t)));
+
 
     // OCRB register value
     ASSERT_EQ(timer_8_bit_registers_stub.OCRB, 0U);
     ret = timer_8_bit_set_ocrb_register_value(DT_ID, config.timing_config.ocrb_val);
     ASSERT_EQ(TIMER_ERROR_OK, ret);
     ASSERT_EQ(timer_8_bit_registers_stub.OCRB, config.timing_config.ocrb_val);
+    ret = timer_8_bit_get_ocrb_register_value(DT_ID, &received_ocrb_val);
+    ASSERT_EQ(TIMER_ERROR_OK, ret);
+    ASSERT_EQ(0, memcmp(&received_ocrb_val, &config.timing_config.ocrb_val, sizeof(uint8_t)));
+
+}
+
+TEST_F(Timer8BitFixture, test_force_compare_flags)
+{
+    auto ret = TIMER_ERROR_OK;
+    timer_x_bit_force_compare_config_t received_config;
+    memcpy(&received_config, &config.force_compare, sizeof(timer_x_bit_force_compare_config_t));
+
+    config.force_compare.force_comp_match_a = true;
+    config.force_compare.force_comp_match_b = true;
+
+    ASSERT_EQ(timer_8_bit_registers_stub.TCCRB, 0);
+    ret = timer_8_bit_set_force_compare_config(DT_ID, &config.force_compare);
+    ASSERT_EQ(TIMER_ERROR_OK, ret);
+    ASSERT_EQ(timer_8_bit_registers_stub.TCCRB & (FOCA_MSK | FOCB_MSK), FOCA_MSK | FOCB_MSK);
+
+    ret = timer_8_bit_get_force_compare_config(DT_ID, &received_config);
+    ASSERT_EQ(TIMER_ERROR_OK, ret);
+    ASSERT_EQ(0, memcmp(&config.force_compare, &received_config, sizeof(timer_x_bit_force_compare_config_t)));
+}
+
+TEST_F(Timer8BitFixture, test_interrupt_enable_flags)
+{
+    auto ret = TIMER_ERROR_OK;
+    timer_8_bit_interrupt_config_t received_interrupt_config;
+    // Copy default state of interrupt config
+    memcpy(&received_interrupt_config, &config.interrupt_config, sizeof(timer_8_bit_interrupt_config_t));
+
+    config.interrupt_config.it_comp_match_a = true;
+    config.interrupt_config.it_comp_match_b = true;
+    config.interrupt_config.it_timer_overflow = true;
+
+    ASSERT_EQ(timer_8_bit_registers_stub.TIMSK, 0);
+    ret = timer_8_bit_set_interrupt_config(DT_ID, &config.interrupt_config);
+    ASSERT_EQ(TIMER_ERROR_OK, ret);
+    ASSERT_EQ(timer_8_bit_registers_stub.TIMSK, OCIEA_MSK | OCIEB_MSK | TOIE_MSK);
+
+    // Compare output to input : shall be exactly matching
+    ret = timer_8_bit_get_interrupt_config(DT_ID, &received_interrupt_config);
+    ASSERT_EQ(TIMER_ERROR_OK, ret);
+    ASSERT_EQ(0, memcmp(&config.interrupt_config, &received_interrupt_config, sizeof(timer_8_bit_interrupt_config_t)));
+
+    // set all interrupt flags to true
+    received_interrupt_config.it_comp_match_a = false;
+    received_interrupt_config.it_comp_match_b = false;
+    received_interrupt_config.it_timer_overflow = false;
+    timer_8_bit_registers_stub.TIFR = 0x07;
+    ret = timer_8_bit_get_interrupt_flags(DT_ID, &received_interrupt_config);
+    ASSERT_EQ(TIMER_ERROR_OK, ret);
+    ASSERT_EQ(0, memcmp(&config.interrupt_config, &received_interrupt_config, sizeof(timer_8_bit_interrupt_config_t)));
+
 }
 
 

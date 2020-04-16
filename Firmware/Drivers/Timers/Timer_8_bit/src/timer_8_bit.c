@@ -435,7 +435,7 @@ timer_error_t timer_8_bit_set_compare_match_A(uint8_t id, const timer_8_bit_comp
         }
         else
         {
-            *(internal_config[id].handle.TCCRA) = (*(internal_config[id].handle.TCCRB) & ~COMA_MSK) | (compA << COMA_BIT);
+            *(internal_config[id].handle.TCCRA) = (*(internal_config[id].handle.TCCRA) & ~COMA_MSK) | (compA << COMA_BIT);
         }
     }
     return ret;
@@ -462,7 +462,7 @@ timer_error_t timer_8_bit_get_compare_match_A(uint8_t id, timer_8_bit_compare_ou
         }
         else
         {
-            *compA = ((*(internal_config[id].handle.TCCRB) & COMA_MSK) >> COMA_BIT);
+            *compA = ((*(internal_config[id].handle.TCCRA) & COMA_MSK) >> COMA_BIT);
         }
     }
 
@@ -486,7 +486,7 @@ timer_error_t timer_8_bit_set_compare_match_B(uint8_t id, const timer_8_bit_comp
         }
         else
         {
-            *(internal_config[id].handle.TCCRA) = (*(internal_config[id].handle.TCCRB) & ~COMB_MSK) | (compB << COMB_BIT);
+            *(internal_config[id].handle.TCCRA) = (*(internal_config[id].handle.TCCRA) & ~COMB_MSK) | (compB << COMB_BIT);
         }
     }
     return ret;
@@ -513,7 +513,7 @@ timer_error_t timer_8_bit_get_compare_match_B(uint8_t id, timer_8_bit_compare_ou
         }
         else
         {
-            *compB = ((*(internal_config[id].handle.TCCRB) & COMB_MSK) >> COMB_BIT);
+            *compB = ((*(internal_config[id].handle.TCCRA) & COMB_MSK) >> COMB_BIT);
         }
     }
 
