@@ -275,7 +275,7 @@ timer_error_t timer_8_bit_get_interrupt_config(uint8_t id, timer_8_bit_interrupt
         else
         {
             /* Output Compare Match A Interrupt Flag */
-            if (0U == *(internal_config[id].handle.TIMSK) & OCIEA_MSK)
+            if (0U == (*(internal_config[id].handle.TIMSK) & OCIEA_MSK))
             {
                 it_config->it_comp_match_a = false;
             }
@@ -285,7 +285,7 @@ timer_error_t timer_8_bit_get_interrupt_config(uint8_t id, timer_8_bit_interrupt
             }
 
             /* Output Compare Match B Interrupt Flag */
-            if (0U == *(internal_config[id].handle.TIMSK) & OCIEB_MSK)
+            if (0U == (*(internal_config[id].handle.TIMSK) & OCIEB_MSK))
             {
                 it_config->it_comp_match_b = false;
             }
@@ -295,7 +295,7 @@ timer_error_t timer_8_bit_get_interrupt_config(uint8_t id, timer_8_bit_interrupt
             }
 
             /* Timer Overflow Interrupt Flag */
-            if (0U == *(internal_config[id].handle.TIMSK) & 1U)
+            if (0U == (*(internal_config[id].handle.TIMSK) & 1U))
             {
                 it_config->it_timer_overflow = false;
             }
