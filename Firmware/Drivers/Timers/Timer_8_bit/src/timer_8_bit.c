@@ -61,14 +61,9 @@ timer_error_t timer_8_bit_set_handle(uint8_t id, timer_8_bit_handle_t * const ha
     return ret;
 }
 
-timer_error_t timer_8_bit_get_default_config(uint8_t id, timer_8_bit_config_t * config)
+timer_error_t timer_8_bit_get_default_config(timer_8_bit_config_t * config)
 {
     timer_error_t ret = TIMER_ERROR_OK;
-    if (id >= TIMER_8_BIT_COUNT)
-    {
-        ret = TIMER_ERROR_UNKNOWN_TIMER;
-    }
-
     if (TIMER_ERROR_OK == ret)
     {
         if (NULL == config)
@@ -726,6 +721,74 @@ timer_error_t timer_8_bit_get_ocrb_register_value(uint8_t id, uint8_t * ocrb)
     return ret;
 }
 
+static void timer_8_bit_write_config(uint8_t id, timer_8_bit_config_t * const config)
+{
+    timer_8_bit_handle_t * handle = &internal_config[id].handle;
+    /* Initialise counter as well */
+    *(handle->TCNT) = config->timing_config.counter;
+
+    /* TCCRA register */
+    *(handle->OCRA) = config->timing_config.ocra_val;
+    *(handle->OCRB) = config->timing_config.ocrb_val;
+    *(handle->TCCRA) = (*(handle->TCCRA) & ~COMA_MSK) | (config->timing_config.comp_match_a << COMA_BIT);
+    *(handle->TCCRA) = (*(handle->TCCRA) & ~COMB_MSK) | (config->timing_config.comp_match_b << COMB_BIT);
+    *(handle->TCCRA) = (*(handle->TCCRA) & ~(WGM0_MSK | WGM1_MSK)) | (config->timing_config.waveform_mode & (WGM0_MSK | WGM1_MSK));
+
+    /* TCCRB register */
+    /* Select bit index 2 of waveform mode (matches datasheet bit mapping) and store it to bit index 3 of TCCRB with one more bitshift */
+    *(handle->TCCRB) = (*(handle->TCCRB) & ~WGM2_MSK) | ((config->timing_config.waveform_mode & (1U << 2U)) << 1U);
+
+    /* Handles force output compare A flags */
+    if (true == config->force_compare.force_comp_match_a)
+    {
+        *(handle->TCCRB) |= (1 << FOCA_BIT) ;
+    }
+    else
+    {
+        *(handle->TCCRB) &=  ~(1 << FOCA_BIT) ;
+    }
+
+    /* Handles force output compare A flags */
+    if (true == config->force_compare.force_comp_match_b)
+    {
+        *(handle->TCCRB) |= (1 << FOCB_BIT) ;
+    }
+    else
+    {
+        *(handle->TCCRB) &=  ~(1 << FOCB_BIT) ;
+    }
+
+    /* NOTE : Do not handle prescaler until timer is manually started using timer_8_bit_start(id)*/
+
+    /* TIMSK register */
+    if (true == config->interrupt_config.it_comp_match_a)
+    {
+        *(handle->TIMSK) |= 1U << OCIEA_BIT;
+    }
+    else
+    {
+        *(handle->TIMSK) &= ~(1U << OCIEA_BIT);
+    }
+
+    if (true == config->interrupt_config.it_comp_match_b)
+    {
+        *(handle->TIMSK) |= 1U << OCIEB_BIT;
+    }
+    else
+    {
+        *(handle->TIMSK) &= ~(1U << OCIEB_BIT);
+    }
+
+    /* TOIE interrupt flag is the first bit, no need to bitshift it */
+    if (true == config->interrupt_config.it_timer_overflow)
+    {
+        *(handle->TIMSK) |= 1U;
+    }
+    else
+    {
+        *(handle->TIMSK) &= ~1U;
+    }
+}
 
 timer_error_t timer_8_bit_init(uint8_t id, timer_8_bit_config_t * const config)
 {
@@ -743,77 +806,47 @@ timer_error_t timer_8_bit_init(uint8_t id, timer_8_bit_config_t * const config)
         }
         else
         {
-            timer_8_bit_handle_t * handle = &internal_config[id].handle;
-
-            /* Initialise counter as well */
-            *(handle->TCNT) = config->timing_config.counter;
-
-            /* TCCRA register */
-            *(handle->OCRA) = config->timing_config.ocra_val;
-            *(handle->OCRB) = config->timing_config.ocrb_val;
-            *(handle->TCCRA) = (*(handle->TCCRA) & ~COMA_MSK) | (config->timing_config.comp_match_a << COMA_BIT);
-            *(handle->TCCRA) = (*(handle->TCCRA) & ~COMB_MSK) | (config->timing_config.comp_match_b << COMB_BIT);
-            *(handle->TCCRA) = (*(handle->TCCRA) & ~(WGM0_MSK | WGM1_MSK)) | (config->timing_config.waveform_mode & (WGM0_MSK | WGM1_MSK));
-
-            /* TCCRB register */
-            /* Select bit index 2 of waveform mode (matches datasheet bit mapping) and store it to bit index 3 of TCCRB with one more bitshift */
-            *(handle->TCCRB) = (*(handle->TCCRB) & ~WGM2_MSK) | ((config->timing_config.waveform_mode & (1U << 2U)) << 1U);
-
-            /* Handles force output compare A flags */
-            if (true == config->force_compare.force_comp_match_a)
-            {
-                *(handle->TCCRB) |= (1 << FOCA_BIT) ;
-            }
-            else
-            {
-                *(handle->TCCRB) &=  ~(1 << FOCA_BIT) ;
-            }
-
-            /* Handles force output compare A flags */
-            if (true == config->force_compare.force_comp_match_b)
-            {
-                *(handle->TCCRB) |= (1 << FOCB_BIT) ;
-            }
-            else
-            {
-                *(handle->TCCRB) &=  ~(1 << FOCB_BIT) ;
-            }
-
-            /* NOTE : Do not handle prescaler until timer is manually started using timer_8_bit_start(id)*/
-
-            /* TIMSK register */
-            if (true == config->interrupt_config.it_comp_match_a)
-            {
-                *(handle->TIMSK) |= 1U << OCIEA_BIT;
-            }
-            else
-            {
-                *(handle->TIMSK) &= ~(1U << OCIEA_BIT);
-            }
-
-            if (true == config->interrupt_config.it_comp_match_b)
-            {
-                *(handle->TIMSK) |= 1U << OCIEB_BIT;
-            }
-            else
-            {
-                *(handle->TIMSK) &= ~(1U << OCIEB_BIT);
-            }
-
-            /* TOIE interrupt flag is the first bit, no need to bitshift it */
-            if (true == config->interrupt_config.it_timer_overflow)
-            {
-                *(handle->TIMSK) |= 1U;
-            }
-            else
-            {
-                *(handle->TIMSK) &= ~1U;
-            }
+            timer_8_bit_write_config(id,config);
+            internal_config[id].is_initialised = true;
         }
     }
 
     return ret;
 }
+
+
+timer_error_t timer_8_bit_deinit(uint8_t id)
+{
+    timer_error_t ret = TIMER_ERROR_OK;
+    if (id >= TIMER_8_BIT_COUNT)
+    {
+        ret = TIMER_ERROR_UNKNOWN_TIMER;
+    }
+
+    if(TIMER_ERROR_OK == ret)
+    {
+        if (true == handle_points_to_null(&internal_config[id].handle))
+        {
+            ret = TIMER_ERROR_NULL_HANDLE;
+        }
+        else
+        {
+            timer_8_bit_config_t config;
+            ret = timer_8_bit_stop(id);
+            if (TIMER_ERROR_OK == ret)
+            {
+                ret = timer_8_bit_get_default_config(&config);
+            }
+            if (TIMER_ERROR_OK == ret)
+            {
+                timer_8_bit_write_config(id, &config);
+                internal_config[id].is_initialised = false;
+            }
+        }
+    }
+    return ret;
+}
+
 
 timer_error_t timer_8_bit_start(uint8_t id)
 {

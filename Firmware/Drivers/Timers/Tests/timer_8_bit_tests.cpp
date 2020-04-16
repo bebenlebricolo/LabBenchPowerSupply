@@ -14,7 +14,7 @@ protected:
     void SetUp() override
     {
         timer_8_bit_registers_stub_erase();
-        (void) timer_8_bit_get_default_config(DT_ID , &config);
+        (void) timer_8_bit_get_default_config(&config);
         timer_8_bit_registers_stub_init_handle(&config.handle);
         (void) timer_8_bit_set_handle(DT_ID, &config.handle);
     }
@@ -26,7 +26,7 @@ protected:
 TEST(timer_8_bit_driver_tests, guard_null_handle)
 {
     timer_8_bit_config_t config;
-    timer_error_t ret = timer_8_bit_get_default_config(DT_ID , &config);
+    timer_error_t ret = timer_8_bit_get_default_config(&config);
     ASSERT_EQ(TIMER_ERROR_OK, ret);
 
     /* We should have a null handle at the moment */
@@ -101,7 +101,7 @@ TEST(timer_8_bit_driver_tests, guard_null_pointer)
 {
     timer_8_bit_config_t * nullptr_config = NULL;
 
-    timer_error_t ret = timer_8_bit_get_default_config(DT_ID , nullptr_config);
+    timer_error_t ret = timer_8_bit_get_default_config(nullptr_config);
     ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
 
     /* Test compare match mode A get/set api */
@@ -149,6 +149,61 @@ TEST(timer_8_bit_driver_tests, guard_null_pointer)
     timer_8_bit_waveform_generation_t * nullptr_waveform_mode = NULL;
     ret = timer_8_bit_get_waveform_generation(DT_ID, nullptr_waveform_mode);
     ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
+}
+
+TEST(timer_8_bit_driver_tests, guard_wrong_id)
+{
+    timer_8_bit_config_t * nullptr_config = NULL;
+    uint8_t targeted_id = DT_ID + 1;
+
+    timer_error_t ret = timer_8_bit_get_default_config(nullptr_config);
+    ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
+
+    /* Test compare match mode A get/set api */
+    timer_8_bit_compare_output_mode_t * nullptr_compare_output_mode = NULL;
+    ret = timer_8_bit_get_compare_match_A(targeted_id, nullptr_compare_output_mode);
+    ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
+    ret = timer_8_bit_get_compare_match_B(targeted_id, nullptr_compare_output_mode);
+    ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
+
+    timer_8_bit_handle_t * nullptr_handle = NULL;
+    /* Test handle setting function */
+    ret = timer_8_bit_set_handle(targeted_id, nullptr_handle);
+    ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
+
+    /* Test interrupt config get/set api */
+    timer_8_bit_interrupt_config_t * nullptr_interrupt_config = NULL;
+    ret = timer_8_bit_set_interrupt_config(targeted_id, nullptr_interrupt_config);
+    ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
+    ret = timer_8_bit_get_interrupt_config(targeted_id, nullptr_interrupt_config);
+    ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
+
+    /* Test OCRA get/set api */
+    uint8_t * nullptr_ocrx_val = NULL;
+    ret = timer_8_bit_get_ocra_register_value(targeted_id, nullptr_ocrx_val);
+    ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
+    /* Test OCRB get/set api */
+    ret = timer_8_bit_get_ocrb_register_value(targeted_id, nullptr_ocrx_val);
+    ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
+    /* Test counter get/set api */
+    ret = timer_8_bit_get_counter_value(targeted_id, nullptr_ocrx_val);
+    ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
+
+    /* Test force compare flags get/set api */
+    timer_x_bit_force_compare_config_t * nullptr_force_compare = NULL;
+    ret = timer_8_bit_set_force_compare_config(targeted_id, nullptr_force_compare);
+    ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
+    ret = timer_8_bit_get_force_compare_config(targeted_id, nullptr_force_compare);
+    ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
+
+    /* Test prescaler get/set api */
+    timer_x_bit_prescaler_selection_t * nullptr_prescaler = NULL;
+    ret = timer_8_bit_get_prescaler(targeted_id, nullptr_prescaler);
+    ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
+
+    timer_8_bit_waveform_generation_t * nullptr_waveform_mode = NULL;
+    ret = timer_8_bit_get_waveform_generation(targeted_id, nullptr_waveform_mode);
+    ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
 }
 
 TEST_F(Timer8BitFixture, test_handle_is_set_correctly)

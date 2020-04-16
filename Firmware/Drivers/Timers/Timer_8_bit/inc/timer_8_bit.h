@@ -52,14 +52,13 @@ typedef struct
 
 /**
  * @brief returns a default configuration for 8 bit timer
- * @param[in]   id      : targeted timer id (used to fetch internal configuration based on ids)
  * @param[in]   config  : container object which will receive internal device configuration
  * @return
  *      TIMER_ERROR_OK             :   operation succeeded
  *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
  *      TIMER_ERROR_NULL_POINTER   :   given config parameter points to NULL
 */
-timer_error_t timer_8_bit_get_default_config(uint8_t id, timer_8_bit_config_t * config);
+timer_error_t timer_8_bit_get_default_config(timer_8_bit_config_t * config);
 
 /**
  * @brief sets the handle of timer_8_bit driver
@@ -217,13 +216,6 @@ timer_error_t timer_8_bit_set_compare_match_B(uint8_t id, timer_8_bit_compare_ou
 */
 timer_error_t timer_8_bit_get_compare_match_B(uint8_t id, timer_8_bit_compare_output_mode_t * compB);
 
-
-
-
-
-
-
-
 /* ################################ Waveform & timing configuration ############################### */
 /**
  * @brief sets the targeted timer waveform generation mode
@@ -320,14 +312,35 @@ timer_error_t timer_8_bit_get_counter_value(uint8_t id, uint8_t * ticks);
    ############################################################################################################## */
 
 /**
+ * @brief simply checks whether selected timer is initialised or not
+ * @param[in]  id : selected timer registered id
+ * @return
+ *    true  :  timer is initialised
+ *    false :  timer is not initialised
+*/
+bool timer_8_bit_is_initialised(uint8_t id);
+
+/**
  * @brief initialises targeted timer with the given configuration. Timer does not start yet, but will be fully configured.
  * @param[in]   id     : targeted timer id (used to fetch internal configuration based on ids)
+ * @param[in]   config : container holding timer configuration to be written into its registers
  * @return
  *      TIMER_ERROR_OK             :   operation succeeded
  *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
  *      TIMER_ERROR_NULL_HANDLE    :   targeted timer's handle is still NULL (unitialised). Operation failed
 */
 timer_error_t timer_8_bit_init(uint8_t id, timer_8_bit_config_t * const config);
+
+/**
+ * @brief stops selected timer and reset internal configuration back to default
+ * @param[in]   id     : targeted timer id (used to fetch internal configuration based on ids)
+ * @return
+ *      TIMER_ERROR_OK             :   operation succeeded
+ *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
+ *      TIMER_ERROR_NULL_HANDLE    :   targeted timer's handle is still NULL (unitialised). Operation failed
+*/
+timer_error_t timer_8_bit_deinit(uint8_t id);
+
 
 /**
  * @brief starts selected timer based on its internal configuration. Basically, this function sets the adequate prescaler to internal registers to start it.
