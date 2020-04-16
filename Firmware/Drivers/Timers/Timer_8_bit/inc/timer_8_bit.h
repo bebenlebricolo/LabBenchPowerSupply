@@ -72,8 +72,10 @@ timer_error_t timer_8_bit_get_default_config(uint8_t id, timer_8_bit_config_t * 
 */
 timer_error_t timer_8_bit_set_handle(uint8_t id, timer_8_bit_handle_t * const handle);
 
-/* ################################ Force compare flags configuration ############################### */
 
+
+
+/* ################################ Force compare flags configuration ############################### */
 /**
  * @brief sets the given force compare configuration object to targeted timer
  * @param[in]   id                  : targeted timer id (used to fetch internal configuration based on ids)
@@ -95,9 +97,6 @@ timer_error_t timer_8_bit_set_force_compare_config(uint8_t id, timer_x_bit_force
  *      TIMER_ERROR_NULL_POINTER   :   given it_config parameter points to NULL
 */
 timer_error_t timer_8_bit_get_force_compare_config(uint8_t id, timer_x_bit_force_compare_config_t * force_comp_config);
-
-
-
 
 
 
@@ -225,7 +224,7 @@ timer_error_t timer_8_bit_get_compare_match_B(uint8_t id, timer_8_bit_compare_ou
 
 
 
-/* ################################ Waveform configuration ############################### */
+/* ################################ Waveform & timing configuration ############################### */
 /**
  * @brief sets the targeted timer waveform generation mode
  * @param[in]   id       : targeted timer id (used to fetch internal configuration based on ids)
@@ -246,34 +245,6 @@ timer_error_t timer_8_bit_set_waveform_generation(uint8_t id, const timer_8_bit_
  *      TIMER_ERROR_NULL_POINTER   :   given waveform parameter points to NULL
 */
 timer_error_t timer_8_bit_get_waveform_generation(uint8_t id, timer_8_bit_waveform_generation_t * waveform);
-
-
-
-
-
-
-
-/* ################################ Counter register configuration ############################### */
-
-/**
- * @brief sets the targeted timer internal main counter
- * @param[in]   id    : targeted timer id (used to fetch internal configuration based on ids)
- * @param[in]   ticks : actual counter value to be set
- * @return
- *      TIMER_ERROR_OK             :   operation succeeded
- *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
-*/
-timer_error_t timer_8_bit_set_counter_value(uint8_t id, const uint8_t ticks);
-
-/**
- * @brief gets the targeted timer internal main counter from internal registers
- * @param[in]   id    : targeted timer id (used to fetch internal configuration based on ids)
- * @param[in]   ticks : actual counter value from internal registers
- * @return
- *      TIMER_ERROR_OK             :   operation succeeded
- *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
-*/
-timer_error_t timer_8_bit_get_counter_value(uint8_t id, uint8_t * ticks);
 
 /**
  * @brief sets the targeted timer Output Compare A register value
@@ -314,6 +285,33 @@ timer_error_t timer_8_bit_set_ocrb_register_value(uint8_t id, uint8_t ocrb);
  *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
 */
 timer_error_t timer_8_bit_get_ocrb_register_value(uint8_t id, uint8_t * ocrb);
+
+
+
+
+
+/* ################################ Counter register configuration ############################### */
+
+/**
+ * @brief sets the targeted timer internal main counter
+ * @param[in]   id    : targeted timer id (used to fetch internal configuration based on ids)
+ * @param[in]   ticks : actual counter value to be set
+ * @return
+ *      TIMER_ERROR_OK             :   operation succeeded
+ *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
+*/
+timer_error_t timer_8_bit_set_counter_value(uint8_t id, const uint8_t ticks);
+
+/**
+ * @brief gets the targeted timer internal main counter from internal registers
+ * @param[in]   id    : targeted timer id (used to fetch internal configuration based on ids)
+ * @param[in]   ticks : actual counter value from internal registers
+ * @return
+ *      TIMER_ERROR_OK             :   operation succeeded
+ *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
+*/
+timer_error_t timer_8_bit_get_counter_value(uint8_t id, uint8_t * ticks);
+
 
 
 

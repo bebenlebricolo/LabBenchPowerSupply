@@ -218,10 +218,60 @@ TEST_F(Timer8BitFixture, test_handle_is_set_correctly)
 }
 
 
-TEST_F(Timer8BitFixture, test_timing_configuration)
+TEST_F(Timer8BitFixture, test_timing_configuration_unitary_functions)
 {
+    auto ret = TIMER_ERROR_OK;
+    // Random configuration, with bits set everywhere
+    config.timing_config.comp_match_a = TIMER8BIT_CMOD_TOGGLE_OCnX;
+    config.timing_config.comp_match_b = TIMER8BIT_CMOD_SET_OCnX;
+    config.timing_config.ocra_val = 33U;
+    config.timing_config.ocrb_val = 156U;
+    config.timing_config.prescaler = TIMERxBIT_CLK_PRESCALER_64;
+    config.timing_config.waveform_mode = TIMER8BIT_WG_PWM_FAST_FULL_RANGE;
 
+    // Compare match A mode
+    ASSERT_EQ(timer_8_bit_registers_stub.TCCRA & COMA_MSK, 0U);
+    ret = timer_8_bit_set_compare_match_A(DT_ID, config.timing_config.comp_match_a);
+    ASSERT_EQ(TIMER_ERROR_OK, ret);
+    ASSERT_EQ(timer_8_bit_registers_stub.TCCRA & COMA_MSK, config.timing_config.comp_match_a << COMA_BIT);
 
+    // Compare match B mode
+    ASSERT_EQ(timer_8_bit_registers_stub.TCCRA & COMB_MSK, 0U);
+    ret = timer_8_bit_set_compare_match_B(DT_ID, config.timing_config.comp_match_b);
+    ASSERT_EQ(TIMER_ERROR_OK, ret);
+    ASSERT_EQ(timer_8_bit_registers_stub.TCCRA & COMB_MSK, config.timing_config.comp_match_b << COMB_BIT);
+
+    // Waveform modes
+    ASSERT_EQ(timer_8_bit_registers_stub.TCCRA & (WGM0_MSK | WGM1_MSK), 0U);
+    ASSERT_EQ(timer_8_bit_registers_stub.TCCRB & (WGM2_MSK), 0U);
+    ret = timer_8_bit_set_waveform_generation(DT_ID, config.timing_config.waveform_mode);
+    ASSERT_EQ(TIMER_ERROR_OK, ret);
+    ASSERT_EQ(timer_8_bit_registers_stub.TCCRA & (WGM0_MSK | WGM1_MSK), config.timing_config.waveform_mode);
+    ASSERT_EQ(timer_8_bit_registers_stub.TCCRB & WGM2_MSK, (config.timing_config.waveform_mode & (1 << 2U)) << 1U);
+
+    // Prescaler settings
+    ASSERT_EQ(timer_8_bit_registers_stub.TCCRB & CS_MSK, 0U);
+    ret = timer_8_bit_set_prescaler(DT_ID, config.timing_config.prescaler);
+    ASSERT_EQ(TIMER_ERROR_OK, ret);
+    ASSERT_EQ(timer_8_bit_registers_stub.TCCRB & CS_MSK, config.timing_config.prescaler);
+
+    // Timer counter main register value
+    ASSERT_EQ(timer_8_bit_registers_stub.TCNT, 0U);
+    ret = timer_8_bit_set_counter_value(DT_ID, config.timing_config.counter);
+    ASSERT_EQ(TIMER_ERROR_OK, ret);
+    ASSERT_EQ(timer_8_bit_registers_stub.TCNT, config.timing_config.counter);
+
+    // OCRA register value
+    ASSERT_EQ(timer_8_bit_registers_stub.OCRA, 0U);
+    ret = timer_8_bit_set_ocra_register_value(DT_ID, config.timing_config.ocra_val);
+    ASSERT_EQ(TIMER_ERROR_OK, ret);
+    ASSERT_EQ(timer_8_bit_registers_stub.OCRA, config.timing_config.ocra_val);
+
+    // OCRB register value
+    ASSERT_EQ(timer_8_bit_registers_stub.OCRB, 0U);
+    ret = timer_8_bit_set_ocrb_register_value(DT_ID, config.timing_config.ocrb_val);
+    ASSERT_EQ(TIMER_ERROR_OK, ret);
+    ASSERT_EQ(timer_8_bit_registers_stub.OCRB, config.timing_config.ocrb_val);
 }
 
 
