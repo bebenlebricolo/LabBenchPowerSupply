@@ -6,7 +6,7 @@
 /* Default timer id */
 #define DT_ID 0
 
-/*class Timer8BitFixture : public ::testing::Test
+class Timer8BitFixture : public ::testing::Test
 {
 public:
     timer_8_bit_config_t config;
@@ -28,7 +28,7 @@ protected:
     void TearDown() override
     {
     }
-};*/
+};
 
 TEST(timer_8_bit_driver_tests, guard_null_handle)
 {
@@ -103,6 +103,61 @@ TEST(timer_8_bit_driver_tests, guard_null_handle)
     ret = timer_8_bit_get_waveform_generation(DT_ID, &config.timing_config.waveform_mode);
     ASSERT_EQ(TIMER_ERROR_NULL_HANDLE, ret);
 }
+
+TEST(timer_8_bit_driver_tests, guard_null_pointer)
+{
+    timer_8_bit_config_t * nullptr_config = NULL;
+
+    timer_error_t ret = timer_8_bit_get_default_config(DT_ID , nullptr_config);
+    ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
+
+    /* Test compare match mode A get/set api */
+    timer_8_bit_compare_output_mode_t * nullptr_compare_output_mode = NULL;
+    ret = timer_8_bit_get_compare_match_A(DT_ID, nullptr_compare_output_mode);
+    ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
+    ret = timer_8_bit_get_compare_match_B(DT_ID, nullptr_compare_output_mode);
+    ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
+
+    timer_8_bit_handle_t * nullptr_handle = NULL;
+    /* Test handle setting function */
+    ret = timer_8_bit_set_handle(DT_ID, nullptr_handle);
+    ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
+
+    /* Test interrupt config get/set api */
+    timer_8_bit_interrupt_config_t * nullptr_interrupt_config = NULL;
+    ret = timer_8_bit_set_interrupt_config(DT_ID, nullptr_interrupt_config);
+    ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
+    ret = timer_8_bit_get_interrupt_config(DT_ID, nullptr_interrupt_config);
+    ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
+
+    /* Test OCRA get/set api */
+    uint8_t * nullptr_ocrx_val = NULL;
+    ret = timer_8_bit_get_ocra_register_value(DT_ID, nullptr_ocrx_val);
+    ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
+    /* Test OCRB get/set api */
+    ret = timer_8_bit_get_ocrb_register_value(DT_ID, nullptr_ocrx_val);
+    ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
+    /* Test counter get/set api */
+    ret = timer_8_bit_get_counter_value(DT_ID, nullptr_ocrx_val);
+    ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
+
+    /* Test force compare flags get/set api */
+    timer_x_bit_force_compare_config_t * nullptr_force_compare = NULL;
+    ret = timer_8_bit_set_force_compare_config(DT_ID, nullptr_force_compare);
+    ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
+    ret = timer_8_bit_get_force_compare_config(DT_ID, nullptr_force_compare);
+    ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
+
+    /* Test prescaler get/set api */
+    timer_x_bit_prescaler_selection_t * nullptr_prescaler = NULL;
+    ret = timer_8_bit_get_prescaler(DT_ID, nullptr_prescaler);
+    ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
+
+    timer_8_bit_waveform_generation_t * nullptr_waveform_mode = NULL;
+    ret = timer_8_bit_get_waveform_generation(DT_ID, nullptr_waveform_mode);
+    ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
+}
+
 
 int main(int argc, char **argv)
 {
