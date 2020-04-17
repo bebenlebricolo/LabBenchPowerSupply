@@ -70,10 +70,9 @@ timer_error_t timer_8_bit_async_set_handle(uint8_t id, timer_8_bit_async_handle_
         return ret;
     }
 
-    ret = check_handle(handle);
-    if (TIMER_ERROR_OK != ret)
+    if (NULL == handle)
     {
-        return ret;
+        return TIMER_ERROR_NULL_POINTER;
     }
 
     memcpy(&internal_config[id].handle, handle, sizeof(timer_8_bit_async_handle_t));
