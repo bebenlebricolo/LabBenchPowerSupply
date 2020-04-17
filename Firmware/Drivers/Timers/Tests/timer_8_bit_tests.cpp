@@ -421,9 +421,40 @@ TEST_F(Timer8BitFixture, test_interrupt_enable_flags)
     ret = timer_8_bit_get_interrupt_flags(DT_ID, &received_interrupt_config);
     ASSERT_EQ(TIMER_ERROR_OK, ret);
     ASSERT_EQ(0, memcmp(&config.interrupt_config, &received_interrupt_config, sizeof(timer_8_bit_interrupt_config_t)));
-
 }
 
+TEST_F(Timer8BitFixture, test_initialisation_deinitialisation)
+{
+    timer_error_t ret = TIMER_ERROR_OK;
+
+    // We should not be able to start/stop the timer as it hasn't been configured yet
+    ret = timer_8_bit_start(DT_ID);
+    ASSERT_EQ(ret, TIMER_ERROR_NOT_INITIALISED);
+
+    ret = timer_8_bit_stop(DT_ID);
+    ASSERT_EQ(ret, TIMER_ERROR_NOT_INITIALISED);
+
+    ret = timer_8_bit_init(DT_ID, &config);
+    ASSERT_EQ(ret, TIMER_ERROR_OK);
+
+    // Now we should be able to start/stop the timer
+    ret = timer_8_bit_start(DT_ID);
+    ASSERT_EQ(ret, TIMER_ERROR_OK);
+
+    ret = timer_8_bit_stop(DT_ID);
+    ASSERT_EQ(ret, TIMER_ERROR_OK);
+
+    ret = timer_8_bit_deinit(DT_ID);
+    ASSERT_EQ(ret, TIMER_ERROR_OK);
+
+    // We should not be able to start/stop the timer as it hasn't been configured yet
+    ret = timer_8_bit_start(DT_ID);
+    ASSERT_EQ(ret, TIMER_ERROR_NOT_INITIALISED);
+
+    ret = timer_8_bit_stop(DT_ID);
+    ASSERT_EQ(ret, TIMER_ERROR_NOT_INITIALISED);
+
+}
 
 int main(int argc, char **argv)
 {
