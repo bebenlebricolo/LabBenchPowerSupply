@@ -3,6 +3,68 @@
 
 #include "timer_generic.h"
 
+/* TCCRA register bip mapping */
+#define WGM0_BIT    0
+#define WGM1_BIT    1
+#define COMB0_BIT   4
+#define COMB1_BIT   5
+#define COMA0_BIT   6
+#define COMA1_BIT   7
+
+/* TCCRA register masks */
+#define WGM0_MSK    0x01
+#define WGM1_MSK    0x02
+#define COMB_MSK    0x30
+#define COMA_MSK    0xC0
+
+/* TCCRB register bip mapping */
+#define CS0_BIT     0
+#define CS1_BIT     1
+#define CS2_BIT     2
+#define WGM2_BIT    3
+#define WGM3_BIT    4
+#define ICES_BIT    6
+#define INC_BIT     7
+
+/* TCCRB register masks */
+#define CS_MSK      0x07
+#define WGM2_MSK    0x08
+#define WGM3_MSK    0x10
+#define ICES_MSK    0x40
+#define INC_MSK     0x80
+
+/* TCCRC register bit mapping */
+#define FOCB_BIT    6
+#define FOCA_BIT    7
+
+/* TCCRC register masks */
+#define FOCB_MSK    0x40
+#define FOCA_MSK    0x80
+
+/* TIMSK register bit mapping */
+#define TOIE_BIT    0
+#define OCIEA_BIT   1
+#define OCIEB_BIT   2
+#define ICIE_BIT    5
+
+/* TIMSK register masks */
+#define TOIE_MSK    0x01
+#define OCIEA_MSK   0x02
+#define OCIEB_MSK   0x04
+#define ICIE_MSK    0x20
+
+/* TIFR register bit mapping */
+#define TOV_BIT     0
+#define OCFA_BIT    1
+#define OCFB_BIT    2
+#define ICF_BIT     5
+
+/* TIFR register masks */
+#define TOV_MSK     0x01
+#define OCFA_MSK    0x02
+#define OCFB_MSK    0x04
+#define ICF_MSK     0x20
+
 /* #########################################################################################
    ############################## 16 bits regular timers ###################################
    ######################################################################################### */
@@ -56,6 +118,9 @@ typedef struct
     timer_16_bit_compare_output_mode_t comp_match_b;  /**< Equivalent to TCCRnA COMnB0 and COMnB1 bits                            */
     timer_16_bit_waveform_generation_t waveform_mode; /**< Selects the right waveform mode and dispatch it to the right registers */
     timer_x_bit_prescaler_selection_t  prescaler;     /**< Selects the right prescaler to be fed in the timer                     */
+    uint16_t                           counter;       /**< Gives the starting counter value when configured                       */
+    uint16_t                           ocra_val;      /**< Selects the OCRA value to be used for timer events triggering          */
+    uint16_t                           ocrb_val;      /**< Selects the OCRB value to be used for timer events triggering          */
 } timer_16_bit_timing_config_t;
 
 /**
@@ -82,7 +147,7 @@ typedef struct
 typedef struct
 {
     bool it_input_capture;  /**< Enables (or not) the TOEIn flag (interrupt on timer overflow, or not)   */
-    bool it_comp_match_a,;  /**< Enables (or not) the OCIEnA flag (interrupt on compare match A, or not) */
+    bool it_comp_match_a;  /**< Enables (or not) the OCIEnA flag (interrupt on compare match A, or not) */
     bool it_comp_match_b;   /**< Enables (or not) the OCIEnB flag (interrupt on compare match B, or not) */
     bool it_timer_overflow; /**< Enables (or not) the TOEIn flag (interrupt on timer overflow, or not)   */
 } timer_16_bit_interrupt_config_t;
