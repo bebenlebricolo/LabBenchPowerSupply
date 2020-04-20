@@ -6,26 +6,24 @@ extern "C" {
 #endif
 
 #include "adc.h"
-#include "generic_peripheral.h"
 
 /**
  * @brief mimics adc internal registers
- * Note: it is almost 100% the same structure as adc_handle_t, but contains actual values instead of 
+ * Note: it is almost 100% the same structure as adc_handle_t, but contains actual values instead of
  * pointers
  * Note 2 : this structure does not represent by itself the actual behavior of ADC's registers, such as
- * read-only registers, reserved registers, reset register by writing a 1 to it, etc.. 
+ * read-only registers, reserved registers, reset register by writing a 1 to it, etc..
  * This might be handled by a dedicated module which continuously checks against a reference to detect changes
  * and react accordingly
 */
 typedef struct
 {
-    peripheral_addr_t adc_addr;   
-    peripheral_reg_t  mux_reg;       
-    peripheral_reg_t  adcsra_reg;    
-    peripheral_reg_t  adcsrb_reg;    
+    volatile uint8_t mux_reg;
+    volatile uint8_t adcsra_reg;
+    volatile uint8_t  adcsrb_reg;
     struct {
-        peripheral_reg_t adclow_reg; 
-        peripheral_reg_t adchigh_reg; 
+        volatile uint8_t adclow_reg;
+        volatile uint8_t adchigh_reg;
     } readings;
 } adc_register_stub_t;
 

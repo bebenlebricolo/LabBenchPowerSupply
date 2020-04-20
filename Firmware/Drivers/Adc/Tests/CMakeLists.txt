@@ -12,7 +12,6 @@ add_library(adc_stack STATIC
 target_include_directories(adc_stack PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../inc
     ${CMAKE_CURRENT_SOURCE_DIR}/../private_inc
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Peripheral/inc
     ${AVR_INCLUDES}
 )
 
@@ -27,7 +26,6 @@ add_library(adc_driver STATIC
 target_include_directories(adc_driver PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../inc
     ${CMAKE_CURRENT_SOURCE_DIR}/../private_inc
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Peripheral/inc
     ${AVR_INCLUDES}
 )
 
@@ -51,7 +49,6 @@ target_compile_definitions(adc_stack_tests PRIVATE
 target_include_directories(adc_stack_tests PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../inc
     ${CMAKE_CURRENT_SOURCE_DIR}/../private_inc
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Peripheral/inc
     ${CMAKE_CURRENT_SOURCE_DIR}/Stub
     ${GTEST_INCLUDE_DIRS}
 )
@@ -76,7 +73,6 @@ target_compile_definitions(adc_driver_tests PRIVATE
 target_include_directories(adc_driver_tests PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../inc
     ${CMAKE_CURRENT_SOURCE_DIR}/Stub
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Peripheral/inc
     ${GTEST_INCLUDE_DIRS}
 )
 target_link_libraries(adc_driver_tests adc_driver ${GTEST_LIBRARIES} pthread)

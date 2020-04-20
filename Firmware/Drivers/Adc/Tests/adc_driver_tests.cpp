@@ -48,35 +48,35 @@ TEST(adc_driver_tests, guard_null)
     adc_register_stub_erase(&adc_register_stub);
     {
         const auto& result = adc_base_init(config_default);
-        ASSERT_EQ(PERIPHERAL_ERROR_NULL_POINTER, result);
+        ASSERT_EQ(ADC_ERROR_NULL_POINTER, result);
     }
     {
         const auto& result = adc_config_hal_copy(config_default, config_default);
-        ASSERT_EQ(PERIPHERAL_ERROR_NULL_POINTER, result);
+        ASSERT_EQ(ADC_ERROR_NULL_POINTER, result);
     }
     {
         const auto& result = adc_config_hal_reset(config_default);
-        ASSERT_EQ(PERIPHERAL_ERROR_NULL_POINTER, result);
+        ASSERT_EQ(ADC_ERROR_NULL_POINTER, result);
     }
     {
         adc_handle_t * null_handle = NULL;
         const auto& result = adc_handle_copy(null_handle, null_handle);
-        ASSERT_EQ(PERIPHERAL_ERROR_NULL_POINTER, result);
+        ASSERT_EQ(ADC_ERROR_NULL_POINTER, result);
     }
     {
         adc_handle_t * null_handle = NULL;
         const auto& result = adc_handle_reset(null_handle);
-        ASSERT_EQ(PERIPHERAL_ERROR_NULL_POINTER, result);
+        ASSERT_EQ(ADC_ERROR_NULL_POINTER, result);
     }
     {
         adc_result_t * null_result = NULL;
         const auto& result = adc_read_raw(ADC_MUX_GND, null_result);
-        ASSERT_EQ(PERIPHERAL_ERROR_NULL_POINTER, result);
+        ASSERT_EQ(ADC_ERROR_NULL_POINTER, result);
     }
     {
         adc_millivolts_t * null_result = NULL;
         const auto& result = adc_read_millivolt(ADC_MUX_GND, null_result);
-        ASSERT_EQ(PERIPHERAL_ERROR_NULL_POINTER, result);
+        ASSERT_EQ(ADC_ERROR_NULL_POINTER, result);
     }
 }
 
@@ -85,11 +85,11 @@ TEST_F(AdcTestFixture, check_config_copy_ok)
     adc_config_hal_t config_copy;
     {
         const auto& ret2 = adc_handle_reset(&config_copy.handle);
-        ASSERT_EQ(PERIPHERAL_ERROR_OK, ret2);
+        ASSERT_EQ(ADC_ERROR_OK, ret2);
     }
     adc_register_stub_erase(&adc_register_stub);
     const auto& copy_result = adc_config_hal_copy(&config_copy, &config);
-    ASSERT_EQ(PERIPHERAL_ERROR_OK, copy_result);
+    ASSERT_EQ(ADC_ERROR_OK, copy_result);
     ASSERT_EQ(0,memcmp(&config_copy, &config, sizeof(adc_config_hal_t)));
 }
 
@@ -97,7 +97,7 @@ TEST_F(AdcTestFixture, adc_base_init_check)
 {
     /* test initialisation of registers */
     const auto& init_result = adc_base_init(&config);
-    ASSERT_EQ(init_result, PERIPHERAL_ERROR_OK);
+    ASSERT_EQ(init_result, ADC_ERROR_OK);
 
     // No channels should be set at this moment
     ASSERT_EQ(0, adc_register_stub.mux_reg & MUX_MSK);
@@ -110,14 +110,14 @@ TEST_F(AdcTestFixture, adc_base_init_check)
 TEST_F(AdcTestFixture, adc_base_init_check_2)
 {
     const auto& unitialised_result = adc_process();
-    ASSERT_EQ(unitialised_result, PERIPHERAL_STATE_NOT_INITIALISED);
+    ASSERT_EQ(unitialised_result, ADC_STATE_NOT_INITIALISED);
     /* test initialisation of registers */
     const auto& init_result = adc_base_init(&config);
-    ASSERT_EQ(init_result, PERIPHERAL_ERROR_OK);
+    ASSERT_EQ(init_result, ADC_ERROR_OK);
 
     // Shall be ok now
     const auto& process_result = adc_process();
-    ASSERT_EQ(process_result, PERIPHERAL_STATE_READY);
+    ASSERT_EQ(process_result, ADC_STATE_READY);
 }
 
 TEST_F(AdcTestFixture, adc_process_test)
@@ -131,25 +131,25 @@ TEST_F(AdcTestFixture, adc_process_test)
                                          412, 23 , 18};
     /* test initialisation of registers */
     const auto& init_result = adc_base_init(&config);
-    ASSERT_EQ(init_result, PERIPHERAL_ERROR_OK);
+    ASSERT_EQ(init_result, ADC_ERROR_OK);
 
     /* Will fail because no channels has been registered yet */
     {
         adc_result_t adcresult;
         const auto& result = adc_read_raw(ADC_MUX_ADC0, &adcresult);
-        ASSERT_EQ(result, PERIPHERAL_ERROR_FAILED);
+        ASSERT_EQ(result, ADC_ERROR_CHANNEL_NOT_FOUND);
     }
 
     // Register 3 channels
-    ASSERT_EQ(adc_register_channel(ADC_MUX_ADC0), PERIPHERAL_ERROR_OK);
-    ASSERT_EQ(adc_register_channel(ADC_MUX_ADC1), PERIPHERAL_ERROR_OK);
-    ASSERT_EQ(adc_register_channel(ADC_MUX_ADC2), PERIPHERAL_ERROR_OK);
+    ASSERT_EQ(adc_register_channel(ADC_MUX_ADC0), ADC_ERROR_OK);
+    ASSERT_EQ(adc_register_channel(ADC_MUX_ADC1), ADC_ERROR_OK);
+    ASSERT_EQ(adc_register_channel(ADC_MUX_ADC2), ADC_ERROR_OK);
 
     /* This read shall not fail */
     {
         adc_result_t adcresult;
         const auto& result = adc_read_raw(ADC_MUX_ADC0, &adcresult);
-        ASSERT_EQ(result, PERIPHERAL_ERROR_OK);
+        ASSERT_EQ(result, ADC_ERROR_OK);
         ASSERT_EQ(0, adcresult);
     }
 
@@ -165,11 +165,11 @@ TEST_F(AdcTestFixture, adc_process_test)
 
         // Shall be ok now
         const auto& process_result = adc_process();
-        EXPECT_EQ(process_result, PERIPHERAL_STATE_READY);
+        EXPECT_EQ(process_result, ADC_STATE_READY);
 
         adc_result_t result;
         const auto& read_result = adc_read_raw(mux_lookup_table[i % channels], &result);
-        EXPECT_EQ(read_result, PERIPHERAL_ERROR_OK);
+        EXPECT_EQ(read_result, ADC_ERROR_OK);
         EXPECT_EQ(values[i], result);
     }
 }
@@ -186,25 +186,25 @@ TEST_F(AdcTestFixture, adc_isr_test)
     /* test initialisation of registers */
     config.using_interrupt = true;
     const auto& init_result = adc_base_init(&config);
-    ASSERT_EQ(init_result, PERIPHERAL_ERROR_OK);
+    ASSERT_EQ(init_result, ADC_ERROR_OK);
 
     /* Will fail because no channels has been registered yet */
     {
         adc_result_t adcresult;
         const auto& result = adc_read_raw(ADC_MUX_ADC0, &adcresult);
-        ASSERT_EQ(result, PERIPHERAL_ERROR_FAILED);
+        ASSERT_EQ(result, ADC_ERROR_CHANNEL_NOT_FOUND);
     }
 
     // Register 3 channels
-    ASSERT_EQ(adc_register_channel(ADC_MUX_ADC0), PERIPHERAL_ERROR_OK);
-    ASSERT_EQ(adc_register_channel(ADC_MUX_ADC1), PERIPHERAL_ERROR_OK);
-    ASSERT_EQ(adc_register_channel(ADC_MUX_ADC2), PERIPHERAL_ERROR_OK);
+    ASSERT_EQ(adc_register_channel(ADC_MUX_ADC0), ADC_ERROR_OK);
+    ASSERT_EQ(adc_register_channel(ADC_MUX_ADC1), ADC_ERROR_OK);
+    ASSERT_EQ(adc_register_channel(ADC_MUX_ADC2), ADC_ERROR_OK);
 
     /* This read shall not fail */
     {
         adc_result_t adcresult;
         const auto& result = adc_read_raw(ADC_MUX_ADC0, &adcresult);
-        ASSERT_EQ(result, PERIPHERAL_ERROR_OK);
+        ASSERT_EQ(result, ADC_ERROR_OK);
         ASSERT_EQ(0, adcresult);
     }
 
@@ -221,7 +221,7 @@ TEST_F(AdcTestFixture, adc_isr_test)
 
         adc_result_t result;
         const auto& read_result = adc_read_raw(mux_lookup_table[i % channels], &result);
-        EXPECT_EQ(read_result, PERIPHERAL_ERROR_OK);
+        EXPECT_EQ(read_result, ADC_ERROR_OK);
         EXPECT_EQ(values[i % (max_values - 1)] , result);
     }
 }

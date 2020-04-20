@@ -30,12 +30,12 @@ static inline uint16_t retrieve_result_from_registers(void)
     return (uint16_t)(low | (high << 8U) );
 }
 
-static inline peripheral_error_t set_mux_register(volatile adc_channel_pair_t * const pair)
+static inline adc_error_t set_mux_register(volatile adc_channel_pair_t * const pair)
 {
-    peripheral_error_t ret = PERIPHERAL_ERROR_OK;
+    adc_error_t ret = ADC_ERROR_OK;
     if (NULL == pair)
     {
-        ret = PERIPHERAL_ERROR_NULL_POINTER;
+        ret = ADC_ERROR_NULL_POINTER;
     }
     else
     {
@@ -44,12 +44,12 @@ static inline peripheral_error_t set_mux_register(volatile adc_channel_pair_t * 
     return ret;
 }
 
-peripheral_error_t adc_config_hal_copy(adc_config_hal_t * dest, adc_config_hal_t * const src)
+adc_error_t adc_config_hal_copy(adc_config_hal_t * dest, adc_config_hal_t * const src)
 {
-    peripheral_error_t ret = PERIPHERAL_ERROR_OK;
+    adc_error_t ret = ADC_ERROR_OK;
     if (NULL == dest || NULL == src)
     {
-        ret = PERIPHERAL_ERROR_NULL_POINTER;
+        ret = ADC_ERROR_NULL_POINTER;
     }
     else
     {
@@ -58,12 +58,12 @@ peripheral_error_t adc_config_hal_copy(adc_config_hal_t * dest, adc_config_hal_t
     return ret;
 }
 
-peripheral_error_t adc_config_hal_reset(adc_config_hal_t * config)
+adc_error_t adc_config_hal_reset(adc_config_hal_t * config)
 {
-    peripheral_error_t ret = PERIPHERAL_ERROR_OK;
+    adc_error_t ret = ADC_ERROR_OK;
     if (NULL == config)
     {
-        ret = PERIPHERAL_ERROR_NULL_POINTER;
+        ret = ADC_ERROR_NULL_POINTER;
     }
     else
     {
@@ -73,12 +73,12 @@ peripheral_error_t adc_config_hal_reset(adc_config_hal_t * config)
     return ret;
 }
 
-peripheral_error_t adc_config_hal_get_default(adc_config_hal_t * config)
+adc_error_t adc_config_hal_get_default(adc_config_hal_t * config)
 {
-    peripheral_error_t ret = PERIPHERAL_ERROR_OK;
+    adc_error_t ret = ADC_ERROR_OK;
     if (NULL == config)
     {
-        ret = PERIPHERAL_ERROR_NULL_POINTER;
+        ret = ADC_ERROR_NULL_POINTER;
     }
     else
     {
@@ -95,12 +95,12 @@ peripheral_error_t adc_config_hal_get_default(adc_config_hal_t * config)
 }
 
 
-peripheral_error_t adc_handle_copy(adc_handle_t * const dest, const adc_handle_t * const src)
+adc_error_t adc_handle_copy(adc_handle_t * const dest, const adc_handle_t * const src)
 {
-    peripheral_error_t ret = PERIPHERAL_ERROR_OK;
+    adc_error_t ret = ADC_ERROR_OK;
     if (NULL == dest || NULL == src)
     {
-        ret = PERIPHERAL_ERROR_NULL_POINTER;
+        ret = ADC_ERROR_NULL_POINTER;
     }
     else
     {
@@ -109,12 +109,12 @@ peripheral_error_t adc_handle_copy(adc_handle_t * const dest, const adc_handle_t
     return ret;
 }
 
-peripheral_error_t adc_handle_reset(adc_handle_t * const handle)
+adc_error_t adc_handle_reset(adc_handle_t * const handle)
 {
-    peripheral_error_t ret = PERIPHERAL_ERROR_OK;
+    adc_error_t ret = ADC_ERROR_OK;
     if (NULL == handle)
     {
-        ret = PERIPHERAL_ERROR_NULL_POINTER;
+        ret = ADC_ERROR_NULL_POINTER;
     }
     else
     {
@@ -127,12 +127,12 @@ peripheral_error_t adc_handle_reset(adc_handle_t * const handle)
     return ret;
 }
 
-peripheral_error_t adc_handle_get_default(adc_handle_t * const handle)
+adc_error_t adc_handle_get_default(adc_handle_t * const handle)
 {
-    peripheral_error_t ret = PERIPHERAL_ERROR_OK;
+    adc_error_t ret = ADC_ERROR_OK;
     if (NULL == handle)
     {
-        ret = PERIPHERAL_ERROR_NULL_POINTER;
+        ret = ADC_ERROR_NULL_POINTER;
     }
     else
     {
@@ -146,12 +146,12 @@ peripheral_error_t adc_handle_get_default(adc_handle_t * const handle)
 }
 
 
-peripheral_error_t adc_base_init(adc_config_hal_t * const config)
+adc_error_t adc_base_init(adc_config_hal_t * const config)
 {
-    peripheral_error_t ret = PERIPHERAL_ERROR_OK;
+    adc_error_t ret = ADC_ERROR_OK;
     if (NULL == config)
     {
-        ret = PERIPHERAL_ERROR_NULL_POINTER;
+        ret = ADC_ERROR_NULL_POINTER;
     }
     else
     {
@@ -201,17 +201,17 @@ void adc_base_deinit(void)
 }
 
 
-static inline peripheral_state_t check_initialisation(void)
+static inline adc_state_t check_initialisation(void)
 {
-    return (internal_configuration.is_initialised) ? PERIPHERAL_STATE_READY : PERIPHERAL_STATE_NOT_INITIALISED;
+    return (internal_configuration.is_initialised) ? ADC_STATE_READY : ADC_STATE_NOT_INITIALISED;
 }
 
-peripheral_state_t adc_start(void)
+adc_state_t adc_start(void)
 {
-    peripheral_state_t init_state = check_initialisation();
-    if (PERIPHERAL_STATE_READY == init_state)
+    adc_state_t init_state = check_initialisation();
+    if (ADC_STATE_READY == init_state)
     {
-        peripheral_reg_t * reg = internal_configuration.base_config.handle.adcsra_reg;
+        volatile uint8_t * reg = internal_configuration.base_config.handle.adcsra_reg;
         /* Enable and start the ADC peripheral */
         *reg |= (1 << ADEN) | (1 << ADSC);
     }
@@ -219,12 +219,12 @@ peripheral_state_t adc_start(void)
     return init_state;
 }
 
-peripheral_state_t adc_stop(void)
+adc_state_t adc_stop(void)
 {
-    peripheral_state_t init_state = check_initialisation();
-    if (PERIPHERAL_STATE_READY == init_state)
+    adc_state_t init_state = check_initialisation();
+    if (ADC_STATE_READY == init_state)
     {
-        peripheral_reg_t * reg = internal_configuration.base_config.handle.adcsra_reg;
+        volatile uint8_t * reg = internal_configuration.base_config.handle.adcsra_reg;
         /* Disable the ADC peripheral */
         *reg &= ~((1 << ADEN) | (1 << ADSC));
         /* Disable ADC interrupt mode */
@@ -234,26 +234,26 @@ peripheral_state_t adc_stop(void)
     return init_state;
 }
 
-peripheral_error_t adc_register_channel(const adc_mux_t channel)
+adc_error_t adc_register_channel(const adc_mux_t channel)
 {
-    peripheral_error_t ret = PERIPHERAL_ERROR_OK;
+    adc_error_t ret = ADC_ERROR_OK;
     ret = adc_stack_register_channel(&registered_channels, channel);
     return ret;
 }
 
-peripheral_error_t adc_unregister_channel(const adc_mux_t channel)
+adc_error_t adc_unregister_channel(const adc_mux_t channel)
 {
-    peripheral_error_t ret = PERIPHERAL_ERROR_OK;
+    adc_error_t ret = ADC_ERROR_OK;
     ret = adc_stack_unregister_channel(&registered_channels, channel);
     return ret;
 }
 
-peripheral_error_t adc_read_raw(const adc_mux_t channel, adc_result_t * const result)
+adc_error_t adc_read_raw(const adc_mux_t channel, adc_result_t * const result)
 {
-    peripheral_error_t ret = PERIPHERAL_ERROR_OK;
+    adc_error_t ret = ADC_ERROR_OK;
     if (NULL == result)
     {
-        ret = PERIPHERAL_ERROR_NULL_POINTER;
+        ret = ADC_ERROR_NULL_POINTER;
     }
     else
     {
@@ -265,7 +265,7 @@ peripheral_error_t adc_read_raw(const adc_mux_t channel, adc_result_t * const re
         }
         else
         {
-            ret = PERIPHERAL_ERROR_FAILED;
+            ret = ADC_ERROR_CHANNEL_NOT_FOUND;
         }
     }
     return ret;
@@ -304,10 +304,10 @@ static inline void isr_helper_extract_data_from_adc_regs(void)
     }
 }
 
-peripheral_state_t adc_process(void)
+adc_state_t adc_process(void)
 {
-    peripheral_state_t ret = check_initialisation();
-    if (PERIPHERAL_STATE_READY == ret)
+    adc_state_t ret = check_initialisation();
+    if (ADC_STATE_READY == ret)
     {
        isr_helper_extract_data_from_adc_regs();
         /* Start next conversion */
@@ -316,18 +316,18 @@ peripheral_state_t adc_process(void)
     return ret;
 }
 
-peripheral_error_t adc_read_millivolt(const adc_mux_t channel, adc_millivolts_t * const reading)
+adc_error_t adc_read_millivolt(const adc_mux_t channel, adc_millivolts_t * const reading)
 {
-    peripheral_error_t ret = PERIPHERAL_ERROR_OK;
+    adc_error_t ret = ADC_ERROR_OK;
     if (NULL == reading )
     {
-        ret = PERIPHERAL_ERROR_NULL_POINTER;
+        ret = ADC_ERROR_NULL_POINTER;
     }
     else
     {
         adc_result_t result = 0;
         ret = adc_read_raw(channel, &result);
-        if (PERIPHERAL_ERROR_OK == ret)
+        if (ADC_ERROR_OK == ret)
         {
             switch (internal_configuration.base_config.ref)
             {
@@ -340,7 +340,7 @@ peripheral_error_t adc_read_millivolt(const adc_mux_t channel, adc_millivolts_t 
                     break;
                 default:
                     *reading = 0;
-                    ret = PERIPHERAL_ERROR_FAILED;
+                    ret = ADC_ERROR_CONFIG;
                     break;
             }
         }

@@ -14,6 +14,5 @@ add_library(adc_driver STATIC
 target_include_directories(adc_driver PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/inc
     ${CMAKE_CURRENT_SOURCE_DIR}/private_inc
-    ${CMAKE_CURRENT_SOURCE_DIR}/../Peripheral/inc
     ${AVR_INCLUDES}
 )

@@ -11,12 +11,12 @@ extern "C"
 #endif /* __cplusplus */
 
 /* Generic includes */
+#include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
 
 /* Application drivers */
 #include "adc_reg.h"
-#include "generic_peripheral.h"
 
 /* ############################################################################################
    ################################## Data types declaration ##################################
@@ -24,6 +24,31 @@ extern "C"
 
 typedef uint16_t adc_result_t;
 typedef uint16_t adc_millivolts_t;
+
+
+/**
+ * @brief generic structure which holds timer error types
+*/
+typedef enum
+{
+    ADC_ERROR_OK,               /**< Everything went well so far                                  */
+    ADC_ERROR_CONFIG,           /**< Given configuration is not well-formed                       */
+    ADC_ERROR_CHANNEL_NOT_FOUND,/**< Given configuration is not well-formed                       */
+    ADC_ERROR_NULL_POINTER,     /**< One or more parameters were set to NULL                      */
+    ADC_ERROR_NULL_HANDLE,      /**< Timer handle still points to NULL                            */
+    ADC_ERROR_UNKNOWN_TIMER,    /**< Given timer id exceeds the range of registered timers        */
+    ADC_ERROR_NOT_INITIALISED,  /**< Given configuration is not well-formed                       */
+} adc_error_t;
+
+/**
+ * @brief basic adc peripheral state
+*/
+typedef enum
+{
+    ADC_STATE_READY,              /**< Adc is initialised and is ready                */
+    ADC_STATE_BUSY,               /**< A conversion is ongoing, peripheral is busy    */
+    ADC_STATE_NOT_INITIALISED,    /**< Driver is not initialised                      */
+} adc_state_t;
 
 /**
  * @brief gives running modes of ADC driver
@@ -39,14 +64,14 @@ typedef enum
  * @brief this structure mimics ADC peripheral registers. It is passed when configuring ADC peripheral.
  */
 typedef struct {
-    peripheral_reg_t  *  mux_reg;    /**< Refers to adc multiplexing register (ADCMUX)   */
-    peripheral_reg_t  *  adcsra_reg; /**< Refers to ADC Control and Status Register A    */
-    peripheral_reg_t  *  adcsrb_reg; /**< Refers to ADC Control and Status Register B    */
+    volatile uint8_t  *  mux_reg;    /**< Refers to adc multiplexing register (ADCMUX)   */
+    volatile uint8_t  *  adcsra_reg; /**< Refers to ADC Control and Status Register A    */
+    volatile uint8_t  *  adcsrb_reg; /**< Refers to ADC Control and Status Register B    */
 
     /* Packs result registers in one */
     struct {
-        peripheral_reg_t *  adclow_reg;  /**< Refers to the low value register of ADC peripheral  (first 8 bits)*/
-        peripheral_reg_t *  adchigh_reg; /**< Refers to the high value register of ADC peripheral (last 2 bits) */
+        volatile uint8_t *  adclow_reg;  /**< Refers to the low value register of ADC peripheral  (first 8 bits)*/
+        volatile uint8_t *  adchigh_reg; /**< Refers to the high value register of ADC peripheral (last 2 bits) */
     } readings;
 } adc_handle_t;
 
@@ -76,7 +101,7 @@ typedef struct {
  *      PERIPHERAL_ERROR_OK             : operation succeeded
  *      PERIPHERAL_ERROR_NULL_POINTER   : null pointer guarded
 */
-peripheral_error_t adc_config_hal_copy(adc_config_hal_t * dest, adc_config_hal_t * const src);
+adc_error_t adc_config_hal_copy(adc_config_hal_t * dest, adc_config_hal_t * const src);
 
 /**
  * @brief resets config to default
@@ -85,7 +110,7 @@ peripheral_error_t adc_config_hal_copy(adc_config_hal_t * dest, adc_config_hal_t
  *      PERIPHERAL_ERROR_OK             : operation succeeded
  *      PERIPHERAL_ERROR_NULL_POINTER   : null pointer guarded
 */
-peripheral_error_t adc_config_hal_reset(adc_config_hal_t * config);
+adc_error_t adc_config_hal_reset(adc_config_hal_t * config);
 
 /**
  * @brief returns a default configuration for the ADC driver
@@ -94,7 +119,7 @@ peripheral_error_t adc_config_hal_reset(adc_config_hal_t * config);
  *      PERIPHERAL_ERROR_OK             : operation succeeded
  *      PERIPHERAL_ERROR_NULL_POINTER   : null pointer guarded
 */
-peripheral_error_t adc_config_hal_get_default(adc_config_hal_t * config);
+adc_error_t adc_config_hal_get_default(adc_config_hal_t * config);
 
 /**
  * @brief copies handle data from a source object to destination object
@@ -104,7 +129,7 @@ peripheral_error_t adc_config_hal_get_default(adc_config_hal_t * config);
  *      PERIPHERAL_ERROR_OK             : operation succeeded
  *      PERIPHERAL_ERROR_NULL_POINTER   : null pointer guarded
 */
-peripheral_error_t adc_handle_copy(adc_handle_t * const dest, const adc_handle_t * const src);
+adc_error_t adc_handle_copy(adc_handle_t * const dest, const adc_handle_t * const src);
 
 /**
  * @brief resets handle to default
@@ -113,7 +138,7 @@ peripheral_error_t adc_handle_copy(adc_handle_t * const dest, const adc_handle_t
  *      PERIPHERAL_ERROR_OK             : operation succeeded
  *      PERIPHERAL_ERROR_NULL_POINTER   : null pointer guarded
 */
-peripheral_error_t adc_handle_reset(adc_handle_t * const handle);
+adc_error_t adc_handle_reset(adc_handle_t * const handle);
 
 /**
  * @brief returns a default handle, set to target avr registers
@@ -122,7 +147,7 @@ peripheral_error_t adc_handle_reset(adc_handle_t * const handle);
  *      PERIPHERAL_ERROR_OK             : operation succeeded
  *      PERIPHERAL_ERROR_NULL_POINTER   : null pointer guarded
 */
-peripheral_error_t adc_handle_get_default(adc_handle_t * const handle);
+adc_error_t adc_handle_get_default(adc_handle_t * const handle);
 
 /* ############################################################################################
    ################################## Function declarations ###################################
@@ -131,7 +156,7 @@ peripheral_error_t adc_handle_get_default(adc_handle_t * const handle);
 /**
  * @brief adc module initialisation function
 */
-peripheral_error_t adc_base_init(adc_config_hal_t * const config);
+adc_error_t adc_base_init(adc_config_hal_t * const config);
 
 /**
  * @brief module deinitialisation
@@ -151,25 +176,25 @@ void adc_base_deinit(void);
  *    - adc_stop()      // stops the adc
  * @return
  *      PERIPHERAL_ERROR_OK      : operation was successful
- *      PERIPHERAL_ERROR_CONFIG  : adc peripheral is not enabled (not initialised ?)
+ *      ADC_ERROR_CONFIG  : adc peripheral is not enabled (not initialised ?)
 */
-peripheral_state_t adc_start(void);
+adc_state_t adc_start(void);
 
 /**
  * @brief stops the adc in normal mode, no interrupt
  * @return
  *      PERIPHERAL_ERROR_OK      : operation was successful
- *      PERIPHERAL_ERROR_CONFIG  : adc peripheral is not enabled (not initialised ?)
+ *      ADC_ERROR_CONFIG  : adc peripheral is not enabled (not initialised ?)
 */
-peripheral_state_t adc_stop(void);
+adc_state_t adc_stop(void);
 
 /**
  * @brief starts conversions and retrieves results (using asynchronous, non interrupting mode)
  * @return
  *      PERIPHERAL_ERROR_OK      : operation was successful
- *      PERIPHERAL_ERROR_CONFIG  : adc peripheral is not enabled (not initialised ?)
+ *      ADC_ERROR_CONFIG  : adc peripheral is not enabled (not initialised ?)
 */
-peripheral_state_t adc_process(void);
+adc_state_t adc_process(void);
 
 /**
  * @brief isr handler that might be called from within an ISR function
@@ -179,12 +204,12 @@ void adc_isr_handler(void);
 /**
  * @brief explicitely adds a channel to scanned channels configuration
  * @param[in]   channel : channel to be configured and scanned */
-peripheral_error_t adc_register_channel(const adc_mux_t channel);
+adc_error_t adc_register_channel(const adc_mux_t channel);
 
 /**
  * @brief explicitely removes channel from scanned channels configuration
  * @param[in]   channel : channel to be removed */
-peripheral_error_t adc_unregister_channel(const adc_mux_t channel);
+adc_error_t adc_unregister_channel(const adc_mux_t channel);
 
 /**
  * @brief adc result getter function
@@ -194,7 +219,7 @@ peripheral_error_t adc_unregister_channel(const adc_mux_t channel);
  *      PERIPHERAL_ERROR_OK             : everything's fine
  *      PERIPHERAL_ERROR_NULL_POINTER   : wrong pointer or out of bounds index
 */
-peripheral_error_t adc_read_raw(const adc_mux_t channel, adc_result_t * const result);
+adc_error_t adc_read_raw(const adc_mux_t channel, adc_result_t * const result);
 
 /**
  * @brief adc raw reading getter
@@ -204,7 +229,7 @@ peripheral_error_t adc_read_raw(const adc_mux_t channel, adc_result_t * const re
  *      PERIPHERAL_ERROR_OK      : everything's fine
  *      PERIPHERAL_ERROR_NULL_POINTER  : wrong pointer or out of bounds index
 */
-peripheral_error_t adc_read_millivolt(const adc_mux_t channel, adc_millivolts_t * const reading);
+adc_error_t adc_read_millivolt(const adc_mux_t channel, adc_millivolts_t * const reading);
 
 
 #ifdef __cplusplus

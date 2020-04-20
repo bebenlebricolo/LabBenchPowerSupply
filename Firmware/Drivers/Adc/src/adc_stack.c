@@ -1,6 +1,5 @@
 #include <stddef.h>
 #include <stdbool.h>
-#include "generic_peripheral.h"
 #include "adc_stack.h"
 
 adc_stack_error_t adc_stack_reset(volatile adc_stack_t * const stack)
