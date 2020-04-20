@@ -146,6 +146,47 @@ timer_error_t timer_16_bit_get_interrupt_config(uint8_t id, timer_16_bit_interru
 timer_error_t timer_16_bit_get_interrupt_flags(uint8_t id, timer_16_bit_interrupt_config_t * it_flags);
 #endif
 
+/**
+ * @brief allows the usage of input capture noise canceler peripheral
+ * @param[in]   id       : targeted timer id (used to fetch internal configuration based on ids)
+ * @param[in]   enabled  : choose whether this peripheral is enabled or not
+ * @return
+ *      TIMER_ERROR_OK             :   operation succeeded
+ *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
+ */
+timer_error_t timer_16_bit_set_input_compare_noise_canceler(uint8_t id, const bool enabled);
+
+/**
+ * @brief fetches the usage of input capture noise canceler peripheral
+ * @param[in]   id       : targeted timer id (used to fetch internal configuration based on ids)
+ * @param[in]   enabled  : tells whether this peripheral is enabled or not
+ * @return
+ *      TIMER_ERROR_OK             :   operation succeeded
+ *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
+ *      TIMER_ERROR_NULL_POINTER   :   given it_config parameter points to NULL
+*/
+timer_error_t timer_16_bit_get_input_compare_noise_canceler(uint8_t id, bool * const enabled);
+
+/**
+ * @brief selects which edge will trigger the input capture interrupt
+ * @param[in]   id       : targeted timer id (used to fetch internal configuration based on ids)
+ * @param[in]   edge     : egde used to trigger the interrupt
+ * @return
+ *      TIMER_ERROR_OK             :   operation succeeded
+ *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
+*/
+timer_error_t timer_16_bit_set_input_compare_edge_select(uint8_t id, const timer_16_bit_input_capture_edge_select_flag_t edge);
+
+/**
+ * @brief tells which edge is used to trigger the input capture interrupt
+ * @param[in]   id    : targeted timer id (used to fetch internal configuration based on ids)
+ * @param[in]   edge  : fetches the edge used to trigger input capture peripheral
+ * @return
+ *      TIMER_ERROR_OK             :   operation succeeded
+ *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
+ *      TIMER_ERROR_NULL_POINTER   :   given it_config parameter points to NULL
+*/
+timer_error_t timer_16_bit_get_input_compare_edge_select(uint8_t id, timer_16_bit_input_capture_edge_select_flag_t * const edge);
 
 
 
@@ -253,7 +294,7 @@ timer_error_t timer_16_bit_get_waveform_generation(uint8_t id, timer_16_bit_wave
  *      TIMER_ERROR_OK             :   operation succeeded
  *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
 */
-timer_error_t timer_16_bit_set_ocra_register_value(uint8_t id, uint8_t ocra);
+timer_error_t timer_16_bit_set_ocra_register_value(uint8_t id, uint16_t ocra);
 
 /**
  * @brief fetches given timer Output Compare A register value
@@ -263,7 +304,7 @@ timer_error_t timer_16_bit_set_ocra_register_value(uint8_t id, uint8_t ocra);
  *      TIMER_ERROR_OK             :   operation succeeded
  *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
 */
-timer_error_t timer_16_bit_get_ocra_register_value(uint8_t id, uint8_t * ocra);
+timer_error_t timer_16_bit_get_ocra_register_value(uint8_t id, uint16_t * ocra);
 
 /**
  * @brief sets the targeted timer Output Compare B register value
@@ -273,7 +314,7 @@ timer_error_t timer_16_bit_get_ocra_register_value(uint8_t id, uint8_t * ocra);
  *      TIMER_ERROR_OK             :   operation succeeded
  *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
 */
-timer_error_t timer_16_bit_set_ocrb_register_value(uint8_t id, uint8_t ocrb);
+timer_error_t timer_16_bit_set_ocrb_register_value(uint8_t id, uint16_t ocrb);
 
 /**
  * @brief fetches the targeted timer Output Compare B register value
@@ -283,7 +324,7 @@ timer_error_t timer_16_bit_set_ocrb_register_value(uint8_t id, uint8_t ocrb);
  *      TIMER_ERROR_OK             :   operation succeeded
  *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
 */
-timer_error_t timer_16_bit_get_ocrb_register_value(uint8_t id, uint8_t * ocrb);
+timer_error_t timer_16_bit_get_ocrb_register_value(uint8_t id, uint16_t * ocrb);
 
 
 
@@ -299,7 +340,7 @@ timer_error_t timer_16_bit_get_ocrb_register_value(uint8_t id, uint8_t * ocrb);
  *      TIMER_ERROR_OK             :   operation succeeded
  *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
 */
-timer_error_t timer_16_bit_set_counter_value(uint8_t id, const uint8_t ticks);
+timer_error_t timer_16_bit_set_counter_value(uint8_t id, const uint16_t ticks);
 
 /**
  * @brief gets the targeted timer internal main counter from internal registers
@@ -308,10 +349,20 @@ timer_error_t timer_16_bit_set_counter_value(uint8_t id, const uint8_t ticks);
  * @return
  *      TIMER_ERROR_OK             :   operation succeeded
  *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
+ *      TIMER_ERROR_NULL_POINTER   :   given pointer points to null
 */
-timer_error_t timer_16_bit_get_counter_value(uint8_t id, uint8_t * ticks);
+timer_error_t timer_16_bit_get_counter_value(uint8_t id, uint16_t * ticks);
 
-
+/**
+ * @brief gets the targeted timer internal input capture register value
+ * @param[in]   id    : targeted timer id (used to fetch internal configuration based on ids)
+ * @param[in]   ticks : actual counter value from internal registers
+ * @return
+ *      TIMER_ERROR_OK             :   operation succeeded
+ *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
+ *      TIMER_ERROR_NULL_POINTER   :   given pointer points to null
+*/
+timer_error_t timer_16_bit_get_input_capture_value(uint8_t id, uint16_t * ticks);
 
 
 /* ##############################################################################################################
@@ -320,12 +371,14 @@ timer_error_t timer_16_bit_get_counter_value(uint8_t id, uint8_t * ticks);
 
 /**
  * @brief simply checks whether selected timer is initialised or not
- * @param[in]  id : selected timer registered id
+ * @param[in]  id          : selected timer registered id
+ * @param[in]  initialised : tells whether this timer is initialised or not
  * @return
- *    true  :  timer is initialised
- *    false :  timer is not initialised
+ *      TIMER_ERROR_OK             :   operation succeeded
+ *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
+ *      TIMER_ERROR_NULL_POINTER   :   given pointer points to null
 */
-bool timer_16_bit_is_initialised(uint8_t id);
+timer_error_t timer_16_bit_is_initialised(uint8_t id, bool * const initialised);
 
 /**
  * @brief initialises targeted timer with the given configuration. Timer does not start yet, but will be fully configured.

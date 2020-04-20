@@ -138,7 +138,7 @@ typedef enum
 typedef struct
 {
     timer_16_bit_input_capture_edge_select_flag_t edge_select;  /**< Selects which edge to be used when          */
-    bool use;                                                   /**< Triggers input capture noise canceler usage */
+    bool use_noise_canceler;                                    /**< Triggers input capture noise canceler usage */
 } timer_16_bit_input_capture_noise_canceler_config_t;
 
 /**
