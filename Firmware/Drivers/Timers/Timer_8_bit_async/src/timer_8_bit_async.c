@@ -376,7 +376,7 @@ timer_error_t timer_8_bit_async_get_interrupt_flags(uint8_t id, timer_8_bit_inte
 
 
 
-timer_error_t timer_8_bit_async_set_prescaler(uint8_t id, const timer_x_bit_prescaler_selection_t prescaler)
+timer_error_t timer_8_bit_async_set_prescaler(uint8_t id, const timer_8_bit_async_prescaler_selection_t prescaler)
 {
     timer_error_t ret = check_id(id);
     if (TIMER_ERROR_OK != ret)
@@ -402,7 +402,7 @@ timer_error_t timer_8_bit_async_set_prescaler(uint8_t id, const timer_x_bit_pres
     return ret;
 }
 
-timer_error_t timer_8_bit_async_get_prescaler(uint8_t id, timer_x_bit_prescaler_selection_t * prescaler)
+timer_error_t timer_8_bit_async_get_prescaler(uint8_t id, timer_8_bit_async_prescaler_selection_t * prescaler)
 {
     timer_error_t ret = check_id(id);
     if (TIMER_ERROR_OK != ret)
@@ -777,13 +777,13 @@ timer_error_t timer_8_bit_async_get_ocrb_register_value(uint8_t id, uint8_t * oc
     return ret;
 }
 
-static timer_error_t timer_8_bit_async_write_config(uint8_t id, timer_8_bit_config_t * const config)
+static timer_error_t timer_8_bit_async_write_config(uint8_t id, timer_8_bit_async_config_t * const config)
 {
     timer_error_t ret = TIMER_ERROR_OK;
     /* Do not perform all usual parameter check because this function shall only be called
      * by already protected api (meaning, caller functions will have already performed parameter checking
      * so there is no need to perform it twice */
-    timer_8_bit_handle_t * handle = &internal_config[id].handle;
+    timer_8_bit_async_handle_t * handle = &internal_config[id].handle;
 
     /* If register is asynchronously updated, it will be blocked by hardware and any read/write operation
      * will be discarded. See datasheet for further details */
@@ -827,7 +827,7 @@ static timer_error_t timer_8_bit_async_write_config(uint8_t id, timer_8_bit_conf
         *(handle->TCCRB) &=  ~(1 << FOCB_BIT) ;
     }
 
-    /* NOTE : Do not handle prescaler until timer is manually started using timer_8_bit_start(id)*/
+    /* NOTE : Do not handle prescaler until timer is manually started using timer_8_bit_async_start(id)*/
 
     /* TIMSK register */
     if (true == config->interrupt_config.it_comp_match_a)
@@ -898,8 +898,8 @@ timer_error_t timer_8_bit_async_deinit(uint8_t id)
     }
 
     /* Retrieve a config object to write back default configuration into timer registers */
-    timer_8_bit_config_t config;
-    ret = timer_8_bit_stop(id);
+    timer_8_bit_async_config_t config;
+    ret = timer_8_bit_async_stop(id);
     if (TIMER_ERROR_OK == ret)
     {
         ret = timer_8_bit_async_get_default_config(&config);

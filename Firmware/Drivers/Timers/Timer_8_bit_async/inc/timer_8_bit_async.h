@@ -2,9 +2,13 @@
 #define TIMER_8_BIT_ASYNC_HEADER
 
 #include <stdint.h>
-#include "generic_peripheral.h"
 #include "timer_8_bit.h"
 #include "timer_8_bit_async_reg.h"
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 /* #########################################################################################
    ################################## Timer handle types ###################################
@@ -19,7 +23,6 @@ typedef struct
     volatile uint8_t * TCCRB; /**< Timer/Counter control register B  */
     volatile uint8_t * TCNT;  /**< Timer/Counter main register       */
     volatile uint8_t * OCRA;  /**< Output compare control register A */
-    volatile uint8_t * OCRB;  /**< Output compare control register B */
     volatile uint8_t * OCRB;  /**< Output compare control register B */
     volatile uint8_t * TIMSK; /**< Timer interrupt mask register     */
     volatile uint8_t * TIFR;  /**< Timer interrupt flags register    */
@@ -163,7 +166,7 @@ timer_error_t timer_8_bit_async_get_interrupt_flags(uint8_t id, timer_8_bit_inte
  *      TIMER_ERROR_OK             :   operation succeeded
  *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
 */
-timer_error_t timer_8_bit_async_set_prescaler(uint8_t id, const timer_x_bit_prescaler_selection_t prescaler);
+timer_error_t timer_8_bit_async_set_prescaler(uint8_t id, const timer_8_bit_async_prescaler_selection_t prescaler);
 
 /**
  * @brief reads targeted timer prescaler from internal configuration
@@ -174,7 +177,7 @@ timer_error_t timer_8_bit_async_set_prescaler(uint8_t id, const timer_x_bit_pres
  *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
  *      TIMER_ERROR_NULL_POINTER   :   given prescaler parameter points to NULL
 */
-timer_error_t timer_8_bit_async_get_prescaler(uint8_t id, timer_x_bit_prescaler_selection_t * prescaler);
+timer_error_t timer_8_bit_async_get_prescaler(uint8_t id, timer_8_bit_async_prescaler_selection_t * prescaler);
 
 
 
@@ -290,8 +293,6 @@ timer_error_t timer_8_bit_async_get_ocrb_register_value(uint8_t id, uint8_t * oc
 
 
 
-
-
 /* ################################ Counter register configuration ############################### */
 
 /**
@@ -374,5 +375,9 @@ timer_error_t timer_8_bit_async_start(uint8_t id);
 timer_error_t timer_8_bit_async_stop(uint8_t id);
 
 
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* TIMER_8_BIT_ASYNC_HEADER */
