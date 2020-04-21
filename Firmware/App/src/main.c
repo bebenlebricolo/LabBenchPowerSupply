@@ -66,7 +66,11 @@ int main(void)
 
     adc_start();
     sei();
-
+    timer_error_t timer_error = timer_8_bit_start(0);
+    if (TIMER_ERROR_OK != timer_error)
+    {
+        error_handler();
+    }
 
     while(true)
     {

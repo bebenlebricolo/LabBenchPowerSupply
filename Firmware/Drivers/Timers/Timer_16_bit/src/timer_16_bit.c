@@ -826,13 +826,12 @@ timer_error_t timer_16_bit_get_ocrb_register_value(uint8_t id, uint16_t * const 
 static timer_error_t timer_16_bit_write_config(uint8_t id, timer_16_bit_config_t * const config)
 {
     timer_error_t ret = TIMER_ERROR_OK;
-
-    ret = check_handle(&internal_config[id].handle);
-    if (TIMER_ERROR_OK != ret)
-    {
-        return ret;
-    }
     timer_16_bit_handle_t * handle = &internal_config[id].handle;
+
+    internal_config[id].prescaler = config->timing_config.prescaler;
+
+    /* Clear all interrupts */
+    *(handle->TIFR) = 0U;
 
     /* Initialise counter as well */
     *(handle->TCNT_H) = (config->timing_config.counter & 0xFF00) >> 8U;
@@ -922,7 +921,13 @@ timer_error_t timer_16_bit_init(uint8_t id, timer_16_bit_config_t * const config
         return ret;
     }
 
-    ret = check_handle(&internal_config[id].handle);
+    ret = check_handle(&config->handle);
+    if (TIMER_ERROR_OK != ret)
+    {
+        return ret;
+    }
+
+    ret = timer_16_bit_set_handle(id, &config->handle);
     if (TIMER_ERROR_OK != ret)
     {
         return ret;

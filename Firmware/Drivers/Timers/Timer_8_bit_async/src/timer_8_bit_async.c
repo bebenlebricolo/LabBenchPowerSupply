@@ -780,13 +780,6 @@ timer_error_t timer_8_bit_async_get_ocrb_register_value(uint8_t id, uint8_t * oc
 static timer_error_t timer_8_bit_async_write_config(uint8_t id, timer_8_bit_async_config_t * const config)
 {
     timer_error_t ret = TIMER_ERROR_OK;
-
-    ret = check_handle(&internal_config[id].handle);
-    if (TIMER_ERROR_OK != ret)
-    {
-        return ret;
-    }
-
     timer_8_bit_async_handle_t * handle = &internal_config[id].handle;
 
     /* If register is asynchronously updated, it will be blocked by hardware and any read/write operation
@@ -796,6 +789,11 @@ static timer_error_t timer_8_bit_async_write_config(uint8_t id, timer_8_bit_asyn
     {
         return ret;
     }
+
+    internal_config[id].prescaler = config->timing_config.prescaler;
+
+    /* Clear all interrupts */
+    *(handle->TIFR) = 0U;
 
     /* Initialise counter as well */
     *(handle->TCNT) = config->timing_config.counter;
@@ -872,7 +870,13 @@ timer_error_t timer_8_bit_async_init(uint8_t id, timer_8_bit_async_config_t * co
         return ret;
     }
 
-    ret = check_handle(&internal_config[id].handle);
+    ret = check_handle(&config->handle);
+    if (TIMER_ERROR_OK != ret)
+    {
+        return ret;
+    }
+
+    ret = timer_8_bit_async_set_handle(id, &config->handle);
     if (TIMER_ERROR_OK != ret)
     {
         return ret;
