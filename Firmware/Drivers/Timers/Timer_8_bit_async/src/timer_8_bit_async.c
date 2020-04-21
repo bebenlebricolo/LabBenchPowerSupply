@@ -35,7 +35,7 @@ static inline timer_error_t check_handle(timer_8_bit_async_handle_t * const hand
         found_null |= (NULL == handle->TCNT);
         found_null |= (NULL == handle->TIFR);
         found_null |= (NULL == handle->TIMSK);
-        found_null |= (NULL == handle->ASSR);
+        found_null |= (NULL == handle->ASSR_REG);
     }
     if (found_null)
     {
@@ -55,7 +55,7 @@ static inline timer_error_t check_id(uint8_t id)
 
 static inline timer_error_t check_reg_busy(uint8_t id, uint8_t mask)
 {
-    if (0 != (*internal_config[id].handle.ASSR & mask))
+    if (0 != (*internal_config[id].handle.ASSR_REG & mask))
     {
         return TIMER_ERROR_REGISTER_IS_BUSY;
     }
@@ -117,7 +117,7 @@ timer_error_t timer_8_bit_async_get_default_config(timer_8_bit_async_config_t * 
     config->handle.TCNT = NULL;
     config->handle.TIFR = NULL;
     config->handle.TIMSK = NULL;
-    config->handle.ASSR = NULL;
+    config->handle.ASSR_REG = NULL;
     return ret;
 }
 
@@ -780,9 +780,13 @@ timer_error_t timer_8_bit_async_get_ocrb_register_value(uint8_t id, uint8_t * oc
 static timer_error_t timer_8_bit_async_write_config(uint8_t id, timer_8_bit_async_config_t * const config)
 {
     timer_error_t ret = TIMER_ERROR_OK;
-    /* Do not perform all usual parameter check because this function shall only be called
-     * by already protected api (meaning, caller functions will have already performed parameter checking
-     * so there is no need to perform it twice */
+
+    ret = check_handle(&internal_config[id].handle);
+    if (TIMER_ERROR_OK != ret)
+    {
+        return ret;
+    }
+
     timer_8_bit_async_handle_t * handle = &internal_config[id].handle;
 
     /* If register is asynchronously updated, it will be blocked by hardware and any read/write operation

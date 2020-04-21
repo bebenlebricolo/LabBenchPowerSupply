@@ -826,9 +826,12 @@ timer_error_t timer_16_bit_get_ocrb_register_value(uint8_t id, uint16_t * const 
 static timer_error_t timer_16_bit_write_config(uint8_t id, timer_16_bit_config_t * const config)
 {
     timer_error_t ret = TIMER_ERROR_OK;
-    /* Do not perform all usual parameter check because this function shall only be called
-     * by already protected api (meaning, caller functions will have already performed parameter checking
-     * so there is no need to perform it twice */
+
+    ret = check_handle(&internal_config[id].handle);
+    if (TIMER_ERROR_OK != ret)
+    {
+        return ret;
+    }
     timer_16_bit_handle_t * handle = &internal_config[id].handle;
 
     /* Initialise counter as well */

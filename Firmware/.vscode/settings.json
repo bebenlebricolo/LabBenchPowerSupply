@@ -22,6 +22,8 @@
         "timer_8_bit.h": "c",
         "timer_8_bit_async_registers_stub.h": "c",
         "timer_8_bit_async.h": "c",
-        "timer_8_bit_async_reg.h": "c"
+        "timer_8_bit_async_reg.h": "c",
+        "timer_8_bit_reg.h": "c",
+        "timer_generic.h": "c"
     }
 }

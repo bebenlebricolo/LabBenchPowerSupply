@@ -1,12 +1,12 @@
 #include "adc.h"
-#include "adc_reg.h"
+#include "timer_8_bit.h"
+#include "timer_8_bit_async.h"
+#include "timer_16_bit.h"
+
+#include "driver_setup.h"
 #include <avr/interrupt.h>
 
 #define MAX_MUX 5
-ISR(ADC_vect)
-{
-    adc_isr_handler();
-}
 
 static adc_mux_t mux_table[MAX_MUX] =
 {
@@ -17,21 +17,51 @@ static adc_mux_t mux_table[MAX_MUX] =
     ADC_MUX_ADC4,
 };
 
-int main(void)
+ISR(ADC_vect)
 {
-    adc_config_hal_t config;
-    adc_config_hal_get_default(&config);
-    config.prescaler = ADC_PRESCALER_64;
-    config.ref = ADC_VOLTAGE_REF_AVCC;
-    config.running_mode = ADC_RUNNING_MODE_SINGLE_SHOT;
-    config.supply_voltage_mv = 5000;
-    config.using_interrupt = true;
+    adc_isr_handler();
+}
 
-    adc_base_init(&config);
+void error_handler(void)
+{
+    while(1)
+    {
+        asm("NOP");
+    }
+}
+
+driver_setup_error_t adc_register_all_channels(void)
+{
     for (uint8_t i = 0; i < MAX_MUX ; i++)
     {
-        peripheral_error_t ret = adc_register_channel(mux_table[i]);
-        (void)ret;
+        adc_error_t err = adc_register_channel(mux_table[i]);
+        if (ADC_ERROR_OK != err)
+        {
+            return DRIVER_SETUP_ERROR_INIT_FAILED;
+        }
+    }
+    return DRIVER_SETUP_ERROR_OK;
+}
+
+int main(void)
+{
+    driver_setup_error_t init_error = DRIVER_SETUP_ERROR_OK;
+    init_error = init_timer_0();
+    if (DRIVER_SETUP_ERROR_OK != init_error)
+    {
+        error_handler();
+    }
+
+    init_error = init_adc();
+    if (DRIVER_SETUP_ERROR_OK != init_error)
+    {
+        error_handler();
+    }
+
+    init_error = adc_register_all_channels();
+    if (DRIVER_SETUP_ERROR_OK != init_error)
+    {
+        error_handler();
     }
 
     adc_start();

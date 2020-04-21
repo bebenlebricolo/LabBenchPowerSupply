@@ -37,7 +37,7 @@ TEST(timer_8_bit_async_driver_tests, guard_null_handle)
     ASSERT_TRUE(NULL == config.handle.TCNT   );
     ASSERT_TRUE(NULL == config.handle.TIFR   );
     ASSERT_TRUE(NULL == config.handle.TIMSK  );
-    ASSERT_TRUE(NULL == config.handle.ASSR   );
+    ASSERT_TRUE(NULL == config.handle.ASSR_REG   );
 
     /* Test compare match mode A get/set api */
     ret = timer_8_bit_async_set_compare_match_A(DT_ID, config.timing_config.comp_match_a);
@@ -109,17 +109,17 @@ TEST_F(Timer8BitAsyncFixture,  guard_reg_busy)
     ASSERT_TRUE(NULL != config.handle.TCNT   );
     ASSERT_TRUE(NULL != config.handle.TIFR   );
     ASSERT_TRUE(NULL != config.handle.TIMSK  );
-    ASSERT_TRUE(NULL != config.handle.ASSR   );
+    ASSERT_TRUE(NULL != config.handle.ASSR_REG   );
 
     /* Test compare match mode A get/set api */
-    timer_8_bit_async_registers_stub.ASSR |= TCRAUB_MSK;
+    timer_8_bit_async_registers_stub.ASSR_REG |= TCRAUB_MSK;
     ret = timer_8_bit_async_set_compare_match_A(DT_ID, config.timing_config.comp_match_a);
     ASSERT_EQ(TIMER_ERROR_REGISTER_IS_BUSY, ret);
     ret = timer_8_bit_async_get_compare_match_A(DT_ID, &config.timing_config.comp_match_a);
     ASSERT_EQ(TIMER_ERROR_REGISTER_IS_BUSY, ret);
 
     /* Test compare match mode B get/set api */
-    timer_8_bit_async_registers_stub.ASSR |= TCRBUB_MSK;
+    timer_8_bit_async_registers_stub.ASSR_REG |= TCRBUB_MSK;
     ret = timer_8_bit_async_set_compare_match_B(DT_ID, config.timing_config.comp_match_b);
     ASSERT_EQ(TIMER_ERROR_REGISTER_IS_BUSY, ret);
     ret = timer_8_bit_async_get_compare_match_B(DT_ID, &config.timing_config.comp_match_b);
@@ -132,43 +132,43 @@ TEST_F(Timer8BitAsyncFixture,  guard_reg_busy)
     ASSERT_EQ(TIMER_ERROR_OK, ret);
 
     /* Test OCRA get/set api */
-    timer_8_bit_async_registers_stub.ASSR |= OCRAUB_MSK;
+    timer_8_bit_async_registers_stub.ASSR_REG |= OCRAUB_MSK;
     ret = timer_8_bit_async_set_ocra_register_value(DT_ID, config.timing_config.ocra_val);
     ASSERT_EQ(TIMER_ERROR_REGISTER_IS_BUSY, ret);
     ret = timer_8_bit_async_get_ocra_register_value(DT_ID, &config.timing_config.ocra_val);
     ASSERT_EQ(TIMER_ERROR_REGISTER_IS_BUSY, ret);
 
     /* Test OCRB get/set api */
-    timer_8_bit_async_registers_stub.ASSR |= OCRBUB_MSK;
+    timer_8_bit_async_registers_stub.ASSR_REG |= OCRBUB_MSK;
     ret = timer_8_bit_async_set_ocrb_register_value(DT_ID, config.timing_config.ocrb_val);
     ASSERT_EQ(TIMER_ERROR_REGISTER_IS_BUSY, ret);
     ret = timer_8_bit_async_get_ocrb_register_value(DT_ID, &config.timing_config.ocrb_val);
     ASSERT_EQ(TIMER_ERROR_REGISTER_IS_BUSY, ret);
 
     /* Test counter get/set api */
-    timer_8_bit_async_registers_stub.ASSR |= TCNUB_MSK;
+    timer_8_bit_async_registers_stub.ASSR_REG |= TCNUB_MSK;
     ret = timer_8_bit_async_set_counter_value(DT_ID, config.timing_config.counter);
     ASSERT_EQ(TIMER_ERROR_REGISTER_IS_BUSY, ret);
     ret = timer_8_bit_async_get_counter_value(DT_ID, &config.timing_config.counter);
     ASSERT_EQ(TIMER_ERROR_REGISTER_IS_BUSY, ret);
 
     /* Test force compare flags get/set api */
-    timer_8_bit_async_registers_stub.ASSR |= TCRBUB_MSK;
+    timer_8_bit_async_registers_stub.ASSR_REG |= TCRBUB_MSK;
     ret = timer_8_bit_async_set_force_compare_config(DT_ID, &config.force_compare);
     ASSERT_EQ(TIMER_ERROR_REGISTER_IS_BUSY, ret);
     ret = timer_8_bit_async_get_force_compare_config(DT_ID, &config.force_compare);
     ASSERT_EQ(TIMER_ERROR_REGISTER_IS_BUSY, ret);
 
     /* Test prescaler get/set api */
-    timer_8_bit_async_registers_stub.ASSR |= TCRBUB_MSK;
+    timer_8_bit_async_registers_stub.ASSR_REG |= TCRBUB_MSK;
     ret = timer_8_bit_async_set_prescaler(DT_ID, config.timing_config.prescaler);
     ASSERT_EQ(TIMER_ERROR_REGISTER_IS_BUSY, ret);
     ret = timer_8_bit_async_get_prescaler(DT_ID, &config.timing_config.prescaler);
     ASSERT_EQ(TIMER_ERROR_REGISTER_IS_BUSY, ret);
 
     /* Test waveforme generation get/set api */
-    timer_8_bit_async_registers_stub.ASSR |= TCRAUB_MSK;
-    timer_8_bit_async_registers_stub.ASSR |= TCRBUB_MSK;
+    timer_8_bit_async_registers_stub.ASSR_REG |= TCRAUB_MSK;
+    timer_8_bit_async_registers_stub.ASSR_REG |= TCRBUB_MSK;
     ret = timer_8_bit_async_set_waveform_generation(DT_ID, config.timing_config.waveform_mode);
     ASSERT_EQ(TIMER_ERROR_REGISTER_IS_BUSY, ret);
     ret = timer_8_bit_async_get_waveform_generation(DT_ID, &config.timing_config.waveform_mode);

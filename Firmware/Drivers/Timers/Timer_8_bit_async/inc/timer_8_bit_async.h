@@ -19,14 +19,14 @@ extern "C"
 */
 typedef struct
 {
-    volatile uint8_t * TCCRA; /**< Timer/Counter control register A  */
-    volatile uint8_t * TCCRB; /**< Timer/Counter control register B  */
-    volatile uint8_t * TCNT;  /**< Timer/Counter main register       */
-    volatile uint8_t * OCRA;  /**< Output compare control register A */
-    volatile uint8_t * OCRB;  /**< Output compare control register B */
-    volatile uint8_t * TIMSK; /**< Timer interrupt mask register     */
-    volatile uint8_t * TIFR;  /**< Timer interrupt flags register    */
-    volatile uint8_t * ASSR;  /**< Asynchronous status register      */
+   volatile uint8_t * TCCRA; /**< Timer/Counter control register A  */
+   volatile uint8_t * TCCRB; /**< Timer/Counter control register B  */
+   volatile uint8_t * TCNT;  /**< Timer/Counter main register       */
+   volatile uint8_t * OCRA;  /**< Output compare control register A */
+   volatile uint8_t * OCRB;  /**< Output compare control register B */
+   volatile uint8_t * TIMSK; /**< Timer interrupt mask register     */
+   volatile uint8_t * TIFR;  /**< Timer interrupt flags register    */
+   volatile uint8_t * ASSR_REG;  /**< Asynchronous status register      */
 } timer_8_bit_async_handle_t;
 
 /* #########################################################################################
