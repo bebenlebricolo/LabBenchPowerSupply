@@ -8,7 +8,7 @@
             "name": "(gdb) Launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/Tests/build/bin/Timers/timer_8_bit_driver_tests",
+            "program": "${workspaceFolder}/Tests/build/bin/Timers/timer_16_bit_driver_tests",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

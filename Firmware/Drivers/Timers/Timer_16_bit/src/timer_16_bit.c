@@ -121,6 +121,8 @@ timer_error_t timer_16_bit_get_default_config(timer_16_bit_config_t * config)
     config->handle.TCCRC = NULL;
     config->handle.TCNT_H = NULL;
     config->handle.TCNT_L = NULL;
+    config->handle.ICR_H = NULL;
+    config->handle.ICR_L = NULL;
     config->handle.TIFR = NULL;
     config->handle.TIMSK = NULL;
     return ret;
@@ -537,7 +539,7 @@ timer_error_t timer_16_bit_set_waveform_generation(uint8_t id, const timer_16_bi
 
     *(internal_config[id].handle.TCCRA) = (*(internal_config[id].handle.TCCRA) & ~(WGM0_MSK | WGM1_MSK)) | (waveform & (WGM0_MSK | WGM1_MSK));
     /* Select bit index 2 and 3 (0x3 -> 0b11) of waveform mode (matches datasheet bit mapping) and store it to bit index 3 of TCCRB with one more bitshift */
-    *(internal_config[id].handle.TCCRB) = (*(internal_config[id].handle.TCCRB) & ~(WGM2_MSK | WGM3_MSK)) | (waveform & (0x3U << 2U) << 1U);
+    *(internal_config[id].handle.TCCRB) = (*(internal_config[id].handle.TCCRB) & ~(WGM2_MSK | WGM3_MSK)) | ((waveform & 0x0C) << 1U);
     return ret;
 }
 
@@ -564,6 +566,8 @@ timer_error_t timer_16_bit_set_input_compare_noise_canceler(uint8_t id, const bo
     {
         *(internal_config[id].handle.TCCRB) &= ~INC_MSK;
     }
+
+    return ret;
 }
 
 timer_error_t timer_16_bit_get_input_compare_noise_canceler(uint8_t id, bool * const enabled)
@@ -586,6 +590,7 @@ timer_error_t timer_16_bit_get_input_compare_noise_canceler(uint8_t id, bool * c
     }
 
     *enabled = ((*(internal_config[id].handle.TCCRB) & INC_MSK) != 0U);
+    return ret;
 }
 
 timer_error_t timer_16_bit_set_input_compare_edge_select(uint8_t id, const timer_16_bit_input_capture_edge_select_flag_t edge)
@@ -602,7 +607,8 @@ timer_error_t timer_16_bit_set_input_compare_edge_select(uint8_t id, const timer
         return ret;
     }
 
-    *(internal_config[id].handle.TCCRB) |=  (*(internal_config[id].handle.TCCRB) & ~INC_MSK) | (edge << ICES_BIT);
+    *(internal_config[id].handle.TCCRB) =  (*(internal_config[id].handle.TCCRB) & ~ICES_MSK) | (edge << ICES_BIT);
+    return ret;
 }
 
 timer_error_t timer_16_bit_get_input_compare_edge_select(uint8_t id, timer_16_bit_input_capture_edge_select_flag_t * const edge)
@@ -624,7 +630,7 @@ timer_error_t timer_16_bit_get_input_compare_edge_select(uint8_t id, timer_16_bi
         return ret;
     }
 
-    if (0 !=  (*(internal_config[id].handle.TCCRB) & ~INC_MSK))
+    if (0 !=  (*(internal_config[id].handle.TCCRB) & ICES_MSK))
     {
         *edge = TIMER16BIT_INPUT_CAPTURE_EDGE_RISING_EDGE;
     }
@@ -632,6 +638,7 @@ timer_error_t timer_16_bit_get_input_compare_edge_select(uint8_t id, timer_16_bi
     {
         *edge = TIMER16BIT_INPUT_CAPTURE_EDGE_FALLING_EDGE;
     }
+    return ret;
 }
 
 timer_error_t timer_16_bit_get_input_capture_value(uint8_t id, uint16_t * ticks)
@@ -655,6 +662,7 @@ timer_error_t timer_16_bit_get_input_capture_value(uint8_t id, uint16_t * ticks)
 
     *ticks  = *(internal_config[id].handle.TCNT_L);
     *ticks |= *(internal_config[id].handle.TCNT_H) << 8U;
+    return ret;
 }
 
 
@@ -683,7 +691,7 @@ timer_error_t timer_16_bit_get_waveform_generation(uint8_t id, timer_16_bit_wave
     return ret;
 }
 
-timer_error_t timer_16_bit_set_counter_value(uint8_t id, const uint16_t ticks)
+timer_error_t timer_16_bit_set_counter_value(uint8_t id, const uint16_t * const ticks)
 {
     timer_error_t ret = check_id(id);
     if (TIMER_ERROR_OK != ret)
@@ -698,13 +706,13 @@ timer_error_t timer_16_bit_set_counter_value(uint8_t id, const uint16_t ticks)
     }
 
     /* Write new value to internal timer/counter register */
-    *(internal_config[id].handle.TCNT_L) = ticks & 0xFF;
-    *(internal_config[id].handle.TCNT_H) = (ticks & 0xFF00) >> 8U;
+    *(internal_config[id].handle.TCNT_L) = *ticks & 0xFF;
+    *(internal_config[id].handle.TCNT_H) = (*ticks & 0xFF00) >> 8U;
 
     return ret;
 }
 
-timer_error_t timer_16_bit_get_counter_value(uint8_t id, uint16_t * ticks)
+timer_error_t timer_16_bit_get_counter_value(uint8_t id, uint16_t * const ticks)
 {
     timer_error_t ret = check_id(id);
     if (TIMER_ERROR_OK != ret)
@@ -729,7 +737,7 @@ timer_error_t timer_16_bit_get_counter_value(uint8_t id, uint16_t * ticks)
     return ret;
 }
 
-timer_error_t timer_16_bit_set_ocra_register_value(uint8_t id, uint16_t ocra)
+timer_error_t timer_16_bit_set_ocra_register_value(uint8_t id, const uint16_t * const ocra)
 {
     timer_error_t ret = check_id(id);
     if (TIMER_ERROR_OK != ret)
@@ -743,12 +751,12 @@ timer_error_t timer_16_bit_set_ocra_register_value(uint8_t id, uint16_t ocra)
         return ret;
     }
 
-    *internal_config[id].handle.OCRA_H = (ocra & 0xFF00) << 8U;
-    *internal_config[id].handle.OCRA_L = (ocra & 0xFF);
+    *(internal_config[id].handle.OCRA_H) = (*ocra & 0xFF00) >> 8U;
+    *(internal_config[id].handle.OCRA_L) = (*ocra & 0xFF);
     return ret;
 }
 
-timer_error_t timer_16_bit_get_ocra_register_value(uint8_t id, uint16_t * ocra)
+timer_error_t timer_16_bit_get_ocra_register_value(uint8_t id, uint16_t * const ocra)
 {
     timer_error_t ret = check_id(id);
     if (TIMER_ERROR_OK != ret)
@@ -772,7 +780,7 @@ timer_error_t timer_16_bit_get_ocra_register_value(uint8_t id, uint16_t * ocra)
     return ret;
 }
 
-timer_error_t timer_16_bit_set_ocrb_register_value(uint8_t id, uint16_t ocrb)
+timer_error_t timer_16_bit_set_ocrb_register_value(uint8_t id, const uint16_t * const ocrb)
 {
     timer_error_t ret = check_id(id);
     if (TIMER_ERROR_OK != ret)
@@ -786,12 +794,12 @@ timer_error_t timer_16_bit_set_ocrb_register_value(uint8_t id, uint16_t ocrb)
         return ret;
     }
 
-    *internal_config[id].handle.OCRB_H = (ocrb & 0xFF00) << 8U;
-    *internal_config[id].handle.OCRB_L = (ocrb & 0xFF);;
+    *internal_config[id].handle.OCRB_H = (*ocrb & 0xFF00) >> 8U;
+    *internal_config[id].handle.OCRB_L = (*ocrb & 0xFF);;
     return ret;
 }
 
-timer_error_t timer_16_bit_get_ocrb_register_value(uint8_t id, uint16_t * ocrb)
+timer_error_t timer_16_bit_get_ocrb_register_value(uint8_t id, uint16_t * const ocrb)
 {
     timer_error_t ret = check_id(id);
     if (TIMER_ERROR_OK != ret)
@@ -815,7 +823,7 @@ timer_error_t timer_16_bit_get_ocrb_register_value(uint8_t id, uint16_t * ocrb)
     return ret;
 }
 
-static timer_error_t timer_8_bit_write_config(uint8_t id, timer_16_bit_config_t * const config)
+static timer_error_t timer_16_bit_write_config(uint8_t id, timer_16_bit_config_t * const config)
 {
     timer_error_t ret = TIMER_ERROR_OK;
     /* Do not perform all usual parameter check because this function shall only be called

@@ -7,7 +7,6 @@
                 "${workspaceFolder}/Drivers/Adc/inc",
                 "${workspaceFolder}/Drivers/Adc/private_inc",
                 "${workspaceFolder}/Drivers/Adc/Tests/Stub",
-                "${workspaceFolder}/Drivers/Peripheral/inc",
                 "${workspaceFolder}/Drivers/Timers/Timer_generic/inc",
                 "${workspaceFolder}/Drivers/Timers/Tests/Stub",
                 "${workspaceFolder}/Drivers/Timers/Timer_8_bit/inc",

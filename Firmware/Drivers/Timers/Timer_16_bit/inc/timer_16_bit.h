@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 #include "timer_16_bit_reg.h"
-#include "generic_peripheral.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -294,7 +293,7 @@ timer_error_t timer_16_bit_get_waveform_generation(uint8_t id, timer_16_bit_wave
  *      TIMER_ERROR_OK             :   operation succeeded
  *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
 */
-timer_error_t timer_16_bit_set_ocra_register_value(uint8_t id, uint16_t ocra);
+timer_error_t timer_16_bit_set_ocra_register_value(uint8_t id, const uint16_t * const ocra);
 
 /**
  * @brief fetches given timer Output Compare A register value
@@ -304,7 +303,7 @@ timer_error_t timer_16_bit_set_ocra_register_value(uint8_t id, uint16_t ocra);
  *      TIMER_ERROR_OK             :   operation succeeded
  *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
 */
-timer_error_t timer_16_bit_get_ocra_register_value(uint8_t id, uint16_t * ocra);
+timer_error_t timer_16_bit_get_ocra_register_value(uint8_t id, uint16_t * const ocra);
 
 /**
  * @brief sets the targeted timer Output Compare B register value
@@ -314,7 +313,7 @@ timer_error_t timer_16_bit_get_ocra_register_value(uint8_t id, uint16_t * ocra);
  *      TIMER_ERROR_OK             :   operation succeeded
  *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
 */
-timer_error_t timer_16_bit_set_ocrb_register_value(uint8_t id, uint16_t ocrb);
+timer_error_t timer_16_bit_set_ocrb_register_value(uint8_t id, const uint16_t * const ocrb);
 
 /**
  * @brief fetches the targeted timer Output Compare B register value
@@ -324,7 +323,7 @@ timer_error_t timer_16_bit_set_ocrb_register_value(uint8_t id, uint16_t ocrb);
  *      TIMER_ERROR_OK             :   operation succeeded
  *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
 */
-timer_error_t timer_16_bit_get_ocrb_register_value(uint8_t id, uint16_t * ocrb);
+timer_error_t timer_16_bit_get_ocrb_register_value(uint8_t id, uint16_t * const ocrb);
 
 
 
@@ -340,7 +339,7 @@ timer_error_t timer_16_bit_get_ocrb_register_value(uint8_t id, uint16_t * ocrb);
  *      TIMER_ERROR_OK             :   operation succeeded
  *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
 */
-timer_error_t timer_16_bit_set_counter_value(uint8_t id, const uint16_t ticks);
+timer_error_t timer_16_bit_set_counter_value(uint8_t id, const uint16_t * const ticks);
 
 /**
  * @brief gets the targeted timer internal main counter from internal registers
@@ -351,7 +350,7 @@ timer_error_t timer_16_bit_set_counter_value(uint8_t id, const uint16_t ticks);
  *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
  *      TIMER_ERROR_NULL_POINTER   :   given pointer points to null
 */
-timer_error_t timer_16_bit_get_counter_value(uint8_t id, uint16_t * ticks);
+timer_error_t timer_16_bit_get_counter_value(uint8_t id, uint16_t * const ticks);
 
 /**
  * @brief gets the targeted timer internal input capture register value
