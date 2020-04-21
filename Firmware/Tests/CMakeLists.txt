@@ -24,6 +24,12 @@ add_subdirectory( ${CMAKE_SOURCE_DIR}/../Drivers/Adc/Tests
     ${CMAKE_BINARY_DIR}/Tests/Adc
 )
 
-add_subdirectory( ${CMAKE_SOURCE_DIR}/../Drivers/Timers/Tests
-    ${CMAKE_BINARY_DIR}/Tests/Timers
+add_subdirectory( ${CMAKE_SOURCE_DIR}/../Drivers/Timers/Timer_8_bit/Tests
+    ${CMAKE_BINARY_DIR}/Tests/Timers/Timer_8_bit
+)
+add_subdirectory( ${CMAKE_SOURCE_DIR}/../Drivers/Timers/Timer_8_bit_async/Tests
+    ${CMAKE_BINARY_DIR}/Tests/Timers/Timer_8_bit_async
+)
+add_subdirectory( ${CMAKE_SOURCE_DIR}/../Drivers/Timers/Timer_16_bit/Tests
+    ${CMAKE_BINARY_DIR}/Tests/Timers/Timer_16_bit
 )
