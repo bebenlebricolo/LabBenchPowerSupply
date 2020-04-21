@@ -19,7 +19,7 @@ void timer_8_bit_async_registers_stub_init_handle(timer_8_bit_async_handle_t * h
         handle->TCNT = &timer_8_bit_async_registers_stub.TCNT;
         handle->TIMSK = &timer_8_bit_async_registers_stub.TIMSK;
         handle->TIFR = &timer_8_bit_async_registers_stub.TIFR;
-        handle->ASSR = &timer_8_bit_async_registers_stub.ASSR;
+        handle->ASSR_REG = &timer_8_bit_async_registers_stub.ASSR_REG;
     }
 }
 

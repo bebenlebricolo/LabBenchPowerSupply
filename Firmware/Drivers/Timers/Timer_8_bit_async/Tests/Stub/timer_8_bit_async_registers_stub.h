@@ -20,7 +20,7 @@ typedef struct
     volatile uint8_t TCNT;  /**< Timer Counter main counting register   */
     volatile uint8_t TIMSK; /**< Timer Interrupt Mask register          */
     volatile uint8_t TIFR;  /**< Timer Interrupt Flags register         */
-    volatile uint8_t ASSR;  /**< Timer Interrupt Flags register         */
+    volatile uint8_t ASSR_REG;  /**< Timer Interrupt Flags register         */
 } timer_8_bit_async_registers_stub_t;
 
 extern timer_8_bit_async_registers_stub_t timer_8_bit_async_registers_stub;
