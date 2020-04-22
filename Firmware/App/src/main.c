@@ -46,7 +46,14 @@ driver_setup_error_t adc_register_all_channels(void)
 int main(void)
 {
     driver_setup_error_t init_error = DRIVER_SETUP_ERROR_OK;
+
+#ifdef USE_TIMER_DRIVER
     init_error = init_timer_0();
+#else
+    TCCR0A = (1 << WGM01) | (1 << WGM00) | (1 << COM0A0) | (1 << COM0B0) | (1 << COM0B1)  ;
+    TCCR0B = (1 << CS01);
+#endif
+
     if (DRIVER_SETUP_ERROR_OK != init_error)
     {
         error_handler();
@@ -66,11 +73,13 @@ int main(void)
 
     adc_start();
     sei();
+#ifdef USE_TIMER_DRIVER
     timer_error_t timer_error = timer_8_bit_start(0);
     if (TIMER_ERROR_OK != timer_error)
     {
         error_handler();
     }
+#endif
 
     while(true)
     {
