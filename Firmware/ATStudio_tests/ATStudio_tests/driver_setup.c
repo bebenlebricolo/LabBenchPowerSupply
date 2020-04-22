@@ -1,29 +1,9 @@
 #include "driver_setup.h"
 
 #include <avr/io.h>
-#include "adc.h"
 #include "timer_8_bit.h"
 #include "timer_8_bit_async.h"
 #include "timer_16_bit.h"
-
-driver_setup_error_t init_adc(void)
-{
-    adc_config_hal_t config;
-    adc_config_hal_get_default(&config);
-    config.prescaler = ADC_PRESCALER_64;
-    config.ref = ADC_VOLTAGE_REF_AVCC;
-    config.running_mode = ADC_RUNNING_MODE_SINGLE_SHOT;
-    config.supply_voltage_mv = 5000;
-    config.using_interrupt = true;
-
-
-    adc_error_t init_err = adc_base_init(&config);
-    if (ADC_ERROR_OK != init_err)
-    {
-        return DRIVER_SETUP_ERROR_INIT_FAILED;
-    }
-    return DRIVER_SETUP_ERROR_OK;
-}
 
 driver_setup_error_t init_timer_0(void)
 {
