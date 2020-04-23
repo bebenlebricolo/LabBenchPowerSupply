@@ -25,6 +25,8 @@
         "timer_8_bit_async_reg.h": "c",
         "timer_8_bit_reg.h": "c",
         "timer_generic.h": "c",
-        "timer_16_bit.h": "c"
+        "timer_16_bit.h": "c",
+        "driver_setup.h": "c",
+        "avr_mcu_section.h": "c"
     }
 }

@@ -6,6 +6,21 @@
 #include "driver_setup.h"
 #include <avr/interrupt.h>
 
+#ifdef USE_SIMAVR_VCD_TRACE
+    #include <simavr/avr/avr_mcu_section.h>
+    #include "pin_mapping.h"
+    AVR_MCU(16000000, "atmega328p");
+    AVR_MCU_VCD_FILE("my_trace_file.vcd", 1000);
+
+    const struct avr_mmcu_vcd_trace_t _mytrace[] _MMCU_ =
+    {
+        { AVR_MCU_VCD_SYMBOL("OC0A"), .mask = (1 << OC0A_PIN_NUMBER), .what = (void*)&OC0A_PORT_REG },
+        { AVR_MCU_VCD_SYMBOL("OC0B"), .mask = (1 << OC0B_PIN_NUMBER), .what = (void*)&OC0B_PORT_REG },
+        { AVR_MCU_VCD_SYMBOL("OC1A"), .mask = (1 << OC1A_PIN_NUMBER), .what = (void*)&OC1A_PORT_REG },
+        { AVR_MCU_VCD_SYMBOL("OC1A"), .mask = (1 << OC1B_PIN_NUMBER), .what = (void*)&OC1B_PORT_REG },
+    };
+#endif
+
 #define MAX_MUX 5
 
 static adc_mux_t mux_table[MAX_MUX] =
@@ -47,13 +62,15 @@ int main(void)
 {
     driver_setup_error_t init_error = DRIVER_SETUP_ERROR_OK;
 
-#ifdef USE_TIMER_DRIVER
+    /* Set up 8 bit timer 0 as 8 bit FAST PWM generator */
     init_error = init_timer_0();
-#else
-    TCCR0A = (1 << WGM01) | (1 << WGM00) | (1 << COM0A0) | (1 << COM0B0) | (1 << COM0B1)  ;
-    TCCR0B = (1 << CS01);
-#endif
+    if (DRIVER_SETUP_ERROR_OK != init_error)
+    {
+        error_handler();
+    }
 
+    /* Set up 16 bit timer 1 as 10 bit FAST PWM generator */
+    init_error = init_timer_1();
     if (DRIVER_SETUP_ERROR_OK != init_error)
     {
         error_handler();
@@ -73,13 +90,18 @@ int main(void)
 
     adc_start();
     sei();
-#ifdef USE_TIMER_DRIVER
+
+    /* Start both timers */
     timer_error_t timer_error = timer_8_bit_start(0);
     if (TIMER_ERROR_OK != timer_error)
     {
         error_handler();
     }
-#endif
+    timer_error = timer_16_bit_start(0);
+    if (TIMER_ERROR_OK != timer_error)
+    {
+        error_handler();
+    }
 
     while(true)
     {

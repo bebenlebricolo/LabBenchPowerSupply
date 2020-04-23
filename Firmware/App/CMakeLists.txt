@@ -13,11 +13,13 @@ target_include_directories(firmware PUBLIC
     ${CMAKE_SOURCE_DIR}/Drivers/Timers/Timer_8_bit/inc
     ${CMAKE_SOURCE_DIR}/Drivers/Timers/Timer_8_bit_async/inc
     ${CMAKE_SOURCE_DIR}/Drivers/Timers/Timer_16_bit/inc
+    ${SIMAVR_INCLUDE_DIR}
 )
 
 target_link_libraries(firmware
     adc_driver
     timer_8_bit_driver
+    timer_16_bit_driver
 )
 
 add_extra_avr_targets(firmware)
