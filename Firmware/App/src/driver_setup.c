@@ -119,7 +119,7 @@ driver_setup_error_t init_timer_1(void)
 
     /* Configuring timer */
     /* F_CPU = 16'000'000 Hz ; F_TIMER0 2'000'000 Hz*/
-    /* 10-bit wide -> 1024 values => F_PWM_1 = 7812 Hz*/
+    /* 10-bit wide -> 1024 values => F_PWM_1 = 1953 Hz*/
     config.timing_config.prescaler = TIMERxBIT_CLK_PRESCALER_8;
     config.timing_config.waveform_mode = TIMER16BIT_WG_PWM_FAST_10_bit_FULL_RANGE;
     /* Invert OC0x behavior to provide a correct PWM for a push-pull driver pair */
@@ -153,13 +153,13 @@ driver_setup_error_t init_timer_2(void)
     }
 
     /* Configuring handle */
-    config.handle.OCRA = &OCR0A;
-    config.handle.OCRB = &OCR0B;
-    config.handle.TCCRA = &TCCR0A;
-    config.handle.TCCRB = &TCCR0B;
-    config.handle.TCNT = &TCNT0;
-    config.handle.TIFR = &TIFR0;
-    config.handle.TIMSK = &TIMSK0;
+    config.handle.OCRA = &OCR2A;
+    config.handle.OCRB = &OCR2B;
+    config.handle.TCCRA = &TCCR2A;
+    config.handle.TCCRB = &TCCR2B;
+    config.handle.TCNT = &TCNT2;
+    config.handle.TIFR = &TIFR2;
+    config.handle.TIMSK = &TIMSK2;
     config.handle.ASSR_REG = &ASSR;
 
 	/* Enable OC0A and OC0B as outputs */
@@ -173,7 +173,7 @@ driver_setup_error_t init_timer_2(void)
 
     /* Configuring timer */
     /* F_CPU = 16'000'000 Hz ; F_TIMER0 2'000'000 Hz*/
-    /* 8-bit wide -> 256 values => F_PWM_0 = 7812 Hz*/
+    /* 8-bit wide -> 256 values => F_PWM_2 = 7812 Hz*/
     config.timing_config.prescaler = TIMER8BIT_ASYNC_CLK_PRESCALER_8;
     config.timing_config.waveform_mode = TIMER8BIT_WG_PWM_FAST_FULL_RANGE;
     /* Invert OC0x behavior to provide a correct PWM for a push-pull driver pair */

@@ -76,6 +76,14 @@ int main(void)
         error_handler();
     }
 
+    /* Set up 8 bit timer 2 as 8 bit FAST PWM generator */
+    init_error = init_timer_2();
+    if (DRIVER_SETUP_ERROR_OK != init_error)
+    {
+        error_handler();
+    }
+
+
     init_error = init_adc();
     if (DRIVER_SETUP_ERROR_OK != init_error)
     {
@@ -98,6 +106,11 @@ int main(void)
         error_handler();
     }
     timer_error = timer_16_bit_start(0);
+    if (TIMER_ERROR_OK != timer_error)
+    {
+        error_handler();
+    }
+    timer_error = timer_8_bit_async_start(0);
     if (TIMER_ERROR_OK != timer_error)
     {
         error_handler();
