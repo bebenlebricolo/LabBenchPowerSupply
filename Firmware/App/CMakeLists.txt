@@ -19,6 +19,7 @@ target_include_directories(firmware PUBLIC
 target_link_libraries(firmware
     adc_driver
     timer_8_bit_driver
+    timer_8_bit_async_driver
     timer_16_bit_driver
 )
 
