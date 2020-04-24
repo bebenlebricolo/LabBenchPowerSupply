@@ -99,14 +99,14 @@ set(COMPILER_WARNINGS "-Wall \
 set(COMPILER_LINKER_FORWARD_OPTIONS "-Wl,--relax,--gc-sections")
 set(FULL_OPTIONS "${COMPILE_OPTIONS} ${COMPILER_WARNINGS} ${COMPILER_LINKER_FORWARD_OPTIONS}")
 
-set (CMAKE_CXX_FLAGS_RELEASE "-O3 -fno-exceptions ${FULL_OPTIONS}" CACHE STRING "Default C++ flags for release" FORCE )
-set (CMAKE_C_FLAGS_RELEASE "-O3 ${FULL_OPTIONS}" CACHE STRING "Default C flags for release" FORCE )
+set (CMAKE_CXX_FLAGS_RELEASE "-O3 -fno-exceptions ${FULL_OPTIONS} -flto " CACHE STRING "Default C++ flags for release" FORCE )
+set (CMAKE_C_FLAGS_RELEASE "-O3 ${FULL_OPTIONS} -flto" CACHE STRING "Default C flags for release" FORCE )
 
-set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -gdwarf-2 -fno-exceptions ${FULL_OPTIONS}" CACHE STRING "Default C++ flags for release with debug info" FORCE )
-set (CMAKE_C_FLAGS_RELWITHDEBINFO "-O3 -g -gdwarf-2 ${FULL_OPTIONS}" CACHE STRING "Default C flags for release with debug info" FORCE )
+set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -gdwarf-2 -fno-exceptions ${FULL_OPTIONS} -flto" CACHE STRING "Default C++ flags for release with debug info" FORCE )
+set (CMAKE_C_FLAGS_RELWITHDEBINFO "-O3 -g -gdwarf-2 ${FULL_OPTIONS} -flto" CACHE STRING "Default C flags for release with debug info" FORCE )
 
-set( CMAKE_C_FLAGS_MINSIZEREL "-Os -mcall-prologues ${FULL_OPTIONS}" CACHE STRING "Default C flags for minimum size release" FORCE )
-set( CMAKE_CXX_FLAGS_MINSIZEREL "-Os -mcall-prologues ${FULL_OPTIONS}" CACHE STRING "Default C++ flags for minimum size release" FORCE )
+set( CMAKE_C_FLAGS_MINSIZEREL "-Os -mcall-prologues ${FULL_OPTIONS} -flto" CACHE STRING "Default C flags for minimum size release" FORCE )
+set( CMAKE_CXX_FLAGS_MINSIZEREL "-Os -mcall-prologues ${FULL_OPTIONS} -flto" CACHE STRING "Default C++ flags for minimum size release" FORCE )
 
 set (CMAKE_CXX_FLAGS_DEBUG "-Og -g -gdwarf-2 -fno-exceptions ${FULL_OPTIONS}")
 set (CMAKE_C_FLAGS_DEBUG " -Og -g -gdwarf-2 ${FULL_OPTIONS}")

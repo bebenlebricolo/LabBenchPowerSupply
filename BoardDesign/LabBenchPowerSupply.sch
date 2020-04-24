@@ -1306,4 +1306,16 @@ Text Notes 700  5875 0    31   ~ 0
 Anti collision protection circuit:\nwhen both high and low lines are triggered, \nthis transistor pulls back to ground the base of high side \nnpn driver, resulting in the extinction of high side driver, \nleaving low side driver on alone (forces N mosfets to close.\nMust reverse logic if P Mosfet is used instead of a N one)
 Text Label 7725 6050 2    50   ~ 0
 Vcc(5v)
+Text Notes 7575 2200 0    50   ~ 0
+OC1A
+Text Notes 7575 2300 0    50   ~ 0
+OC1B
+Text Notes 7575 1900 0    50   ~ 0
+OC0A
+Wire Notes Line
+	7825 1875 8175 1875
+Wire Notes Line
+	7775 2175 7900 2175
+Wire Notes Line
+	7800 2275 7925 2275
 $EndSCHEMATC
