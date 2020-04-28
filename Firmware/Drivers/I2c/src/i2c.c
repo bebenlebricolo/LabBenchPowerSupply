@@ -14,6 +14,7 @@ static struct
 {
     bool is_initialised;
     i2c_handle_t handle;
+    i2c_state_t state;
     void (*i2c_command_handler)(uint8_t * const data_byte);
 } internal_configuration[I2C_DEVICES_COUNT] = {0};
 
@@ -293,6 +294,14 @@ i2c_error_t i2c_enable(const uint8_t id)
     }
 
     *(internal_configuration[id].handle.TWCR) |= TWEN_MSK;
+    if (internal_configuration[id].is_initialised)
+    {
+        internal_configuration[id].state = I2C_STATE_READY;
+    }
+    else
+    {
+        internal_configuration[id].state = I2C_STATE_NOT_INITIALISED;
+    }
     return I2C_ERROR_OK;
 }
 
@@ -308,6 +317,7 @@ i2c_error_t i2c_disable(const uint8_t id)
     }
 
     *(internal_configuration[id].handle.TWCR) &= ~TWEN_MSK;
+    internal_configuration[id].state = I2C_STATE_DISABLED;
     return I2C_ERROR_OK;
 }
 
@@ -326,25 +336,11 @@ i2c_error_t i2c_slave_set_command_handler(const uint8_t id, void (*i2c_slave_com
     return I2C_ERROR_OK;
 }
 
-i2c_error_t i2c_init(const uint8_t id, const i2c_config_t * const config)
+static i2c_error_t write_config(const uint8_t id, const i2c_config_t * const config)
 {
-    if (!is_id_valid(id))
-    {
-        return I2C_ERROR_DEVICE_NOT_FOUND;
-    }
-    if (NULL == config)
-    {
-        return I2C_ERROR_NULL_POINTER;
-    }
     if (!is_handle_initialised(id))
     {
         return I2C_ERROR_NULL_HANDLE;
-    }
-
-    i2c_error_t local_error = i2c_set_handle(id, &config->handle);
-    if (I2C_ERROR_OK != local_error)
-    {
-        return local_error;
     }
 
     /* Baudrate */
@@ -378,7 +374,40 @@ i2c_error_t i2c_init(const uint8_t id, const i2c_config_t * const config)
         *(internal_configuration[id].handle.TWCR) |= TWIE_MSK;
     }
 
+    return I2C_ERROR_OK;
+}
+
+i2c_error_t i2c_init(const uint8_t id, const i2c_config_t * const config)
+{
+    if (!is_id_valid(id))
+    {
+        return I2C_ERROR_DEVICE_NOT_FOUND;
+    }
+    if (NULL == config)
+    {
+        return I2C_ERROR_NULL_POINTER;
+    }
+
+    i2c_error_t local_error = i2c_set_handle(id, &config->handle);
+    if (I2C_ERROR_OK != local_error)
+    {
+        return local_error;
+    }
+
+    local_error = write_config(id, config);
+    if (I2C_ERROR_OK != local_error)
+    {
+        return local_error;
+    }
+
     local_error = i2c_enable(id);
+    if (I2C_ERROR_OK != local_error)
+    {
+        return local_error;
+    }
+
+    internal_configuration[id].state = I2C_STATE_READY;
+
     return local_error;
 }
 
@@ -389,7 +418,6 @@ i2c_error_t i2c_deinit(const uint8_t id)
     {
         return I2C_ERROR_DEVICE_NOT_FOUND;
     }
-    internal_configuration[id].is_initialised = false;
     i2c_error_t local_error = i2c_disable(id);
     if (I2C_ERROR_OK != local_error)
     {
@@ -397,5 +425,29 @@ i2c_error_t i2c_deinit(const uint8_t id)
     }
     i2c_config_t config;
     (void) i2c_get_default_config(&config);
+    local_error = write_config(id, &config);
+    if (I2C_ERROR_OK != local_error)
+    {
+        return local_error;
+    }
+    local_error = i2c_set_handle(id, &(config.handle));
+    internal_configuration[id].is_initialised = false;
+    internal_configuration[id].state = I2C_STATE_DISABLED;;
+    return local_error;
+}
 
+
+i2c_error_t i2c_get_state(const uint8_t id, i2c_state_t * const state)
+{
+    if (!is_id_valid(id))
+    {
+        return I2C_ERROR_DEVICE_NOT_FOUND;
+    }
+    if (NULL == state)
+    {
+        return I2C_ERROR_NULL_POINTER;
+    }
+
+    *state = internal_configuration[id].state;
+    return I2C_ERROR_OK;
 }

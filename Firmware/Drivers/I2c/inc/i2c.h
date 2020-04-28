@@ -44,15 +44,15 @@ typedef enum
 
 typedef enum
 {
-    I2C_STATE_READY,                /**< Configured and enabled                                  */
-    I2C_STATE_NOT_INITIALISED,      /**< Not configured, need to call i2c_init first             */
-    I2C_STATE_DISABLED,             /**< Configured, but peripheral disabled                     */
+    I2C_STATE_DISABLED              = 0, /**< Configured, but peripheral disabled                     */
+    I2C_STATE_NOT_INITIALISED,           /**< Not configured, need to call i2c_init first             */
+    I2C_STATE_READY,                     /**< Configured and enabled                                  */
     /* I2C busy states */
-    I2C_STATE_SLAVE_RECEIVING,      /**< Peripheral is currently receiving data as slave device  */
-    I2C_STATE_SLAVE_TRANSMITTING,   /**< Peripheral is currently sending data as slave device    */
-    I2C_STATE_MASTER_RECEIVING,     /**< Peripheral is currently receiving data as master device */
-    I2C_STATE_MASTER_TRANSMITTING,  /**< Peripheral is currently sending data as master device   */
-    I2C_STATE_PERIPHERAL_ERROR      /**< Peripheral encountered errors and alerts application    */
+    I2C_STATE_SLAVE_RECEIVING,           /**< Peripheral is currently receiving data as slave device  */
+    I2C_STATE_SLAVE_TRANSMITTING,        /**< Peripheral is currently sending data as slave device    */
+    I2C_STATE_MASTER_RECEIVING,          /**< Peripheral is currently receiving data as master device */
+    I2C_STATE_MASTER_TRANSMITTING,       /**< Peripheral is currently sending data as master device   */
+    I2C_STATE_PERIPHERAL_ERROR           /**< Peripheral encountered errors and alerts application    */
 } i2c_state_t;
 
 
