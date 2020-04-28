@@ -1,6 +1,8 @@
 #ifndef I2C_REG_HEADER
 #define I2C_REG_HEADER
 
+#include <stdint.h>
+
 /* TWCR register bit mapping */
 #define TWIE_BIT  0
 #define TWEN_BIT  2
@@ -107,5 +109,19 @@ typedef enum
     I2C_MISC_NO_RELEVANT_STATE              = 0xF8,
     I2C_MISC_BUS_ERROR_ILLEGAL_START_STOP   = 0x00,
 } i2c_miscellaneous_states_t;
+
+/**
+ * @brief packs all necesseray register pointers to interact with TWI peripheral
+*/
+typedef struct
+{
+    volatile uint8_t * TWCR;  /**< Two Wire Interface Control register              */
+    volatile uint8_t * TWBR;  /**< Two Wire Interface Bit Rate register             */
+    volatile uint8_t * TWSR;  /**< Two Wire Interface Status register               */
+    volatile uint8_t * TWDR;  /**< Two Wire Interface Data (in/out) register        */
+    volatile uint8_t * TWAR;  /**< Two Wire Interface Slave Address register        */
+    volatile uint8_t * TWAMR; /**< Two Wire Interface Slave Address Mask register   */
+} i2c_handle_t;
+
 
 #endif /* I2C_REG_HEADER */
