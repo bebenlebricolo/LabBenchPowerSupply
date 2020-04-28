@@ -27,6 +27,7 @@
         "timer_generic.h": "c",
         "timer_16_bit.h": "c",
         "driver_setup.h": "c",
-        "avr_mcu_section.h": "c"
+        "avr_mcu_section.h": "c",
+        "i2c.h": "c"
     }
 }

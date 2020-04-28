@@ -4,16 +4,43 @@
             "name": "LabBenchPowerSupply_Tests",
             "includePath": [
                 "${workspaceFolder}/App/inc",
+
                 "${workspaceFolder}/Drivers/Adc/inc",
                 "${workspaceFolder}/Drivers/Adc/private_inc",
                 "${workspaceFolder}/Drivers/Adc/Tests/Stub",
-                "${workspaceFolder}/Drivers/Timers/Timer_generic/inc",
+
                 "${workspaceFolder}/Drivers/Timers/Timer_8_bit/inc",
                 "${workspaceFolder}/Drivers/Timers/Timer_16_bit/inc",
                 "${workspaceFolder}/Drivers/Timers/Timer_8_bit_async/inc",
                 "${workspaceFolder}/Drivers/Timers/Timer_8_bit/Tests/Stub",
                 "${workspaceFolder}/Drivers/Timers/Timer_8_bit_async/Tests/Stub",
                 "${workspaceFolder}/Drivers/Timers/Timer_16_bit/Tests/Stub",
+
+                "${workspaceFolder}/Drivers/I2c/inc",
+                "${workspaceFolder}/Drivers/I2c/Tests",
+
+                "${workspaceFolder}/**",
+                "/usr/include",
+                "/usr/include/c++/9.3.0/",
+                "/usr/include/gtest",
+                "/usr/avr/include",
+                "/usr/lib/gcc/avr/9.3.0/include"
+            ],
+            "defines": [
+                "__AVR_ATmega328__",
+                "UNIT_TESTING"
+            ],
+            "compilerPath": "/usr/bin/g++",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "gcc-x64"
+        },
+        {
+            "name": "LabBenchPowerSupply_I2c_Tests",
+            "includePath": [
+                "${workspaceFolder}/Drivers/I2c/inc",
+                "${workspaceFolder}/Drivers/I2c/Tests",
+
                 "${workspaceFolder}/**",
                 "/usr/include",
                 "/usr/include/c++/9.3.0/",

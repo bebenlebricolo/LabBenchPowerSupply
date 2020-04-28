@@ -55,6 +55,12 @@ typedef enum
     I2C_STATE_PERIPHERAL_ERROR      /**< Peripheral encountered errors and alerts application    */
 } i2c_state_t;
 
+
+/* #############################################################################################
+   ######################################## Configuration API ##################################
+   ############################################################################################# */
+
+
 /**
  * @brief gets a default configuration for I2C driver, with non initialised handle (you have to manually input right register addresses)
  * @param[out]  config  : default configuration output
@@ -65,27 +71,152 @@ typedef enum
 i2c_error_t i2c_get_default_config(i2c_config_t * const config);
 
 /**
- * @brief initialises targeted instance of I2C driver with provided configuration object.
- * Note that handle field of the config object has to be initialised set before this function is called to prevent
- * getting an error about unitialised handle.
+ * @brief sets the selected device I2C registers handle
  * @param[in]   id      : selected I2C driver instance to be configured
- * @param[in]   config  : configuration representation used to configure physical TWI peripheral
+ * @param[in]   handle  : contains pointers to hardware registers
+ * @return i2c_error_t :
+ *      I2C_ERROR_OK                 : Operation succeeded
+ *      I2C_ERROR_NULL_POINTER        : Uninitialised handle in config object (could not access to device's registers)
+ *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
+*/
+i2c_error_t i2c_set_handle(const uint8_t id, const i2c_handle_t * const handle);
+
+/**
+ * @brief copies internal handle to given output object
+ * @param[in]   id      : selected I2C driver instance to be configured
+ * @param[out]  handle  : contains pointers to hardware registers
+ * @return i2c_error_t :
+ *      I2C_ERROR_OK                 : Operation succeeded
+ *      I2C_ERROR_NULL_POINTER        : Uninitialised handle in config object (could not access to device's registers)
+ *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
+*/
+i2c_error_t i2c_get_handle(const uint8_t id, i2c_handle_t * const handle);
+
+
+/* #############################################################################################
+   ######################################## Single shot registers manipulators #################
+   ############################################################################################# */
+
+/**
+ * @brief sets the selected device I2C slave address to which it is meant to respond
+ * @param[in]   id      : selected I2C driver instance to be configured
+ * @param[in]   address : slave address of the selected device
+ * @return i2c_error_t :
+ *      I2C_ERROR_OK                 : Operation succeeded
+ *      I2C_ERROR_NULL_HANDLE        : Uninitialised handle in config object (could not access to device's registers)
+ *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
+*/
+i2c_error_t i2c_set_slave_address(const uint8_t id, const uint8_t address);
+
+/**
+ * @brief reads the selected I2C device slave address from registers
+ * @param[in]   id      : selected I2C driver instance to be configured
+ * @param[out]   address : slave address of the selected device
  * @return i2c_error_t :
  *      I2C_ERROR_OK                 : Operation succeeded
  *      I2C_ERROR_NULL_POINTER       : Uninitialised pointer parameter
- *      I2C_ERROR_NULL_HANDLE        : Uninitialised handle in config object
+ *      I2C_ERROR_NULL_HANDLE        : Uninitialised handle in config object (could not access to device's registers)
  *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
 */
-i2c_error_t i2c_init(const uint8_t id, const i2c_config_t * const config);
+i2c_error_t i2c_get_slave_address(const uint8_t id, uint8_t * const address);
 
 /**
- * @brief restores selected peripheral's configuration back to default and disable it
- * @param[in]   id      : selected I2C driver instance to be configured
+ * @brief sets the selected device I2C prescaler register
+ * @param[in]   id          : selected I2C driver instance to be configured
+ * @param[in]   prescaler   : prescaler value written to device
  * @return i2c_error_t :
  *      I2C_ERROR_OK                 : Operation succeeded
+ *      I2C_ERROR_NULL_HANDLE        : Uninitialised handle in config object (could not access to device's registers)
  *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
 */
-i2c_error_t i2c_deinit(const uint8_t id);
+i2c_error_t i2c_set_prescaler(const uint8_t id, const i2c_prescaler_t prescaler);
+
+/**
+ * @brief reads the selected device's prescaler from hardware register
+ * @param[in]   id          : selected I2C driver instance to be configured
+ * @param[out]  prescaler   : prescaler value
+ * @return i2c_error_t :
+ *      I2C_ERROR_OK                 : Operation succeeded
+ *      I2C_ERROR_NULL_POINTER       : Uninitialised pointer parameter
+ *      I2C_ERROR_NULL_HANDLE        : Uninitialised handle in config object (could not access to device's registers)
+ *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
+*/
+i2c_error_t i2c_get_prescaler(const uint8_t id, i2c_prescaler_t * const prescaler);
+
+/**
+ * @brief sets the baudrate of selected I2C device
+ * @param[in]   id          : selected I2C driver instance to be configured
+ * @param[in]   baudrate    : baudrate value
+ * @return i2c_error_t :
+ *      I2C_ERROR_OK                 : Operation succeeded
+ *      I2C_ERROR_NULL_HANDLE        : Uninitialised handle in config object (could not access to device's registers)
+ *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
+*/
+i2c_error_t i2c_set_baudrate(const uint8_t id, const uint8_t baudrate);
+
+/**
+ * @brief reads the baudrate of selected I2C device from hardware register
+ * @param[in]   id          : selected I2C driver instance to be configured
+ * @param[out]  baudrate    : baudrate value
+ * @return i2c_error_t :
+ *      I2C_ERROR_OK                 : Operation succeeded
+ *      I2C_ERROR_NULL_POINTER       : Uninitialised pointer parameter
+ *      I2C_ERROR_NULL_HANDLE        : Uninitialised handle in config object (could not access to device's registers)
+ *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
+*/
+i2c_error_t i2c_get_baudrate(const uint8_t id, uint8_t * const baudrate);
+
+/**
+ * @brief sets general call flag bit in selected I2C device's registers
+ * @param[in]   id                      : selected I2C driver instance to be configured
+ * @param[in]   general_call_enabled    : whether general call feature is enabled or not
+ * @return i2c_error_t :
+ *      I2C_ERROR_OK                 : Operation succeeded
+ *      I2C_ERROR_NULL_HANDLE        : Uninitialised handle in config object (could not access to device's registers)
+ *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
+*/
+i2c_error_t i2c_set_general_call_enabled(const uint8_t id, const bool general_call_enabled);
+
+/**
+ * @brief reads general call flag bit from selected I2C device's registers
+ * @param[in]   id                      : selected I2C driver instance to be configured
+ * @param[out]  general_call_enabled    : whether general call feature is enabled or not
+ * @return i2c_error_t :
+ *      I2C_ERROR_OK                 : Operation succeeded
+ *      I2C_ERROR_NULL_POINTER       : Uninitialised pointer parameter
+ *      I2C_ERROR_NULL_HANDLE        : Uninitialised handle in config object (could not access to device's registers)
+ *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
+*/
+i2c_error_t i2c_get_general_call_enabled(const uint8_t id, bool * const general_call_enabled);
+
+/**
+ * @brief configure selected device processing mode : either interrupt-based or non-interrupt-based
+ * Note : one will need to use i2c_process() in ordrer to use I2C device in non-interrupt-based mode
+ * @param[in]   id             : selected I2C driver instance to be configured
+ * @param[in]   use_interrupts : tells whether driver is used in interrupt-based processing mode or non-interrupt-based
+ * @return i2c_error_t :
+ *      I2C_ERROR_OK                 : Operation succeeded
+ *      I2C_ERROR_NULL_HANDLE        : Uninitialised handle in config object (could not access to device's registers)
+ *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
+*/
+i2c_error_t i2c_set_interrupt_mode(const uint8_t id, const bool use_interrupts);
+
+/**
+ * @brief reads selected device processing mode : either interrupt-based or non-interrupt-based
+ * @param[in]   id             : selected I2C driver instance to be configured
+ * @param[out]  use_interrupts : tells whether driver is used in interrupt-based processing mode or non-interrupt-based
+ * @return i2c_error_t :
+ *      I2C_ERROR_OK                 : Operation succeeded
+ *      I2C_ERROR_NULL_POINTER       : Uninitialised pointer parameter
+ *      I2C_ERROR_NULL_HANDLE        : Uninitialised handle in config object (could not access to device's registers)
+ *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
+*/
+i2c_error_t i2c_get_interrupt_mode(const uint8_t id, bool * const use_interrupts);
+
+
+/* #############################################################################################
+   ######################################## General API ########################################
+   ############################################################################################# */
 
 /**
  * @brief powers up selected device (no need for it to be configured or not)
@@ -114,132 +245,68 @@ i2c_error_t i2c_disable(const uint8_t id);
  *      I2C_ERROR_NULL_POINTER       : Uninitialised pointer parameter
  *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
 */
-i2c_error_t i2c_slave_set_command_handler(const uint8_t id, void (*i2c_slave_command_handler)(uint8_t data_byte));
+i2c_error_t i2c_slave_set_command_handler(const uint8_t id, void (*i2c_slave_command_handler)(uint8_t * const data_byte));
+
 
 /**
- * @brief sets the selected device I2C slave address to which it is meant to respond
+ * @brief initialises targeted instance of I2C driver with provided configuration object.
+ * Note that handle field of the config object has to be initialised set before this function is called to prevent
+ * getting an error about unitialised handle.
  * @param[in]   id      : selected I2C driver instance to be configured
- * @param[in]   address : slave address of the selected device
+ * @param[in]   config  : configuration representation used to configure physical TWI peripheral
  * @return i2c_error_t :
  *      I2C_ERROR_OK                 : Operation succeeded
- *      I2C_ERROR_NULL_HANDLE        : Uninitialised handle in config object (could not access to device's registers)
+ *      I2C_ERROR_NULL_POINTER       : Uninitialised pointer parameter
+ *      I2C_ERROR_NULL_HANDLE        : Uninitialised handle in config object
  *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
 */
-i2c_error_t i2c_set_slave_address(const uint8_t id, const uint8_t address);
+i2c_error_t i2c_init(const uint8_t id, const i2c_config_t * const config);
 
 /**
- * @brief reads the selected I2C device slave address from registers
+ * @brief restores selected peripheral's configuration back to default and disable it
  * @param[in]   id      : selected I2C driver instance to be configured
- * @param[in]   address : slave address of the selected device
  * @return i2c_error_t :
  *      I2C_ERROR_OK                 : Operation succeeded
- *      I2C_ERROR_NULL_POINTER       : Uninitialised pointer parameter
- *      I2C_ERROR_NULL_HANDLE        : Uninitialised handle in config object (could not access to device's registers)
  *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
 */
-i2c_error_t i2c_get_slave_address(const uint8_t id, uint8_t * const address);
+i2c_error_t i2c_deinit(const uint8_t id);
 
-/**
- * @brief sets the selected device I2C prescaler register
- * @param[in]   id          : selected I2C driver instance to be configured
- * @param[in]   prescaler   : prescaler value written to device
- * @return i2c_error_t :
- *      I2C_ERROR_OK                 : Operation succeeded
- *      I2C_ERROR_NULL_HANDLE        : Uninitialised handle in config object (could not access to device's registers)
- *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
-*/
-i2c_error_t i2c_set_prescaler(const uint8_t id, const i2c_prescaler_t prescaler);
-
-/**
- * @brief reads the selected device's prescaler from hardware register
- * @param[in]   id          : selected I2C driver instance to be configured
- * @param[in]   prescaler   : prescaler value
- * @return i2c_error_t :
- *      I2C_ERROR_OK                 : Operation succeeded
- *      I2C_ERROR_NULL_POINTER       : Uninitialised pointer parameter
- *      I2C_ERROR_NULL_HANDLE        : Uninitialised handle in config object (could not access to device's registers)
- *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
-*/
-i2c_error_t i2c_get_prescaler(const uint8_t id, i2c_prescaler_t * const prescaler);
-
-/**
- * @brief sets the baudrate of selected I2C device
- * @param[in]   id          : selected I2C driver instance to be configured
- * @param[in]   baudrate    : baudrate value
- * @return i2c_error_t :
- *      I2C_ERROR_OK                 : Operation succeeded
- *      I2C_ERROR_NULL_HANDLE        : Uninitialised handle in config object (could not access to device's registers)
- *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
-*/
-i2c_error_t i2c_set_baudrate(const uint8_t id, const uint8_t baudrate);
-
-/**
- * @brief reads the baudrate of selected I2C device from hardware register
- * @param[in]   id          : selected I2C driver instance to be configured
- * @param[in]   baudrate    : baudrate value
- * @return i2c_error_t :
- *      I2C_ERROR_OK                 : Operation succeeded
- *      I2C_ERROR_NULL_POINTER       : Uninitialised pointer parameter
- *      I2C_ERROR_NULL_HANDLE        : Uninitialised handle in config object (could not access to device's registers)
- *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
-*/
-i2c_error_t i2c_get_baudrate(const uint8_t id, uint8_t * const baudrate);
-
-/**
- * @brief sets general call flag bit in selected I2C device's registers
- * @param[in]   id                      : selected I2C driver instance to be configured
- * @param[in]   general_call_enabled    : whether general call feature is enabled or not
- * @return i2c_error_t :
- *      I2C_ERROR_OK                 : Operation succeeded
- *      I2C_ERROR_NULL_HANDLE        : Uninitialised handle in config object (could not access to device's registers)
- *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
-*/
-i2c_error_t i2c_set_general_call_enabled(const uint8_t id, const bool general_call_enabled);
-
-/**
- * @brief reads general call flag bit from selected I2C device's registers
- * @param[in]   id                      : selected I2C driver instance to be configured
- * @param[in]   general_call_enabled    : whether general call feature is enabled or not
- * @return i2c_error_t :
- *      I2C_ERROR_OK                 : Operation succeeded
- *      I2C_ERROR_NULL_POINTER       : Uninitialised pointer parameter
- *      I2C_ERROR_NULL_HANDLE        : Uninitialised handle in config object (could not access to device's registers)
- *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
-*/
-i2c_error_t i2c_get_general_call_enabled(const uint8_t id, bool * const general_call_enabled);
-
-/**
- * @brief configure selected device processing mode : either interrupt-based or non-interrupt-based
- * Note : one will need to use i2c_process() in ordrer to use I2C device in non-interrupt-based mode
- * @param[in]   id             : selected I2C driver instance to be configured
- * @param[in]   use_interrupts : tells whether driver is used in interrupt-based processing mode or non-interrupt-based
- * @return i2c_error_t :
- *      I2C_ERROR_OK                 : Operation succeeded
- *      I2C_ERROR_NULL_HANDLE        : Uninitialised handle in config object (could not access to device's registers)
- *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
-*/
-i2c_error_t i2c_set_interrupt_mode(const uint8_t id, const bool use_interrupts);
-
-/**
- * @brief reads selected device processing mode : either interrupt-based or non-interrupt-based
- * @param[in]   id             : selected I2C driver instance to be configured
- * @param[in]   use_interrupts : tells whether driver is used in interrupt-based processing mode or non-interrupt-based
- * @return i2c_error_t :
- *      I2C_ERROR_OK                 : Operation succeeded
- *      I2C_ERROR_NULL_POINTER       : Uninitialised pointer parameter
- *      I2C_ERROR_NULL_HANDLE        : Uninitialised handle in config object (could not access to device's registers)
- *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
-*/
-i2c_error_t i2c_get_interrupt_mode(const uint8_t id, bool * const use_interrupts);
 
 /**
  * @brief returns selected driver instance's state machine current state
- * @param[in]   id             : selected I2C driver instance to be configured
+ * @param[in]   id    : selected I2C driver instance to be configured
+ * @param[out]  state : current internal state of selected driver state machine
  * @return i2c_error_t :
+ *      I2C_ERROR_OK                 : Operation succeeded
  *      I2C_ERROR_NULL_POINTER       : Uninitialised pointer parameter
  *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
 */
 i2c_error_t i2c_get_state(const uint8_t id, i2c_state_t * const state);
+
+/**
+ * @brief this function shall be used when non-interrupt mode is used
+ * It basically checks driver current state and performs actions whenever required
+ * E.g: when performing an I2C write action :
+ * my_module.c :
+ *   i2c_write(0, 0x21, buffer, 26);
+ *   -> copies the buffer address internally and posts a write operation if
+ *      device is ready (@see get_state(id))
+ *
+ * main.c, in infinite loop:
+ *  i2c_process();
+ *  -> Will handle write operation triggered by my_module.c and as soon as I2C peripheral
+ *     returns from its busy state (success or failure), next operation in the stack is triggered.
+ *     In this example, execution flow will go as this :
+ *     1 - i2c_process() sends a Start condition as master Transmitter mode and returns
+ *     2 - next call will assert Peripheral is ready (TWINT is set), if so : write device's address on bus and return
+ *     3 - next call will assert Peripheral is ready, if so : send first byte of data in buffer and return
+ *     4 - will proceed as previous line until reaching the end of data buffer
+ *     5 - will finally send a Stop condition on I2C bus and put driver back in its I2C_STATE_READY state
+ * @return i2c_error_t
+ *      I2C_ERROR_OK                 : Operation succeeded
+ *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
+*/
+i2c_error_t i2c_process(const uint8_t id);
 
 /**
  * @brief writes data to I2C bus
@@ -260,7 +327,7 @@ i2c_error_t i2c_write(const uint8_t id, const uint8_t target_address , const uin
  * @brief reads data to I2C bus
  * @param[in]   id              : selected I2C driver instance to be configured
  * @param[in]   target_address  : targeted slave address on I2C bus (address is not checked at runtime, must not bit greater than 127)
- * @param[in]   buffer          : pointer to a buffer of bytes holding the actual payload to be sent over I2C bus
+ * @param[out]  buffer          : pointer to a buffer of bytes holding the actual payload to be sent over I2C bus
  * @param[in]   length          : total length of given buffer
  * @return i2c_error_t :
  *      I2C_ERROR_OK                  : Operation succeeded
