@@ -4,6 +4,8 @@
 #include <stddef.h>
 #include <string.h>
 
+#define I2C_MAX_ADDRESS 127U
+
 #ifndef I2C_DEVICES_COUNT
     #error "I2C_DEVICES_COUNT is not defined. Please add #define I2C_DEVICES_COUNT in config.h to use this timer"
 #elif I2C_DEVICES_COUNT == 0
@@ -17,6 +19,21 @@ static struct
     i2c_state_t state;
     void (*i2c_command_handler)(uint8_t * const data_byte);
 } internal_configuration[I2C_DEVICES_COUNT] = {0};
+
+static volatile struct
+{
+    uint8_t command;    /**< Contains target address + read/write bit                           */
+    uint8_t increment;  /**< Increment used in Rx/Tx mode to iterate though the internal buffer */
+    uint8_t length;     /**< Length of Read/Write command                                       */
+    uint8_t * buffer;   /**< Source/Destination buffer                                          */
+} internal_buffer[I2C_DEVICES_COUNT] = {0};
+
+/* handlers used to process in/out data when TWI peripheral needs servicing */
+static i2c_error_t i2c_master_tx_process(const uint8_t id);
+static i2c_error_t i2c_master_rx_process(const uint8_t id);
+static i2c_error_t i2c_slave_tx_process(const uint8_t id);
+static i2c_error_t i2c_slave_rx_process(const uint8_t id);
+
 
 /* In case no handler is given, simply discard incoming data */
 static inline void default_command_handler(uint8_t * const data_byte)
@@ -39,6 +56,11 @@ static inline bool is_handle_initialised(const uint8_t id)
 static inline bool is_id_valid(const uint8_t id)
 {
     return id < I2C_DEVICES_COUNT;
+}
+
+static inline bool is_twint_set(const uint8_t id)
+{
+    return (0 != ((*internal_configuration[id].handle.TWCR) & TWINT_MSK));
 }
 
 static inline void reset_handle(i2c_handle_t * const handle)
@@ -449,5 +471,98 @@ i2c_error_t i2c_get_state(const uint8_t id, i2c_state_t * const state)
     }
 
     *state = internal_configuration[id].state;
+    return I2C_ERROR_OK;
+}
+
+static i2c_error_t i2c_master_tx_process(const uint8_t id)
+{
+
+}
+
+
+static i2c_error_t process_helper_single(const uint8_t id)
+{
+    i2c_error_t ret = I2C_ERROR_OK;
+    switch(internal_configuration[id].state)
+    {
+        /* TWINT is raised while no operation asked : this is the slave mode being activated by I2C bus */
+        case I2C_STATE_READY:
+            /* TODO : retrieve which mode between I2C slave receive or I2C slave transmit we are in */
+            break;
+        /* Either a Start condition written from i2c_write was sent or a Tx operation is already ongoing */
+        case I2C_STATE_MASTER_TRANSMITTING:
+            ret = i2c_master_tx_process(id);
+            break;
+        /* Either a Start condition was written from i2c_read or a Rx operation is already ongoing */
+        case I2C_STATE_MASTER_RECEIVING:
+            ret = i2c_master_rx_process(id);
+            break;
+        /* A Slave receive operation is ongoing */
+        case I2C_STATE_SLAVE_TRANSMITTING:
+            ret = i2c_slave_tx_process(id);
+            break;
+        /* A Slave transmit operation is ongoing */
+        case I2C_STATE_SLAVE_RECEIVING:
+            ret = i2c_slave_rx_process(id);
+            break;
+        default:
+            /* Do nothing otherwise */
+            ret = I2C_ERROR_WRONG_STATE;
+            break;
+    }
+    return ret;
+}
+
+/* Iterates over available i2c devices to find which one needs servicing */
+static void process_helper(void)
+{
+    for(uint8_t i = 0 ; i < I2C_DEVICES_COUNT ; i++)
+    {
+        if (is_twint_set(i))
+        {
+            process_helper_single(i);
+        }
+    }
+}
+
+i2c_error_t i2c_process(const uint8_t id)
+{
+    if (!is_id_valid(id))
+    {
+        return I2C_ERROR_DEVICE_NOT_FOUND;
+    }
+    process_helper_single(id);
+    return I2C_ERROR_OK;
+}
+
+i2c_error_t i2c_write(const uint8_t id, const uint8_t target_address , const uint8_t * const buffer, const uint8_t length)
+{
+    if (!is_id_valid(id))
+    {
+        return I2C_ERROR_DEVICE_NOT_FOUND;
+    }
+    if (NULL == buffer)
+    {
+        return I2C_ERROR_NULL_POINTER;
+    }
+    if (I2C_MAX_ADDRESS < target_address)
+    {
+        return I2C_ERROR_INVALID_ADDRESS;
+    }
+    if (I2C_STATE_READY != internal_configuration[id].state || is_twint_set(id))
+    {
+        return I2C_ERROR_ALREADY_PROCESSING;
+    }
+
+    /* Initialises internal buffer with supplied data */
+    internal_buffer[id].buffer = buffer;
+    internal_buffer[id].length = length;
+    internal_buffer[id].increment = 0;
+    internal_buffer[id].command = (target_address << 1U) | I2C_CMD_WRITE_BIT;
+
+    /* Switch internal state to master TX state and send a start condition on I2C bus */
+    internal_configuration[id].state = I2C_STATE_MASTER_TRANSMITTING;
+    *internal_configuration[id].handle.TWCR |= TWSTA_MSK;
+
     return I2C_ERROR_OK;
 }

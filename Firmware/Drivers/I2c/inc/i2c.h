@@ -4,6 +4,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "i2c_reg.h"
+
+#define I2C_CMD_WRITE_BIT 0U
+#define I2C_CMD_READ_BIT  1U
+
+
 /**
  * @brief base I2C driver prescaler values
 */
@@ -33,13 +38,15 @@ typedef struct
 */
 typedef enum
 {
-    I2C_ERROR_OK,                 /**< Operation is successful                               */
-    I2C_ERROR_NULL_POINTER,       /**< One or more input pointer is set to NULL              */
-    I2C_ERROR_NULL_HANDLE,        /**< Given handle is not initialised with real addresses   */
-    I2C_ERROR_DEVICE_NOT_FOUND,   /**< Given device id is out of range                       */
+    I2C_ERROR_OK,                 /**< Operation is successful                                      */
+    I2C_ERROR_NULL_POINTER,       /**< One or more input pointer is set to NULL                     */
+    I2C_ERROR_NULL_HANDLE,        /**< Given handle is not initialised with real addresses          */
+    I2C_ERROR_DEVICE_NOT_FOUND,   /**< Given device id is out of range                              */
+    I2C_ERROR_INVALID_ADDRESS,    /**< Given address is out of conventional I2C addresses range     */
+    I2C_ERROR_WRONG_STATE,        /**< Targeted device is in a wrong internal state                 */
     I2C_ERROR_ALREADY_PROCESSING, /**< Not really an error : indicates driver is busy and
                                        get_state() might be called to know which state the
-                                       I2C driver is running on                              */
+                                       I2C driver is running on                                     */
 } i2c_error_t;
 
 typedef enum
@@ -311,7 +318,7 @@ i2c_error_t i2c_process(const uint8_t id);
 /**
  * @brief writes data to I2C bus
  * @param[in]   id              : selected I2C driver instance to be configured
- * @param[in]   target_address  : targeted slave address on I2C bus (address is not checked at runtime, must not bit greater than 127)
+ * @param[in]   target_address  : targeted slave address on I2C bus
  * @param[in]   buffer          : pointer to a buffer of bytes holding the actual payload to be sent over I2C bus
  * @param[in]   length          : total length of given buffer
  * @return i2c_error_t :
