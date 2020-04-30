@@ -38,15 +38,15 @@ typedef struct
 */
 typedef enum
 {
-    I2C_ERROR_OK,                 /**< Operation is successful                                      */
-    I2C_ERROR_NULL_POINTER,       /**< One or more input pointer is set to NULL                     */
-    I2C_ERROR_NULL_HANDLE,        /**< Given handle is not initialised with real addresses          */
-    I2C_ERROR_DEVICE_NOT_FOUND,   /**< Given device id is out of range                              */
-    I2C_ERROR_INVALID_ADDRESS,    /**< Given address is out of conventional I2C addresses range     */
-    I2C_ERROR_WRONG_STATE,        /**< Targeted device is in a wrong internal state                 */
-    I2C_ERROR_ALREADY_PROCESSING, /**< Not really an error : indicates driver is busy and
-                                       get_state() might be called to know which state the
-                                       I2C driver is running on                                     */
+    I2C_ERROR_OK,                 /**< Operation is successful                                                  */
+    I2C_ERROR_NULL_POINTER,       /**< One or more input pointer is set to NULL                                 */
+    I2C_ERROR_NULL_HANDLE,        /**< Given handle is not initialised with real addresses                      */
+    I2C_ERROR_DEVICE_NOT_FOUND,   /**< Given device id is out of range                                          */
+    I2C_ERROR_INVALID_ADDRESS,    /**< Given address is out of conventional I2C addresses range                 */
+    I2C_ERROR_WRONG_STATE,        /**< Targeted device is in a wrong internal state                             */
+    I2C_ERROR_MAX_RETRIES_HIT,    /**< Too much errors were encountered, maximum allowed retries count was hit  */
+    I2C_ERROR_ALREADY_PROCESSING, /**< Not really an error : indicates driver is busy and get_state() might be  */
+                                    /* called to know which state the I2C driver is running on                  */
 } i2c_error_t;
 
 typedef enum
@@ -220,6 +220,18 @@ i2c_error_t i2c_set_interrupt_mode(const uint8_t id, const bool use_interrupts);
 */
 i2c_error_t i2c_get_interrupt_mode(const uint8_t id, bool * const use_interrupts);
 
+/**
+ * @brief reads selected device status code from TWSR register
+ * @param[in]   id          : selected I2C driver instance to be configured
+ * @param[out]  status_code : status code being written down to registers by hardware
+ * @return i2c_error_t :
+ *      I2C_ERROR_OK                 : Operation succeeded
+ *      I2C_ERROR_NULL_POINTER       : Uninitialised pointer parameter
+ *      I2C_ERROR_NULL_HANDLE        : Uninitialised handle in config object (could not access to device's registers)
+ *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
+*/
+i2c_error_t i2c_get_status_code(const uint8_t id, uint8_t * const status_code);
+
 
 /* #############################################################################################
    ######################################## General API ########################################
@@ -321,6 +333,7 @@ i2c_error_t i2c_process(const uint8_t id);
  * @param[in]   target_address  : targeted slave address on I2C bus
  * @param[in]   buffer          : pointer to a buffer of bytes holding the actual payload to be sent over I2C bus
  * @param[in]   length          : total length of given buffer
+ * @param[in]   retries         : number of available tries before giving up
  * @return i2c_error_t :
  *      I2C_ERROR_OK                  : Operation succeeded
  *      I2C_ERROR_NULL_POINTER        : Uninitialised pointer parameter
@@ -328,7 +341,7 @@ i2c_error_t i2c_process(const uint8_t id);
  *      I2C_ERROR_DEVICE_NOT_FOUND    : Selected instance id does not exist in available instances
  *      I2C_ERROR_ALREADY_PROCESSING  : Selected instance is already processing (either in master or slave mode). @see i2c_get_state()
 */
-i2c_error_t i2c_write(const uint8_t id, const uint8_t target_address , const uint8_t * const buffer, const uint8_t length);
+i2c_error_t i2c_write(const uint8_t id, const uint8_t target_address , const uint8_t * const buffer, const uint8_t length, const uint8_t retries);
 
 /**
  * @brief reads data to I2C bus
@@ -336,6 +349,7 @@ i2c_error_t i2c_write(const uint8_t id, const uint8_t target_address , const uin
  * @param[in]   target_address  : targeted slave address on I2C bus (address is not checked at runtime, must not bit greater than 127)
  * @param[out]  buffer          : pointer to a buffer of bytes holding the actual payload to be sent over I2C bus
  * @param[in]   length          : total length of given buffer
+ * @param[in]   retries         : number of available tries before giving up
  * @return i2c_error_t :
  *      I2C_ERROR_OK                  : Operation succeeded
  *      I2C_ERROR_NULL_POINTER        : Uninitialised pointer parameter
@@ -343,7 +357,7 @@ i2c_error_t i2c_write(const uint8_t id, const uint8_t target_address , const uin
  *      I2C_ERROR_DEVICE_NOT_FOUND    : Selected instance id does not exist in available instances
  *      I2C_ERROR_ALREADY_PROCESSING  : Selected instance is already processing (either in master or slave mode). @see i2c_get_state()
 */
-i2c_error_t i2c_read(const uint8_t id, const uint8_t target_address, uint8_t * const buffer, const uint8_t length);
+i2c_error_t i2c_read(const uint8_t id, const uint8_t target_address, uint8_t * const buffer, const uint8_t length, const uint8_t retries);
 
 
 #endif /* I2C_HEADER */
