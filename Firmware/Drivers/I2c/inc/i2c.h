@@ -72,6 +72,19 @@ typedef enum
 } i2c_state_t;
 
 
+/**
+ * @brief structure to be initialised by the i2c command handler function
+*/
+typedef struct
+{
+    volatile uint8_t * data;   /**< pointer to targeted buffer. NULL if command is invalid or after first initialisation */
+    volatile uint8_t length;     /**< length of the selected buffer, to prevent writing/reading past the end of the buffer */
+    volatile bool * locked;      /**< Indicates whether the selected buffer is being written to / read from.
+                                      If this boolean is set, it prevents buffer update while being accessed               */
+} i2c_command_handling_buffers_t;
+
+typedef i2c_slave_handler_error_t (*i2c_command_handler_t)(i2c_command_handling_buffers_t *, uint8_t);
+
 /* #############################################################################################
    ######################################## Configuration API ##################################
    ############################################################################################# */
@@ -273,7 +286,7 @@ i2c_error_t i2c_disable(const uint8_t id);
  *      I2C_ERROR_NULL_POINTER       : Uninitialised pointer parameter
  *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
 */
-i2c_error_t i2c_slave_set_command_handler(const uint8_t id, void (*i2c_slave_command_handler)(uint8_t * const data_byte));
+i2c_error_t i2c_slave_set_command_handler(const uint8_t id, i2c_command_handler_t command_handler);
 
 
 /**
