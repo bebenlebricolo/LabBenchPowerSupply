@@ -49,6 +49,15 @@ typedef enum
                                     /* called to know which state the I2C driver is running on                  */
 } i2c_error_t;
 
+/**
+ * @brief tells if an I2C read command succeeded or not. Basically, a call might fail if the given command is invalid
+*/
+typedef enum
+{
+    I2C_SLAVE_HANDLER_ERROR_OK,              /**< Operation is successful                                   */
+    I2C_SLAVE_HANDLER_ERROR_UNKNOWN_COMMAND, /**< Command written into TWI data register cannot be resolved */
+} i2c_slave_handler_error_t;
+
 typedef enum
 {
     I2C_STATE_DISABLED              = 0, /**< Configured, but peripheral disabled                     */

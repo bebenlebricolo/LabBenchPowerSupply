@@ -79,7 +79,7 @@ typedef enum
     MAS_RX_SLAVE_READ_ACK         = 0x40,
     MAS_RX_SLAVE_READ_NACK        = 0x48,
     MAS_RX_DATA_RECEIVED_ACK      = 0x50,
-    MAS_RX_DATA_LOST_NACK         = 0x58
+    MAS_RX_DATA_RECEIVED_NACK     = 0x58
 } i2c_master_receiver_mode_status_codes_t;
 
 typedef enum
