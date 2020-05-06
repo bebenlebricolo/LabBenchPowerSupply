@@ -62,13 +62,13 @@
 
 typedef enum
 {
-    MAS_TX_START_TRANSMITTED    = 0x08,
-    MAS_TX_REPEATED_START       = 0x10,
-    MAS_TX_SLAVE_WRITE_ACK      = 0x18,
-    MAS_TX_SLAVE_WRITE_NACK     = 0x20,
-    MAS_TX_DATA_RECEIVED_ACK    = 0x28,
-    MAS_TX_DATA_RECEIVED_NACK   = 0x30,
-    MAS_TX_ABRITRATION_LOST     = 0x38
+    MAS_TX_START_TRANSMITTED        = 0x08,
+    MAS_TX_REPEATED_START           = 0x10,
+    MAS_TX_SLAVE_WRITE_ACK          = 0x18,
+    MAS_TX_SLAVE_WRITE_NACK         = 0x20,
+    MAS_TX_DATA_TRANSMITTED_ACK     = 0x28,
+    MAS_TX_DATA_TRANSMITTED_NACK    = 0x30,
+    MAS_TX_ARBITRATION_LOST         = 0x38
 } i2c_master_transmitter_mode_status_codes_t;
 
 typedef enum

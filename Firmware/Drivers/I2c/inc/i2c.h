@@ -45,6 +45,7 @@ typedef enum
     I2C_ERROR_INVALID_ADDRESS,    /**< Given address is out of conventional I2C addresses range                 */
     I2C_ERROR_WRONG_STATE,        /**< Targeted device is in a wrong internal state                             */
     I2C_ERROR_MAX_RETRIES_HIT,    /**< Too much errors were encountered, maximum allowed retries count was hit  */
+    I2C_ERROR_REQUEST_TOO_SHORT,  /**< The given request (i2c_read or i2c_write) is too short                   */
     I2C_ERROR_ALREADY_PROCESSING, /**< Not really an error : indicates driver is busy and get_state() might be  */
                                     /* called to know which state the I2C driver is running on                  */
 } i2c_error_t;
@@ -71,10 +72,10 @@ typedef enum
     I2C_STATE_MASTER_TRANSMITTING,       /**< Peripheral is currently sending data as master device   */
 
     /* I2C finished operations states */
-    I2C_STATE_MASTER_TX_FINISHED,    /**< Just finished an i2c write transmission                    */
-    I2C_STATE_MASTER_RX_FINISHED,    /**< Just finished an i2c read transmission type (write + read) */
+    I2C_STATE_MASTER_TX_FINISHED,       /**< Just finished an i2c write transmission                    */
+    I2C_STATE_MASTER_RX_FINISHED,       /**< Just finished an i2c read transmission type (write + read) */
 
-    I2C_STATE_PERIPHERAL_ERROR           /**< Peripheral encountered errors and alerts application    */
+    I2C_STATE_PERIPHERAL_ERROR          /**< Peripheral encountered errors and alerts application    */
 } i2c_state_t;
 
 
@@ -83,10 +84,10 @@ typedef enum
 */
 typedef struct
 {
-    volatile uint8_t * data;   /**< pointer to targeted buffer. NULL if command is invalid or after first initialisation */
-    volatile uint8_t length;     /**< length of the selected buffer, to prevent writing/reading past the end of the buffer */
-    volatile bool * locked;      /**< Indicates whether the selected buffer is being written to / read from.
-                                      If this boolean is set, it prevents buffer update while being accessed               */
+    volatile uint8_t * data;  /**< pointer to targeted buffer. NULL if command is invalid or after first initialisation */
+    volatile uint8_t length;  /**< length of the selected buffer, to prevent writing/reading past the end of the buffer */
+    volatile bool * locked;   /**< Indicates whether the selected buffer is being written to / read from.
+                                   If this boolean is set, it prevents buffer update while being accessed               */
 } i2c_command_handling_buffers_t;
 
 typedef i2c_slave_handler_error_t (*i2c_command_handler_t)(i2c_command_handling_buffers_t *, uint8_t);
@@ -360,6 +361,11 @@ i2c_error_t i2c_process(const uint8_t id);
  * @param[in]   id              : selected I2C driver instance to be configured
  * @param[in]   target_address  : targeted slave address on I2C bus
  * @param[in]   buffer          : pointer to a buffer of bytes holding the actual payload to be sent over I2C bus
+ *                                Note that buffer shall also contain the slave command as the first byte of the buffer if required
+ *                                e.g. buffer[0] = LCD_SCREEN_CMD_SET_CURSOR
+ *                                     buffer[1] = data ..
+ *                                      ...
+ *                                     buffer[length - 1] = end of data
  * @param[in]   length          : total length of given buffer
  * @param[in]   retries         : number of available tries before giving up
  * @return i2c_error_t :
@@ -376,6 +382,9 @@ i2c_error_t i2c_write(const uint8_t id, const uint8_t target_address , const uin
  * @param[in]   id              : selected I2C driver instance to be configured
  * @param[in]   target_address  : targeted slave address on I2C bus (address is not checked at runtime, must not bit greater than 127)
  * @param[out]  buffer          : pointer to a buffer of bytes holding the actual payload to be sent over I2C bus
+ *                                Note that the first byte of buffer shall contain the slave command (mainly indicates where slave should
+ *                                read data from ; so it is actually an i2c write action (single byte) followed by a subsequent read starting
+ *                                from pointed slave register's address)
  * @param[in]   length          : total length of given buffer
  * @param[in]   retries         : number of available tries before giving up
  * @return i2c_error_t :
