@@ -64,7 +64,7 @@ static inline void reset_i2c_command_handling_buffers(const uint8_t id)
 {
     internal_buffer[id].i2c_buffer.data = NULL;
     internal_buffer[id].i2c_buffer.length = 0;
-    *internal_buffer[id].i2c_buffer.locked = false;
+    internal_buffer[id].i2c_buffer.locked = NULL;
 }
 
 /* handlers used to process in/out data when TWI peripheral needs servicing */
@@ -801,6 +801,10 @@ static i2c_error_t i2c_slave_tx_process(const uint8_t id)
         default:
             internal_buffer[id].index = 0;
             reset_i2c_command_handling_buffers(id);
+
+            /* Re-enable this device to be addressed as a Slave, but switch to the non-addressed mode (a subsequent Start + Slave address will
+               be needed to reinitiate a transmission) */
+            *internal_configuration[id].handle.TWCR |= TWEA_MSK;
             internal_configuration[id].state = I2C_STATE_READY;
             retries = 0;
             break;
@@ -844,8 +848,9 @@ static i2c_error_t i2c_slave_rx_process(const uint8_t id)
         case SLA_RX_ARBITRATION_LOST_OWN_ADDR_RECEIVED_ACK :
         case SLA_RX_GENERAL_CALL_RECEIVED_ACK :
         case SLA_RX_ARBITRATION_LOST_GENERAL_CALL_RECEIVED_ACK :
-            // Addressed in Slave receiver mode, 'ACK' was returned.
+            /* Addressed in Slave receiver mode, 'ACK' was returned to indicate we are ready to accept data */
             *internal_configuration[id].handle.TWCR |= TWEA_MSK;
+            reset_i2c_command_handling_buffers(id);
             processed_bytes = 0;
             break;
 
@@ -854,11 +859,11 @@ static i2c_error_t i2c_slave_rx_process(const uint8_t id)
             // First byte of data contains the command code
             if(0 == processed_bytes)
             {
-                // Receiving I2C command
+                /* Receiving I2C command, consumes it */
                 ret = internal_configuration[id].command_handler(&internal_buffer[id].i2c_buffer, *internal_configuration[id].handle.TWDR);
                 if (I2C_ERROR_OK == ret)
                 {
-                    // command handler has initialised data structures and buffer pointers, we are good to go !
+                    /* Command handler has initialised data structures and buffer pointers */
                     *internal_configuration[id].handle.TWCR |= TWEA_MSK;
                     ++processed_bytes;
                 }
@@ -871,7 +876,7 @@ static i2c_error_t i2c_slave_rx_process(const uint8_t id)
             }
             else
             {
-                // Write is accepted because we are still well inside the targeted buffer boundaries
+                /* Write is accepted because we are still well inside the targeted buffer boundaries */
                 if (internal_buffer[id].i2c_buffer.length != internal_buffer[id].index)
                 {
                     *get_current_internal_buffer_byte(id) = *internal_configuration[id].handle.TWDR;
@@ -889,16 +894,39 @@ static i2c_error_t i2c_slave_rx_process(const uint8_t id)
             }
             break;
 
-        // If NACK was returned by this device while writing to it (the 2 above cases), this means the slave
-        // decides to break the data exchange. TWSTA and TWEA bits are enabled to tell the TWI hardware to
-        // still respond to its own address and General call if enabled
+        /* When written in multi-mode I2C style, we may get a repeated start in the middle of a transmission */
+        case SLA_RX_START_STOP_COND_RECEIVED_WHILE_OPERATING:
+            /* Only one byte processed : we have just consumed the opcode, ready to switch to the not addressed Slave mode
+               And allow this slave to recognize its own address (or general call, if enabled) */
+            if (1 == processed_bytes )
+            {
+                *internal_configuration[id].handle.TWCR |= TWEA_MSK;
+                processed_bytes = 0;
+            }
+            /* In the middle of a write from the master , restart the transmission from the beginning */
+            else
+            {
+                processed_bytes = 0;
+                /* Unlock buffer */
+                *internal_buffer[id].i2c_buffer.locked = false;
+                reset_i2c_command_handling_buffers(id);
+                *internal_configuration[id].handle.TWCR |= TWEA_MSK;
+                internal_buffer[id].index = 0;
+                ++retries;
+            }
+            break;
+
+
+        /* If NACK was returned by this device while writing to it (the 2 above cases), this means the slave
+           decides to break the data exchange. TWEA bit is enabled to tell the TWI hardware to
+           still respond to its own address and General call if enabled */
         case SLA_RX_PREV_ADDRESSED_DATA_LOST_NACK:
         case SLA_RX_GENERAL_CALL_ADDRESSED_DATA_LOST_NACK :
-        case SLA_RX_START_STOP_COND_RECEIVED_WHILE_OPERATING:
         default:
-            *internal_configuration[id].handle.TWCR |= TWSTA_MSK | TWEA_MSK;
+            *internal_configuration[id].handle.TWCR |= TWEA_MSK;
             internal_buffer[id].index = 0;
             processed_bytes = 0;
+            *internal_buffer[id].i2c_buffer.locked = false;
             reset_i2c_command_handling_buffers(id);
             internal_configuration[id].state = I2C_STATE_READY;
             retries = 0;
@@ -911,6 +939,8 @@ static i2c_error_t i2c_slave_rx_process(const uint8_t id)
         && (internal_buffer[id].retries < retries))
     {
         internal_configuration[id].state = I2C_STATE_READY;
+        *internal_buffer[id].i2c_buffer.locked = false;
+        reset_i2c_command_handling_buffers(id);
         // Force TWI to stop any transmission (hard reset by toggling it off and back on)
         *internal_configuration[id].handle.TWCR &= ~TWIE_MSK;
         *internal_configuration[id].handle.TWCR |= TWIE_MSK;
@@ -1009,7 +1039,7 @@ static void process_helper(void)
     {
         if (is_twint_set(i))
         {
-            process_helper_single(i);
+            (void) process_helper_single(i);
         }
     }
 }
@@ -1020,8 +1050,7 @@ i2c_error_t i2c_process(const uint8_t id)
     {
         return I2C_ERROR_DEVICE_NOT_FOUND;
     }
-    process_helper_single(id);
-    return I2C_ERROR_OK;
+    return process_helper_single(id);
 }
 
 i2c_error_t i2c_write(const uint8_t id, const uint8_t target_address , const uint8_t * const buffer, const uint8_t length, const uint8_t retries)
