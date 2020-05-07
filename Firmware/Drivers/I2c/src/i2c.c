@@ -15,7 +15,7 @@
 #ifndef UNIT_TESTING
     #include <avr/interrupt.h>
 #else
-    //#include "isr_stub.h"
+    #include "test_isr_stub.h"
 #endif
 
 /* Minimum I2C request size is 2 to account for : 1 op code + 1 read/write data */
@@ -50,9 +50,9 @@ static volatile struct
     i2c_command_handling_buffers_t i2c_buffer;  /**< I2C buffer used to handle in/out data coming from I2C bus          */
 } internal_buffer[I2C_DEVICES_COUNT] = {0};
 
-static inline uint8_t * get_current_internal_buffer_byte(const uint8_t id)
+static inline volatile uint8_t * get_current_internal_buffer_byte(const uint8_t id)
 {
-    return internal_buffer[id].i2c_buffer.data[internal_buffer[id].index];
+    return &internal_buffer[id].i2c_buffer.data[internal_buffer[id].index];
 }
 
 static inline void clear_twint(const uint8_t id)
@@ -956,11 +956,11 @@ static i2c_error_t i2c_slave_rx_process(const uint8_t id)
 static i2c_error_t process_helper_single(const uint8_t id)
 {
     i2c_error_t ret = I2C_ERROR_OK;
+    uint8_t status_code = 0;
     switch(internal_configuration[id].state)
     {
         /* TWINT is raised while no operation asked : this is the slave mode being activated by I2C bus */
         case I2C_STATE_READY:
-            uint8_t status_code;
             ret = i2c_get_status_code(id, &status_code);
             if (I2C_ERROR_OK != ret)
             {
@@ -1032,7 +1032,8 @@ static i2c_error_t process_helper_single(const uint8_t id)
 }
 
 /* Iterates over available i2c devices to find which one needs servicing */
-#pragma unroll(I2C_DEVICES_COUNT)
+#pragma GCC push_options
+#pragma GCC optimize ("unroll-loops")
 static void process_helper(void)
 {
     for(uint8_t i = 0 ; i < I2C_DEVICES_COUNT ; i++)
@@ -1043,6 +1044,8 @@ static void process_helper(void)
         }
     }
 }
+#pragma GCC pop_options
+
 
 i2c_error_t i2c_process(const uint8_t id)
 {
@@ -1053,7 +1056,7 @@ i2c_error_t i2c_process(const uint8_t id)
     return process_helper_single(id);
 }
 
-i2c_error_t i2c_write(const uint8_t id, const uint8_t target_address , const uint8_t * const buffer, const uint8_t length, const uint8_t retries)
+i2c_error_t i2c_write(const uint8_t id, const uint8_t target_address , uint8_t * const buffer, const uint8_t length, const uint8_t retries)
 {
     if (!is_id_valid(id))
     {

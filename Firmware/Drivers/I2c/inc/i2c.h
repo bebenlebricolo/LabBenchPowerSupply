@@ -8,6 +8,11 @@
 #define I2C_CMD_WRITE_BIT 0U
 #define I2C_CMD_READ_BIT  1U
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 
 /**
  * @brief base I2C driver prescaler values
@@ -90,7 +95,7 @@ typedef struct
                                    If this boolean is set, it prevents buffer update while being accessed               */
 } i2c_command_handling_buffers_t;
 
-typedef i2c_slave_handler_error_t (*i2c_command_handler_t)(i2c_command_handling_buffers_t *, uint8_t);
+typedef i2c_slave_handler_error_t (*i2c_command_handler_t)(volatile i2c_command_handling_buffers_t *, uint8_t);
 
 /* #############################################################################################
    ######################################## Configuration API ##################################
@@ -375,7 +380,7 @@ i2c_error_t i2c_process(const uint8_t id);
  *      I2C_ERROR_DEVICE_NOT_FOUND    : Selected instance id does not exist in available instances
  *      I2C_ERROR_ALREADY_PROCESSING  : Selected instance is already processing (either in master or slave mode). @see i2c_get_state()
 */
-i2c_error_t i2c_write(const uint8_t id, const uint8_t target_address , const uint8_t * const buffer, const uint8_t length, const uint8_t retries);
+i2c_error_t i2c_write(const uint8_t id, const uint8_t target_address , uint8_t * const buffer, const uint8_t length, const uint8_t retries);
 
 /**
  * @brief reads data to I2C bus
@@ -395,6 +400,10 @@ i2c_error_t i2c_write(const uint8_t id, const uint8_t target_address , const uin
  *      I2C_ERROR_ALREADY_PROCESSING  : Selected instance is already processing (either in master or slave mode). @see i2c_get_state()
 */
 i2c_error_t i2c_read(const uint8_t id, const uint8_t target_address, uint8_t * const buffer, const uint8_t length, const uint8_t retries);
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif /* I2C_HEADER */
