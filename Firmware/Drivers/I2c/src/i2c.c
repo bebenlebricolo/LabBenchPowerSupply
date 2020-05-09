@@ -189,6 +189,42 @@ i2c_error_t i2c_get_slave_address(const uint8_t id, uint8_t * const address)
     return I2C_ERROR_OK;
 }
 
+i2c_error_t i2c_set_slave_address_mask(const uint8_t id, const uint8_t address_mask)
+{
+    if (!is_id_valid(id))
+    {
+        return I2C_ERROR_DEVICE_NOT_FOUND;
+    }
+    if (!is_handle_initialised(id))
+    {
+        return I2C_ERROR_NULL_HANDLE;
+    }
+
+    i2c_handle_t * handle = &internal_configuration[id].handle;
+    *(handle->TWAMR) = (*(handle->TWAMR) & TWAMR_MSK) | (address_mask << 1U);
+
+    return I2C_ERROR_OK;
+}
+
+i2c_error_t i2c_get_slave_address_mask(const uint8_t id, uint8_t * const address_mask)
+{
+    if (!is_id_valid(id))
+    {
+        return I2C_ERROR_DEVICE_NOT_FOUND;
+    }
+    if (NULL == address_mask)
+    {
+        return I2C_ERROR_NULL_POINTER;
+    }
+    if (!is_handle_initialised(id))
+    {
+        return I2C_ERROR_NULL_HANDLE;
+    }
+
+    *address_mask = (*(internal_configuration[id].handle.TWAMR) & TWAMR_MSK) >> 1U;
+    return I2C_ERROR_OK;
+}
+
 i2c_error_t i2c_set_prescaler(const uint8_t id, const i2c_prescaler_t prescaler)
 {
     if (!is_id_valid(id))
@@ -510,6 +546,7 @@ i2c_error_t i2c_deinit(const uint8_t id)
     {
         return local_error;
     }
+    /* Restores the handle back to its default state : filled with NULL */
     local_error = i2c_set_handle(id, &(config.handle));
     internal_configuration[id].is_initialised = false;
     internal_configuration[id].state = I2C_STATE_DISABLED;;
@@ -1070,6 +1107,10 @@ i2c_error_t i2c_write(const uint8_t id, const uint8_t target_address , uint8_t *
     {
         return I2C_ERROR_NULL_POINTER;
     }
+    if (false == internal_configuration[id].is_initialised)
+    {
+        return I2C_ERROR_NOT_INITIALISED;
+    }
     if (I2C_MAX_ADDRESS < target_address)
     {
         return I2C_ERROR_INVALID_ADDRESS;
@@ -1110,6 +1151,10 @@ i2c_error_t i2c_read(const uint8_t id, const uint8_t target_address, uint8_t * c
     if (NULL == buffer)
     {
         return I2C_ERROR_NULL_POINTER;
+    }
+    if (false == internal_configuration[id].is_initialised)
+    {
+        return I2C_ERROR_NOT_INITIALISED;
     }
     if (I2C_MAX_ADDRESS < target_address)
     {

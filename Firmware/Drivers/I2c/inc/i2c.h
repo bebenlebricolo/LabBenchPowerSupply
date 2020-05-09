@@ -195,15 +195,38 @@ i2c_error_t i2c_set_slave_address(const uint8_t id, const uint8_t address);
 
 /**
  * @brief reads the selected I2C device slave address from registers
- * @param[in]   id      : selected I2C driver instance to be configured
+ * @param[in]    id      : selected I2C driver instance to be configured
  * @param[out]   address : slave address of the selected device
  * @return i2c_error_t :
  *      I2C_ERROR_OK                 : Operation succeeded
- *      I2C_ERROR_NULL_POINTER       : Uninitialised pointer parameter
  *      I2C_ERROR_NULL_HANDLE        : Uninitialised handle in config object (could not access to device's registers)
+ *      I2C_ERROR_NULL_POINTER       : Uninitialised pointer parameter
  *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
 */
 i2c_error_t i2c_get_slave_address(const uint8_t id, uint8_t * const address);
+
+/**
+ * @brief writes to the slave address mask register
+ * @param[in]   id              : selected I2C driver instance to be configured
+ * @param[out]  address_mask    : slave address mask of the selected device
+ * @return i2c_error_t :
+ *      I2C_ERROR_OK                 : Operation succeeded
+ *      I2C_ERROR_NULL_HANDLE        : Uninitialised handle in config object (could not access to device's registers)
+ *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
+*/
+i2c_error_t i2c_set_slave_address_mask(const uint8_t id, const uint8_t address_mask);
+
+/**
+ * @brief reads the address_mask register
+ * @param[in]   id              : selected I2C driver instance to be configured
+ * @param[out]  address_mask    : slave address mask of the selected device
+ * @return i2c_error_t :
+ *      I2C_ERROR_OK                 : Operation succeeded
+ *      I2C_ERROR_NULL_HANDLE        : Uninitialised handle in config object (could not access to device's registers)
+ *      I2C_ERROR_NULL_POINTER       : Uninitialised pointer parameter
+ *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
+*/
+i2c_error_t i2c_get_slave_address_mask(const uint8_t id, uint8_t * const address_mask);
 
 /**
  * @brief sets the selected device I2C prescaler register
@@ -426,8 +449,10 @@ i2c_error_t i2c_process(const uint8_t id);
  *      I2C_ERROR_OK                  : Operation succeeded
  *      I2C_ERROR_NULL_POINTER        : Uninitialised pointer parameter
  *      I2C_ERROR_NULL_HANDLE         : Uninitialised handle in config object (could not access to device's registers)
+ *      I2C_ERROR_INVALID_ADDRESS     : Targeted slave address is not I2C compatible on 7 bits address mode (>= 128)
  *      I2C_ERROR_NOT_INITIALISED     : Device is not initialised, operation was aborted
  *      I2C_ERROR_DEVICE_NOT_FOUND    : Selected instance id does not exist in available instances
+ *      I2C_ERROR_REQUEST_TOO_SHORT   : Given request's length is too short (shall be >= 2)
  *      I2C_ERROR_ALREADY_PROCESSING  : Selected instance is already processing (either in master or slave mode). @see i2c_get_state()
 */
 i2c_error_t i2c_write(const uint8_t id, const uint8_t target_address , uint8_t * const buffer, const uint8_t length, const uint8_t retries);
@@ -448,6 +473,7 @@ i2c_error_t i2c_write(const uint8_t id, const uint8_t target_address , uint8_t *
  *      I2C_ERROR_NULL_HANDLE         : Uninitialised handle in config object (could not access to device's registers)
  *      I2C_ERROR_NOT_INITIALISED     : Device is not initialised, operation was aborted
  *      I2C_ERROR_DEVICE_NOT_FOUND    : Selected instance id does not exist in available instances
+ *      I2C_ERROR_REQUEST_TOO_SHORT   : Given request's length is too short (shall be >= 2)
  *      I2C_ERROR_ALREADY_PROCESSING  : Selected instance is already processing (either in master or slave mode). @see i2c_get_state()
 */
 i2c_error_t i2c_read(const uint8_t id, const uint8_t target_address, uint8_t * const buffer, const uint8_t length, const uint8_t retries);

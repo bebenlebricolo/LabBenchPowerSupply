@@ -3,7 +3,7 @@
 #include "i2c_register_stub.h"
 #include "test_isr_stub.h"
 
-/*
+
 class I2cTestFixture : public ::testing::Test
 {
 public:
@@ -11,15 +11,30 @@ public:
 protected:
     void SetUp() override
     {
+        for (uint8_t i = 0; i < I2C_DEVICES_COUNT ; i++)
+        {
+            i2c_register_stub_erase(i);
+        }
+        auto ret = i2c_get_default_config(&config);
+        ASSERT_EQ(ret, I2C_ERROR_OK);
+        config.baudrate = 100;
+        config.general_call_enabled = false;
+        config.interrupt_enabled = true;
+        config.prescaler = I2C_PRESCALER_16;
+        config.slave_address = 0x23;
+
+        ret = i2c_init(0U, &config);
+        ASSERT_EQ(ret, I2C_ERROR_OK);
     }
+
     void TearDown() override
     {
-        i2c_deinit(0U);
+        auto ret = i2c_deinit(0U);
+        ASSERT_EQ(ret, I2C_ERROR_OK);
     }
 };
-*/
 
-TEST(i2c_driver_test, guard_null_pointer)
+TEST(i2c_driver_tests, guard_null_pointer)
 {
     {
         i2c_config_t * config = NULL;
@@ -36,6 +51,11 @@ TEST(i2c_driver_test, guard_null_pointer)
     {
         uint8_t * address = NULL;
         auto ret = i2c_get_slave_address(0U, address);
+        ASSERT_EQ(ret, I2C_ERROR_NULL_POINTER);
+    }
+    {
+        uint8_t * address_mask = NULL;
+        auto ret = i2c_get_slave_address_mask(0U, address_mask);
         ASSERT_EQ(ret, I2C_ERROR_NULL_POINTER);
     }
     {
@@ -90,7 +110,7 @@ TEST(i2c_driver_test, guard_null_pointer)
     }
 }
 
-TEST(i2c_driver_test, guard_null_handle)
+TEST(i2c_driver_tests, guard_null_handle)
 {
     i2c_register_stub_t *stub = &i2c_register_stub[0];
     {
@@ -108,6 +128,22 @@ TEST(i2c_driver_test, guard_null_handle)
         ASSERT_EQ(ret, I2C_ERROR_NULL_HANDLE);
         ASSERT_EQ(address, 0x12);
         ASSERT_EQ(old_address, (stub->twar_reg & 0xFE) >> 1U);
+    }
+    {
+        uint8_t address_mask = 0x07U;
+        uint8_t old_address_mask = 0x0F;
+        stub->twar_reg = (stub->twar_reg & ~0xFE) | old_address_mask << 1U;
+        auto ret = i2c_set_slave_address_mask(0U, address_mask);
+
+        /* Check that nothing has been modified under the hood : addresses should remain the same */
+        ASSERT_EQ(ret, I2C_ERROR_NULL_HANDLE);
+        ASSERT_EQ(old_address_mask, (stub->twar_reg & 0xFE) >> 1U);
+
+        /* Same goes with get slave address mask function */
+        ret = i2c_get_slave_address_mask(0U, &address_mask);
+        ASSERT_EQ(ret, I2C_ERROR_NULL_HANDLE);
+        ASSERT_EQ(address_mask, 0x07U);
+        ASSERT_EQ(old_address_mask, (stub->twar_reg & 0xFE) >> 1U);
     }
     {
         i2c_prescaler_t prescaler = I2C_PRESCALER_16;
@@ -195,7 +231,7 @@ TEST(i2c_driver_test, guard_null_handle)
     }
 }
 
-TEST(i2c_driver_test, guard_out_of_range)
+TEST(i2c_driver_tests, guard_out_of_range)
 {
     // Should break on every function
     uint8_t id = I2C_DEVICES_COUNT;
@@ -211,6 +247,13 @@ TEST(i2c_driver_test, guard_out_of_range)
         auto ret = i2c_set_slave_address(id, address);
         ASSERT_EQ(ret , I2C_ERROR_DEVICE_NOT_FOUND);
         ret = i2c_get_slave_address(id, &address);
+        ASSERT_EQ(ret , I2C_ERROR_DEVICE_NOT_FOUND);
+    }
+    {
+        uint8_t address_mask = 0x0FU;
+        auto ret = i2c_set_slave_address_mask(id, address_mask);
+        ASSERT_EQ(ret , I2C_ERROR_DEVICE_NOT_FOUND);
+        ret = i2c_get_slave_address_mask(id, &address_mask);
         ASSERT_EQ(ret , I2C_ERROR_DEVICE_NOT_FOUND);
     }
     {
@@ -287,9 +330,77 @@ TEST(i2c_driver_test, guard_out_of_range)
         ret = i2c_write(id, address, &buffer, length, 0);
         ASSERT_EQ(ret , I2C_ERROR_DEVICE_NOT_FOUND);
     }
+}
 
+TEST(i2c_driver_tests, guard_uninitialised_device)
+{
+    i2c_config_t config;
+    auto ret = i2c_get_default_config(&config);
+    ASSERT_EQ(ret, I2C_ERROR_OK);
+
+    i2c_register_stub_init_handle(0U, &config.handle);
+    ret = i2c_set_handle(0U, &config.handle);
+    ASSERT_EQ(ret, I2C_ERROR_OK);
+
+    ret = i2c_process(0U);
+    ASSERT_EQ(ret, I2C_ERROR_NOT_INITIALISED);
+
+    {
+        uint8_t address = 33;
+        uint8_t buffer = 8;
+        uint8_t length = 2;
+        ret = i2c_write(0U, address, &buffer, length, 0U);
+        ASSERT_EQ(ret, I2C_ERROR_NOT_INITIALISED);
+
+        ret = i2c_read(0U, address, &buffer, length, 0U);
+        ASSERT_EQ(ret, I2C_ERROR_NOT_INITIALISED);
+    }
+}
+
+TEST(i2c_driver_tests, test_api_accessors_get_set)
+{
+    i2c_config_t config;
+    auto ret = i2c_get_default_config(&config);
+    ASSERT_EQ(ret, I2C_ERROR_OK);
+
+    i2c_register_stub_init_handle(0U, &config.handle);
+    // Do not use the 'init' function yet because I want to test each accessors api before
+    ret = i2c_set_handle(0U, &config.handle);
+    ASSERT_EQ(ret, I2C_ERROR_OK);
+
+    i2c_register_stub_t * stub = &i2c_register_stub[0U];
+
+    /* slave device address get/set api */
+    {
+        uint8_t address = 33;
+        stub->twar_reg = 0U;
+        ret = i2c_set_slave_address(0U, address);
+        ASSERT_EQ(ret, I2C_ERROR_OK);
+        ASSERT_EQ(stub->twar_reg & 0xFE, address << 1U);
+
+        stub->twar_reg = 28U << 1U;
+        ret = i2c_get_slave_address(0U, &address);
+        ASSERT_EQ(ret, I2C_ERROR_OK);
+        ASSERT_EQ(address, 28U);
+    }
+
+    /* slave device address mask get/set api */
+    {
+        uint8_t address_mask = 0x07;
+        stub->twamr_reg = 0U;
+        ret = i2c_set_slave_address_mask(0U, address_mask);
+        ASSERT_EQ(ret, I2C_ERROR_OK);
+        ASSERT_EQ(stub->twamr_reg & 0xFE, address_mask << 1U);
+
+        stub->twamr_reg = 0x0FU << 1U;
+        ret = i2c_get_slave_address_mask(0U, &address_mask);
+        ASSERT_EQ(ret, I2C_ERROR_OK);
+        ASSERT_EQ(address_mask, 0x0FU);
+    }
 
 }
+
+//TEST_F(I2cTestFixture, )
 
 
 
