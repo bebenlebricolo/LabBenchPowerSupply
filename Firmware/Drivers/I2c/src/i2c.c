@@ -452,6 +452,13 @@ i2c_error_t i2c_slave_set_command_handler(const uint8_t id, i2c_command_handler_
     return I2C_ERROR_OK;
 }
 
+#ifdef UNIT_TESTING
+i2c_command_handler_t i2c_slave_get_command_handler(const uint8_t id)
+{
+    return internal_configuration[id].command_handler;
+}
+#endif
+
 static i2c_error_t write_config(const uint8_t id, const i2c_config_t * const config)
 {
     if (!is_handle_initialised(id))
@@ -469,6 +476,10 @@ static i2c_error_t write_config(const uint8_t id, const i2c_config_t * const con
     /* Slave address */
     *(internal_configuration[id].handle.TWAR) &= ~TWA_MSK;
     *(internal_configuration[id].handle.TWAR) |= (config->slave_address << 1U);
+
+    /* Slave address mask */
+    *(internal_configuration[id].handle.TWAMR) &= ~TWAMR_MSK;
+    *(internal_configuration[id].handle.TWAMR) |= (config->slave_address_mask << 1U);
 
     /* General call enabled flag */
     if (true == config->general_call_enabled)
@@ -567,6 +578,13 @@ i2c_error_t i2c_get_state(const uint8_t id, i2c_state_t * const state)
     *state = internal_configuration[id].state;
     return I2C_ERROR_OK;
 }
+
+#ifdef UNIT_TESTING
+void i2c_set_state(const uint8_t id, const i2c_state_t state)
+{
+    internal_configuration[id].state = state;
+}
+#endif
 
 static i2c_error_t i2c_master_tx_process(const uint8_t id)
 {

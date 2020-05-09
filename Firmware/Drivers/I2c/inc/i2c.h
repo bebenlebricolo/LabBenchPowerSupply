@@ -33,6 +33,7 @@ typedef struct
     uint8_t baudrate;           /**< Baudrate to be fed into bit rate generator register (final baudrate also depends on prescaler)   */
     i2c_prescaler_t prescaler;  /**< TWI clock based on main CPU clock, divided by prescaler                                          */
     uint8_t slave_address;      /**< Address to which this device will respond                                                        */
+    uint8_t slave_address_mask; /**< Address mask used to drive address recognition module of TWI hardware                            */
     bool general_call_enabled;  /**< Activate the response to general call (0x00) or not                                              */
     bool interrupt_enabled;     /**< Use the interrupt-based workflow or not (if not, i2c_process() will have to be called regularly) */
     i2c_handle_t handle;        /**< Handle which will be used to effectively interact with peripheral                                */
@@ -370,6 +371,9 @@ i2c_error_t i2c_disable(const uint8_t id);
 */
 i2c_error_t i2c_slave_set_command_handler(const uint8_t id, i2c_command_handler_t command_handler);
 
+#ifdef UNIT_TESTING
+i2c_command_handler_t i2c_slave_get_command_handler(const uint8_t id);
+#endif
 
 /**
  * @brief initialises targeted instance of I2C driver with provided configuration object.
@@ -406,6 +410,10 @@ i2c_error_t i2c_deinit(const uint8_t id);
  *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
 */
 i2c_error_t i2c_get_state(const uint8_t id, i2c_state_t * const state);
+
+#ifdef UNIT_TESTING
+void i2c_set_state(const uint8_t id, const i2c_state_t state);
+#endif
 
 /**
  * @brief this function shall be used when non-interrupt mode is used

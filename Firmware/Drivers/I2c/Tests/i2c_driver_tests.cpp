@@ -34,6 +34,13 @@ protected:
     }
 };
 
+i2c_slave_handler_error_t stubbed_command_handler(volatile i2c_command_handling_buffers_t * buffer, uint8_t byte)
+{
+    (void) byte;
+    (void) buffer;
+    return I2C_SLAVE_HANDLER_ERROR_OK;
+}
+
 TEST(i2c_driver_tests, guard_null_pointer)
 {
     {
@@ -296,12 +303,8 @@ TEST(i2c_driver_tests, guard_out_of_range)
         ASSERT_EQ(ret , I2C_ERROR_DEVICE_NOT_FOUND);
     }
     {
-        i2c_command_handler_t handler = [](volatile i2c_command_handling_buffers_t * buffer, uint8_t byte)
-        {
-            (void) byte;
-            (void) buffer;
-             return I2C_SLAVE_HANDLER_ERROR_OK;
-        };
+        i2c_command_handler_t handler = stubbed_command_handler;
+
         auto ret = i2c_slave_set_command_handler(id, handler);
         ASSERT_EQ(ret , I2C_ERROR_DEVICE_NOT_FOUND);
     }
@@ -398,6 +401,91 @@ TEST(i2c_driver_tests, test_api_accessors_get_set)
         ASSERT_EQ(address_mask, 0x0FU);
     }
 
+    /* Prescaler get/set api */
+    {
+        i2c_prescaler_t prescaler = I2C_PRESCALER_16;
+        stub->twsr_reg &= ~TWPS_MSK;
+        ret = i2c_set_prescaler(0U, prescaler);
+        ASSERT_EQ(ret, I2C_ERROR_OK);
+        ASSERT_EQ(prescaler, (stub->twsr_reg & TWPS_MSK));
+
+        stub->twsr_reg = (stub->twsr_reg & ~TWPS_MSK) | I2C_PRESCALER_64;
+        ret = i2c_get_prescaler(0U, &prescaler);
+        ASSERT_EQ(ret, I2C_ERROR_OK);
+        ASSERT_EQ(prescaler, I2C_PRESCALER_64);
+    }
+
+    /* Baudrate get/set api */
+    {
+        uint8_t baudrate = 28;
+        stub->twbr_reg = 0;
+        ret = i2c_set_baudrate(0U, baudrate);
+        ASSERT_EQ(ret, I2C_ERROR_OK);
+        ASSERT_EQ(stub->twbr_reg, baudrate);
+
+        stub->twbr_reg = 124;
+        ret = i2c_get_baudrate(0U, &baudrate);
+        ASSERT_EQ(ret, I2C_ERROR_OK);
+        ASSERT_EQ(baudrate, 124);
+    }
+
+    /* General call get/set api */
+    {
+        bool gcenabled = true;
+        stub->twar_reg &= ~TWGCE_MSK;
+        ret = i2c_set_general_call_enabled(0U, gcenabled);
+        ASSERT_EQ(ret, I2C_ERROR_OK);
+        ASSERT_EQ(stub->twar_reg & TWGCE_MSK, 1U);
+
+        stub->twar_reg &= ~TWGCE_MSK;
+        ret = i2c_get_general_call_enabled(0U, &gcenabled);
+        ASSERT_EQ(ret, I2C_ERROR_OK);
+        ASSERT_EQ(gcenabled, false);
+    }
+
+    /* Interrupt mode get/set api */
+    {
+        bool use_interrupt = true;
+        stub->twcr_reg &= ~TWEN_MSK;
+        ret = i2c_set_interrupt_mode(0U, use_interrupt);
+        ASSERT_EQ(ret, I2C_ERROR_OK);
+        ASSERT_EQ(stub->twcr_reg & TWEN_MSK, 1U);
+
+        stub->twcr_reg &= ~TWEN_MSK;
+        ret = i2c_get_interrupt_mode(0U, &use_interrupt);
+        ASSERT_EQ(ret, I2C_ERROR_OK);
+        ASSERT_EQ(use_interrupt, false);
+    }
+
+    /* I2C status code get api */
+    {
+        uint8_t status_code = 0;
+        stub->twsr_reg &= ~TWS_MSK;
+        stub->twsr_reg |= (uint8_t) MAS_TX_SLAVE_WRITE_ACK << TWS3_BIT;
+
+        ret = i2c_get_status_code(0U, &status_code);
+        ASSERT_EQ(ret, I2C_ERROR_OK);
+        ASSERT_EQ(status_code, (uint8_t) MAS_TX_SLAVE_WRITE_ACK);
+    }
+
+    /* I2C command handler set api */
+    {
+        i2c_command_handler_t handler = stubbed_command_handler;
+        ret = i2c_slave_set_command_handler(0U, handler);
+        ASSERT_EQ(ret, I2C_ERROR_OK);
+        auto registered_handler = i2c_slave_get_command_handler(0U);
+        ASSERT_EQ((volatile size_t) registered_handler, (volatile size_t) stubbed_command_handler);
+    }
+
+    /* I2C get state api */
+    {
+        i2c_state_t state = I2C_STATE_DISABLED;
+
+        i2c_set_state(0U, I2C_STATE_MASTER_RECEIVING);
+        ret = i2c_get_state(0U, &state);
+        ASSERT_EQ(ret, I2C_ERROR_OK);
+        ASSERT_EQ(state, I2C_STATE_MASTER_RECEIVING);
+    }
 }
 
 //TEST_F(I2cTestFixture, )
