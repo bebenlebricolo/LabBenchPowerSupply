@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 #include "i2c.h"
+#include "i2c_register_stub.h"
 #include "test_isr_stub.h"
 
 /*
@@ -89,6 +90,35 @@ TEST(i2c_driver_test, guard_null_pointer)
     }
 }
 
+TEST(i2c_driver_test, guard_null_handle)
+{
+    i2c_register_stub_t *stub = &i2c_register_stub[0];
+    {
+        uint8_t address = 0x12;
+        uint8_t old_address = (stub->twar_reg & 0xFE) >> 1U;
+        auto ret = i2c_set_slave_address(0U, address);
+
+        /* Check that nothing has been modified under the hood : addresses should remain the same */
+        ASSERT_EQ(ret, I2C_ERROR_NULL_HANDLE);
+        ASSERT_EQ(old_address, (stub->twar_reg & 0xFE) >> 1U);
+
+        /* Same goes with get slave address function */
+        ret = i2c_get_slave_address(0U, &address);
+        ASSERT_EQ(ret, I2C_ERROR_NULL_HANDLE);
+        ASSERT_EQ(address, 0x12);
+        ASSERT_EQ(old_address, (stub->twar_reg & 0xFE) >> 1U);
+    }
+    {
+        i2c_prescaler_t prescaler = I2C_PRESCALER_16;
+        uint8_t old_prescaler = stub->twsr_reg & 0x3;
+        auto ret = i2c_set_prescaler(0U, prescaler);
+        ASSERT_EQ(ret, I2C_ERROR_NULL_HANDLE);
+
+        /* Check that nothing has been modified under the hood : registers shall still have the same value */
+        ASSERT_EQ(old_prescaler, stub->twsr_reg & 0x3);
+    }
+
+}
 
 
 int main(int argc, char **argv)

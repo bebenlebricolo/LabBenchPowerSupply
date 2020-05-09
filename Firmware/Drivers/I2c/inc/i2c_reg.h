@@ -22,13 +22,13 @@
 #define TWINT_MSK 0x80
 
 /* TWSR Status register bit mapping */
-#define TWPS0_BIT   0
-#define TWPS1_BIT   1
-#define TWS3_BIT   3
-#define TWS4_BIT   4
-#define TWS5_BIT   5
-#define TWS6_BIT   6
-#define TWS7_BIT   7
+#define TWPS0_BIT 0
+#define TWPS1_BIT 1
+#define TWS3_BIT  3
+#define TWS4_BIT  4
+#define TWS5_BIT  5
+#define TWS6_BIT  6
+#define TWS7_BIT  7
 
 /* TWSR Status register bit masks */
 #define TWPS_MSK 0x03
