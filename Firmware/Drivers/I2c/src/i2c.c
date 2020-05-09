@@ -333,7 +333,7 @@ i2c_error_t i2c_get_general_call_enabled(const uint8_t id, bool * const general_
         return I2C_ERROR_NULL_HANDLE;
     }
 
-    *general_call_enabled = (bool) *(internal_configuration[id].handle.TWAR) & TWGCE_MSK;
+    *general_call_enabled = (bool) (*(internal_configuration[id].handle.TWAR) & TWGCE_MSK);
     return I2C_ERROR_OK;
 }
 
@@ -374,7 +374,7 @@ i2c_error_t i2c_get_interrupt_mode(const uint8_t id, bool * const use_interrupts
         return I2C_ERROR_NULL_HANDLE;
     }
 
-    *use_interrupts = (bool) *(internal_configuration[id].handle.TWCR) & TWIE_MSK;
+    *use_interrupts = (bool) (*(internal_configuration[id].handle.TWCR) & TWIE_MSK);
     return I2C_ERROR_OK;
 }
 

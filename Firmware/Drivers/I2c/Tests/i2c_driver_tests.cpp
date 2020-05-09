@@ -446,12 +446,12 @@ TEST(i2c_driver_tests, test_api_accessors_get_set)
     /* Interrupt mode get/set api */
     {
         bool use_interrupt = true;
-        stub->twcr_reg &= ~TWEN_MSK;
+        stub->twcr_reg &= ~TWIE_MSK;
         ret = i2c_set_interrupt_mode(0U, use_interrupt);
         ASSERT_EQ(ret, I2C_ERROR_OK);
-        ASSERT_EQ(stub->twcr_reg & TWEN_MSK, 1U);
+        ASSERT_EQ(stub->twcr_reg & TWIE_MSK, 1U);
 
-        stub->twcr_reg &= ~TWEN_MSK;
+        stub->twcr_reg &= ~TWIE_MSK;
         ret = i2c_get_interrupt_mode(0U, &use_interrupt);
         ASSERT_EQ(ret, I2C_ERROR_OK);
         ASSERT_EQ(use_interrupt, false);
