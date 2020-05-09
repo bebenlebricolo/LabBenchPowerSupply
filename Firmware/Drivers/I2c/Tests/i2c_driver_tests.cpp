@@ -11,6 +11,7 @@ public:
 protected:
     void SetUp() override
     {
+        i2c_driver_reset_memory();
         for (uint8_t i = 0; i < I2C_DEVICES_COUNT ; i++)
         {
             i2c_register_stub_erase(i);
@@ -43,6 +44,7 @@ i2c_slave_handler_error_t stubbed_command_handler(volatile i2c_command_handling_
 
 TEST(i2c_driver_tests, guard_null_pointer)
 {
+    i2c_driver_reset_memory();
     {
         i2c_config_t * config = NULL;
         auto ret = i2c_get_default_config(config);
@@ -119,6 +121,7 @@ TEST(i2c_driver_tests, guard_null_pointer)
 
 TEST(i2c_driver_tests, guard_null_handle)
 {
+    i2c_driver_reset_memory();
     i2c_register_stub_t *stub = &i2c_register_stub[0];
     {
         uint8_t address = 0x12;
@@ -240,6 +243,7 @@ TEST(i2c_driver_tests, guard_null_handle)
 
 TEST(i2c_driver_tests, guard_out_of_range)
 {
+    i2c_driver_reset_memory();
     // Should break on every function
     uint8_t id = I2C_DEVICES_COUNT;
     {
@@ -337,6 +341,7 @@ TEST(i2c_driver_tests, guard_out_of_range)
 
 TEST(i2c_driver_tests, guard_uninitialised_device)
 {
+    i2c_driver_reset_memory();
     i2c_config_t config;
     auto ret = i2c_get_default_config(&config);
     ASSERT_EQ(ret, I2C_ERROR_OK);
@@ -362,6 +367,7 @@ TEST(i2c_driver_tests, guard_uninitialised_device)
 
 TEST(i2c_driver_tests, test_api_accessors_get_set)
 {
+    i2c_driver_reset_memory();
     i2c_config_t config;
     auto ret = i2c_get_default_config(&config);
     ASSERT_EQ(ret, I2C_ERROR_OK);
@@ -474,7 +480,7 @@ TEST(i2c_driver_tests, test_api_accessors_get_set)
         ret = i2c_slave_set_command_handler(0U, handler);
         ASSERT_EQ(ret, I2C_ERROR_OK);
         auto registered_handler = i2c_slave_get_command_handler(0U);
-        ASSERT_EQ((volatile size_t) registered_handler, (volatile size_t) stubbed_command_handler);
+        ASSERT_EQ(registered_handler, stubbed_command_handler);
     }
 
     /* I2C get state api */
@@ -488,7 +494,80 @@ TEST(i2c_driver_tests, test_api_accessors_get_set)
     }
 }
 
-//TEST_F(I2cTestFixture, )
+static void check_config_against_registers(const uint8_t id, const i2c_config_t * const config)
+{
+    i2c_error_t ret = I2C_ERROR_OK;
+    i2c_register_stub_t * stub = &i2c_register_stub[id];
+
+    ASSERT_EQ(ret, I2C_ERROR_OK);
+    ASSERT_EQ(stub->twbr_reg, config->baudrate);
+    ASSERT_EQ(stub->twar_reg & TWGCE_MSK, (config->general_call_enabled ? 1U : 0U));
+    ASSERT_EQ(stub->twcr_reg & TWIE_MSK, (config->interrupt_enabled ? 1U : 0U));
+    ASSERT_EQ(stub->twsr_reg & TWPS_MSK, config->prescaler);
+    ASSERT_EQ(stub->twar_reg & TWA_MSK, (config->slave_address << 1U));
+    ASSERT_EQ(stub->twamr_reg & TWAMR_MSK, (config->slave_address_mask << 1U));
+}
+
+TEST(i2c_driver_tests, test_initialisation_deinitialisation)
+{
+    i2c_driver_reset_memory();
+    i2c_config_t config;
+    i2c_error_t ret = I2C_ERROR_OK;
+
+    config.baudrate = 124;
+    config.general_call_enabled = true;
+    config.interrupt_enabled = true;
+    config.prescaler = I2C_PRESCALER_4;
+    config.slave_address = 0x23;
+    config.slave_address_mask = 0x07;
+
+    i2c_register_stub_t * stub = &i2c_register_stub[0U];
+
+    i2c_register_stub_init_handle(0U, &config.handle);
+
+    // Performs some checks on internal state machine, should be in Disabled state right now
+    i2c_state_t current_state = I2C_STATE_DISABLED;
+    ret = i2c_get_state(0U, &current_state);
+    ASSERT_EQ(ret, I2C_ERROR_OK);
+    ASSERT_EQ(current_state, I2C_STATE_DISABLED);
+
+    ret = i2c_set_handle(0U, &config.handle);
+    ASSERT_EQ(ret, I2C_ERROR_OK);
+
+    // Powers-up the device to check if the internal state machine was updated
+    // to the 'I2C_STATE_NOT_INITIALISED' state
+    ret = i2c_enable(0U);
+    ASSERT_EQ(ret, I2C_ERROR_OK);
+    ret = i2c_get_state(0U, &current_state);
+    ASSERT_EQ(ret, I2C_ERROR_OK);
+    ASSERT_EQ(current_state, I2C_STATE_NOT_INITIALISED);
+
+    // Time to initialise
+    ret = i2c_init(0U, &config);
+    ASSERT_EQ(ret, I2C_ERROR_OK);
+
+    // Shall be enabled in its registers
+    ASSERT_EQ(stub->twcr_reg & TWEN_MSK, TWEN_MSK);
+    check_config_against_registers(0U, &config);
+
+    // Now that everything is initialised, internal state shall be Ready
+    ret = i2c_get_state(0U, &current_state);
+    ASSERT_EQ(ret, I2C_ERROR_OK);
+    ASSERT_EQ(current_state, I2C_STATE_READY);
+
+    // Internal configuration will be reverted to default config, so use it to check
+    ret = i2c_get_default_config(&config);
+    ASSERT_EQ(ret, I2C_ERROR_OK);
+
+    // Now try deinitialisation and check internal state accordingly
+    ret = i2c_deinit(0U);
+    ASSERT_EQ(ret, I2C_ERROR_OK);
+    check_config_against_registers(0U, &config);
+    ret = i2c_get_state(0U, &current_state);
+    ASSERT_EQ(current_state, I2C_STATE_DISABLED);
+}
+
+//TEST_F(I2cTestFixture, test_initialisation)
 
 
 

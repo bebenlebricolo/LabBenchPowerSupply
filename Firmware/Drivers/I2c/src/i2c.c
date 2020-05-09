@@ -29,7 +29,7 @@ typedef enum
     I2C_REQUEST_IDLE,
 } i2c_request_t;
 
-static struct
+typedef struct
 {
     bool is_initialised;                    /**< Determines whether this instance has been initialised or not                                   */
     i2c_handle_t handle;                    /**< Stores a collection of pointers to the actual TWI peripheral registers                         */
@@ -39,16 +39,18 @@ static struct
                                                  validate the incoming request and if valid, to initialise the i2c_buffer field of
                                                  internal_configuration structure. It essentially maps the i2c_buffer's fields according to the
                                                  registers and command sets exposed by this device as an I2C command API                        */
-} internal_configuration[I2C_DEVICES_COUNT] = {0};
+} i2c_internal_config_t;
+static i2c_internal_config_t internal_configuration[I2C_DEVICES_COUNT] = {0};
 
-static volatile struct
+typedef struct
 {
     uint8_t target_address;                     /**< Contains target slave address                                      */
     uint8_t command;                            /**< Contains target address + read/write bit                           */
     uint8_t index;                              /**< Increment used in Rx/Tx mode to iterate though the internal buffer */
     uint8_t retries;                            /**< Stores the maximum available retries                               */
     i2c_command_handling_buffers_t i2c_buffer;  /**< I2C buffer used to handle in/out data coming from I2C bus          */
-} internal_buffer[I2C_DEVICES_COUNT] = {0};
+} i2c_internal_buffer_t;
+static i2c_internal_buffer_t internal_buffer[I2C_DEVICES_COUNT] = {0};
 
 static inline volatile uint8_t * get_current_internal_buffer_byte(const uint8_t id)
 {
@@ -108,6 +110,18 @@ static inline void reset_handle(i2c_handle_t * const handle)
    (void)memset(handle, 0, sizeof(i2c_handle_t));
 }
 
+#ifdef UNIT_TESTING
+void i2c_driver_reset_memory(void)
+{
+    for (uint8_t i = 0; i < I2C_DEVICES_COUNT ; i++)
+    {
+        memset(&internal_configuration[i], 0, sizeof(i2c_internal_config_t));
+        memset(&internal_buffer[i], 0, sizeof(i2c_internal_buffer_t));
+    }
+}
+#endif
+
+
 i2c_error_t i2c_get_default_config(i2c_config_t * const config)
 {
     if (NULL == config)
@@ -120,6 +134,7 @@ i2c_error_t i2c_get_default_config(i2c_config_t * const config)
     config->interrupt_enabled = false;
     config->prescaler = 0;
     config->slave_address = 0;
+    config->slave_address_mask = 0;
 
     return I2C_ERROR_OK;
 }
@@ -482,24 +497,12 @@ static i2c_error_t write_config(const uint8_t id, const i2c_config_t * const con
     *(internal_configuration[id].handle.TWAMR) |= (config->slave_address_mask << 1U);
 
     /* General call enabled flag */
-    if (true == config->general_call_enabled)
-    {
-        *(internal_configuration[id].handle.TWAR) &= ~TWGCE_MSK;
-    }
-    else
-    {
-        *(internal_configuration[id].handle.TWAR) |= TWGCE_MSK;
-    }
+    *(internal_configuration[id].handle.TWAR) &= ~TWGCE_MSK;
+    *(internal_configuration[id].handle.TWAR) |= (uint8_t) config->general_call_enabled;
 
     /* Interrupt enabled flag */
-    if (true == config->interrupt_enabled)
-    {
-        *(internal_configuration[id].handle.TWCR) &= ~TWIE_MSK;
-    }
-    else
-    {
-        *(internal_configuration[id].handle.TWCR) |= TWIE_MSK;
-    }
+    *(internal_configuration[id].handle.TWCR) &= ~TWIE_MSK;
+    *(internal_configuration[id].handle.TWCR) |= (uint8_t) config->interrupt_enabled;
 
     return I2C_ERROR_OK;
 }
