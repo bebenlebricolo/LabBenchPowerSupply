@@ -49,6 +49,7 @@ typedef enum
     I2C_ERROR_DEVICE_NOT_FOUND,   /**< Given device id is out of range                                          */
     I2C_ERROR_INVALID_ADDRESS,    /**< Given address is out of conventional I2C addresses range                 */
     I2C_ERROR_WRONG_STATE,        /**< Targeted device is in a wrong internal state                             */
+    I2C_ERROR_NOT_INITIALISED,    /**< Extension of the error above (device not initialised)                    */
     I2C_ERROR_MAX_RETRIES_HIT,    /**< Too much errors were encountered, maximum allowed retries count was hit  */
     I2C_ERROR_REQUEST_TOO_SHORT,  /**< The given request (i2c_read or i2c_write) is too short                   */
     I2C_ERROR_ALREADY_PROCESSING, /**< Not really an error : indicates driver is busy and get_state() might be  */
@@ -95,6 +96,49 @@ typedef struct
                                    If this boolean is set, it prevents buffer update while being accessed               */
 } i2c_command_handling_buffers_t;
 
+/**
+ * @brief function pointer which has to be defined by the application software
+ * @details This function pointer will be used when the I2C device enters its slave mode and has been addressed
+ * by a master on the bus.
+ * Its role is to parse the incoming uint8_t byte (which is the value stored in TWI Data Register) and to initialise the
+ * i2c_command_handling_buffers_t with pointers to internal data.
+ * @param[in]   uint8_t -> byte                         : this is the data found in TWDR (to be parsed)
+ * @param[out]  i2c_command_handling_buffers_t->buffer  : the buffer which needs initialisation.
+
+ * Example given :
+ *  Let's think about an I2C slave device which monitors temperature in a complex system and exposes its internal reading
+ *  as such : 2 analog values (temperature), and 2 boolean values (2 thermostats for instance, which represents thermo-mechanical switches).
+ *  Now, assume we expose the following data to be read from :
+ *
+ *      - An array to read the 2 analog sensors values  :       uint8_t temperatures[2]
+ *                                                              bool temperatures_lock;
+
+ *      - A register where the 2 thermostats are mapped :       uint8_t thermostat_switches (bit mapped)
+ *                                                              bool thermostat_switches_lock;
+
+ *  And we can also imagine that this thermal controlled device has thermal regulations capabilities (has a threshold above which cooling is activated)
+ *  So that's one register to be written to as well :
+ *      - Cooling threshold :                                   uint8_t threshold;
+ *                                                              bool threshold_lock;
+ *
+ *  Now, we can imagine that this device will accept at least 3 commands, for a simple I2C interface :
+ *      - THERMAL_MONITOR_TEMPERATURES  : when receiving this command, the device shall initialise the structure like so:
+ *                                        *     buffer->data to point to temperatures array
+ *                                        *     buffer->length = 2;
+ *                                        *     buffer->lock = &temperatures_lock;
+ *                                          -> This will be used by the I2C driver to signal the application software when
+ *                                          I2C communication is finished and releases the control over the data
+
+ *      - THERMAL_MONITOR_THERMOSTATS   : when receiving this command, the device shall initialise the structure like so:
+ *                                        *     buffer->data = &thermostat_switches;
+ *                                        *     buffer->length = 1;
+ *                                        *     buffer->lock = &thermostat_switches_lock;
+
+ *      - THERMAL_MONITOR_THRESHOLD     : when receiving this command, the device shall initialise the structure like so:
+ *                                        *     buffer->data = &threshold;
+ *                                        *     buffer->length = 1;
+ *                                        *     buffer->lock = &threshold_lock;
+*/
 typedef i2c_slave_handler_error_t (*i2c_command_handler_t)(volatile i2c_command_handling_buffers_t *, uint8_t);
 
 /* #############################################################################################
@@ -276,6 +320,7 @@ i2c_error_t i2c_get_status_code(const uint8_t id, uint8_t * const status_code);
  * @param[in]   id      : selected I2C driver instance to be configured
  * @return i2c_error_t :
  *      I2C_ERROR_OK                 : Operation succeeded
+ *      I2C_ERROR_NULL_HANDLE        : Uninitialised handle in config object (could not access to device's registers)
  *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
 */
 i2c_error_t i2c_enable(const uint8_t id);
@@ -285,12 +330,14 @@ i2c_error_t i2c_enable(const uint8_t id);
  * @param[in]   id      : selected I2C driver instance to be configured
  * @return i2c_error_t :
  *      I2C_ERROR_OK                 : Operation succeeded
+ *      I2C_ERROR_NULL_HANDLE        : Uninitialised handle in config object (could not access to device's registers)
  *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
 */
 i2c_error_t i2c_disable(const uint8_t id);
 
 /**
  * @brief registers the given function into selected I2C driver command handler used when receiving commands as a slave device
+ *        @see i2c_command_handler_t documentation for further details about this command handler
  * @param[in]   id                          : selected I2C driver instance to be configured
  * @param[in]   i2c_slave_command_handler   : command handler which will be used to handle incoming data when working as a slave device
  * @return i2c_error_t :
@@ -320,6 +367,7 @@ i2c_error_t i2c_init(const uint8_t id, const i2c_config_t * const config);
  * @param[in]   id      : selected I2C driver instance to be configured
  * @return i2c_error_t :
  *      I2C_ERROR_OK                 : Operation succeeded
+ *      I2C_ERROR_NULL_HANDLE        : Uninitialised handle in config object
  *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
 */
 i2c_error_t i2c_deinit(const uint8_t id);
@@ -357,6 +405,7 @@ i2c_error_t i2c_get_state(const uint8_t id, i2c_state_t * const state);
  *     5 - will finally send a Stop condition on I2C bus and put driver back in its I2C_STATE_READY state
  * @return i2c_error_t
  *      I2C_ERROR_OK                 : Operation succeeded
+ *      I2C_ERROR_NOT_INITIALISED    : Device is not initialised, operation was aborted
  *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
 */
 i2c_error_t i2c_process(const uint8_t id);
@@ -377,6 +426,7 @@ i2c_error_t i2c_process(const uint8_t id);
  *      I2C_ERROR_OK                  : Operation succeeded
  *      I2C_ERROR_NULL_POINTER        : Uninitialised pointer parameter
  *      I2C_ERROR_NULL_HANDLE         : Uninitialised handle in config object (could not access to device's registers)
+ *      I2C_ERROR_NOT_INITIALISED     : Device is not initialised, operation was aborted
  *      I2C_ERROR_DEVICE_NOT_FOUND    : Selected instance id does not exist in available instances
  *      I2C_ERROR_ALREADY_PROCESSING  : Selected instance is already processing (either in master or slave mode). @see i2c_get_state()
 */
@@ -396,6 +446,7 @@ i2c_error_t i2c_write(const uint8_t id, const uint8_t target_address , uint8_t *
  *      I2C_ERROR_OK                  : Operation succeeded
  *      I2C_ERROR_NULL_POINTER        : Uninitialised pointer parameter
  *      I2C_ERROR_NULL_HANDLE         : Uninitialised handle in config object (could not access to device's registers)
+ *      I2C_ERROR_NOT_INITIALISED     : Device is not initialised, operation was aborted
  *      I2C_ERROR_DEVICE_NOT_FOUND    : Selected instance id does not exist in available instances
  *      I2C_ERROR_ALREADY_PROCESSING  : Selected instance is already processing (either in master or slave mode). @see i2c_get_state()
 */

@@ -4,6 +4,7 @@
 #include "config.h"
 #include <stddef.h>
 #include <stdint.h>
+#include "i2c_reg.h"
 
 #ifdef __cplusplus
 extern "C"

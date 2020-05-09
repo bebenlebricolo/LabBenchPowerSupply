@@ -83,13 +83,13 @@ static inline i2c_slave_handler_error_t default_command_handler(uint8_t * const 
 
 static inline bool is_handle_initialised(const uint8_t id)
 {
-    bool out = false;
-    out |= (NULL == internal_configuration[id].handle.TWCR);
-    out |= (NULL == internal_configuration[id].handle.TWAMR);
-    out |= (NULL == internal_configuration[id].handle.TWBR);
-    out |= (NULL == internal_configuration[id].handle.TWDR);
-    out |= (NULL == internal_configuration[id].handle.TWSR);
-    out |= (NULL == internal_configuration[id].handle.TWAR);
+    bool out = true;
+    out &= (NULL != internal_configuration[id].handle.TWCR);
+    out &= (NULL != internal_configuration[id].handle.TWAMR);
+    out &= (NULL != internal_configuration[id].handle.TWBR);
+    out &= (NULL != internal_configuration[id].handle.TWDR);
+    out &= (NULL != internal_configuration[id].handle.TWSR);
+    out &= (NULL != internal_configuration[id].handle.TWAR);
     return out;
 }
 
@@ -1052,6 +1052,10 @@ i2c_error_t i2c_process(const uint8_t id)
     if (!is_id_valid(id))
     {
         return I2C_ERROR_DEVICE_NOT_FOUND;
+    }
+    if (!internal_configuration[id].is_initialised)
+    {
+        return I2C_ERROR_NOT_INITIALISED;
     }
     return process_helper_single(id);
 }

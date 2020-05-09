@@ -24,6 +24,7 @@ target_compile_definitions(i2c_driver PRIVATE
 
 add_executable(i2c_driver_tests
     i2c_driver_tests.cpp
+    Stub/i2c_register_stub.c
 )
 
 target_compile_definitions(i2c_driver_tests PRIVATE
@@ -33,6 +34,7 @@ target_compile_definitions(i2c_driver_tests PRIVATE
 target_include_directories(i2c_driver_tests PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../inc
     ${CMAKE_CURRENT_SOURCE_DIR}/Stub
+    ${CMAKE_CURRENT_SOURCE_DIR}
     ${GTEST_INCLUDE_DIRS}
 )
 target_link_libraries(i2c_driver_tests i2c_driver ${GTEST_LIBRARIES} pthread)
