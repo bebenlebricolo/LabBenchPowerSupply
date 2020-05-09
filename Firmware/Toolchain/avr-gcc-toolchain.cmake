@@ -11,6 +11,13 @@ set( CMAKE_SYSTEM_PROCESSOR avr )
 set( CMAKE_C_COMPILER ${AVR_CC} )
 set( CMAKE_CXX_COMPILER ${AVR_CXX} )
 
+# Needed to use the link-time optimization feature
+# @see : https://stackoverflow.com/questions/39236917/using-gccs-link-time-optimization-with-static-linked-libraries
+find_program( GCC_AR gcc-ar)
+set( CMAKE_AR  ${GCC_AR})
+set(CMAKE_C_ARCHIVE_CREATE "<CMAKE_AR> qcs <TARGET> <LINK_FLAGS> <OBJECTS>")
+set(CMAKE_C_ARCHIVE_FINISH   true)
+
 ###########################################################################
 # some cmake cross-compile necessities
 ##########################################################################

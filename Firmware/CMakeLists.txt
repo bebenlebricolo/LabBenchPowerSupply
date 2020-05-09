@@ -10,8 +10,6 @@ set(AVR_MCU_SPEED 16000000)
 add_definitions(-DF_CPU=${AVR_MCU_SPEED})
 add_compile_options(-mmcu=${AVR_MCU})
 
-set(CMAKE_SYSTEM_LIBRARY_PATH /usr/avr/lib)
-set(CMAKE_SYSTEM_INCLUDE_PATH /usr/avr/include)
 set(CMAKE_EXE_LINKER_FLAGS "-mmcu=${AVR_MCU}")
 
 # Adding sources
