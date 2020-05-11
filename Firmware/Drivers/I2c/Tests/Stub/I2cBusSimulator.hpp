@@ -20,23 +20,31 @@ public:
     void register_device(i2c_interface_getter_function get_interface_function,
                          i2c_process_function process_function);
 private:
+    enum class StateMachine
+    {
+        Idle,
+        SlaveAddressing,
+        Active
+    };
+
     /**
      * @brief depicts the current transaction mode the bus is actually in
     */
     enum class TransactionMode
     {
-        none,   /**< No transaction is ongoing      */
-        write,  /**< A write transaction is ongoing */
-        read,   /**< A read transaction is ongoing  */
+        None,   /**< No transaction is ongoing      */
+        Write,  /**< A write transaction is ongoing */
+        Read,   /**< A read transaction is ongoing  */
     };
 
     // Collection of registered devices
     std::vector<i2c_device_stub_t> devices;
 
     // Used to connect a master to its slave when a transaction is ongoing
-    uint8_t * master_data;
-    uint8_t * slave_data;
+    uint8_t master_index;
+    uint8_t slave_index;
     TransactionMode mode;
+    StateMachine state_machine = StateMachine::Idle;
 };
 
 #endif /* I2C_BUS_SIMULATOR_HEADER */

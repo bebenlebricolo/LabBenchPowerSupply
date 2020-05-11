@@ -9,6 +9,13 @@ extern "C"
 {
 #endif
 
+typedef enum
+{
+    I2C_ACKNOWLEDGMENT_ACK,
+    I2C_ACKNOWLEDGMENT_NACK,
+    I2C_ACKNOWLEDGMENT_UNKNOWN
+} i2c_acknowledgment_t;
+
 /* All devices registered on I2C bus simulator should implement this interface */
 typedef struct
 {
