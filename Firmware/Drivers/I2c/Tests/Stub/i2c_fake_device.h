@@ -7,7 +7,7 @@ extern "C"
 #endif
 
 #include <stdint.h>
-#include "i2c_simulator_device_interface.h"
+#include "i2c_device_interface.h"
 
 /* Device operating modes */
 typedef enum
@@ -42,12 +42,11 @@ typedef enum
 
 
 /* Interface */
+void i2c_fake_device_init(const uint8_t address);
 void i2c_fake_device_clear(void);
 void i2c_fake_device_process(void);
 void i2c_fake_device_set_mode(const i2c_fake_device_mode_t mode);
-uint8_t* i2c_fake_device_get_current_byte(void);
-void i2c_fake_device_init(const uint8_t address);
-void get_interface(i2c_simulator_device_interface_t * const interface);
+void i2c_fake_device_get_interface(i2c_device_interface_t ** const interface);
 
 #ifdef __cplusplus
 }
