@@ -19,12 +19,13 @@ typedef enum
 /* All devices registered on I2C bus simulator should implement this interface */
 typedef struct
 {
-    uint8_t data;          /**< Points to the internal device's data register                                                  */
-    uint8_t address; /**< Gives the current I2C address of targeted device                                               */
-    bool start_sent;       /**< Tells if the device implementing this interface tries to send a Start condition over I2C bus.  */
-    bool stop_sent;        /**< Tells if the device implementing this interface tries to send a Stop condition over I2C bus.   */
-    bool ack_sent;         /**< An Acknoledged bit was sent (or not) over the bus.                                             */
-    bool lost_arbitration; /**< I2C bus determines if this device has lost arbitration or not.                                 */
+    uint8_t data;               /**< Points to the internal device's data register                                                  */
+    uint8_t address;            /**< Gives the current I2C address of targeted device                                               */
+    bool start_sent;            /**< Tells if the device implementing this interface tries to send a Start condition over I2C bus.  */
+    bool stop_sent;             /**< Tells if the device implementing this interface tries to send a Stop condition over I2C bus.   */
+    bool ack_sent;              /**< An Acknoledged bit was sent (or not) over the bus.                                             */
+    bool lost_arbitration;      /**< I2C bus determines if this device has lost arbitration or not.                                 */
+    bool general_call_enabled;  /**< General call flag, tells this device responds to a general call                                */
 } i2c_device_interface_t;
 
 typedef void (*i2c_interface_getter_function)(i2c_device_interface_t ** const interface);

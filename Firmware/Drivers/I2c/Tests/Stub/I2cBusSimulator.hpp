@@ -30,11 +30,12 @@ private:
     /**
      * @brief depicts the current transaction mode the bus is actually in
     */
-    enum class TransactionMode
+    enum class TransactionMode : uint8_t
     {
-        None,   /**< No transaction is ongoing      */
-        Write,  /**< A write transaction is ongoing */
-        Read,   /**< A read transaction is ongoing  */
+        Write       = I2C_CMD_WRITE_BIT,  /**< A write transaction is ongoing       */
+        Read        = I2C_CMD_READ_BIT,   /**< A read transaction is ongoing        */
+        GeneralCall,                      /**< General call (write only) was sent   */
+        None,                             /**< No transaction is ongoing            */
     };
 
     // Collection of registered devices
@@ -42,9 +43,14 @@ private:
 
     // Used to connect a master to its slave when a transaction is ongoing
     uint8_t master_index;
-    uint8_t slave_index;
+    std::vector<uint8_t> slave_indexes;
     TransactionMode mode;
     StateMachine state_machine = StateMachine::Idle;
+
+    void idle_process(const uint8_t id);
+    void slave_addressing_process(const uint8_t id);
+    void active_process(const uint8_t id);
+    void devices_process(const uint8_t id);
 };
 
 #endif /* I2C_BUS_SIMULATOR_HEADER */
