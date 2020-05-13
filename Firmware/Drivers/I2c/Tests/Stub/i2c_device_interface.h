@@ -26,9 +26,11 @@ typedef struct
     bool ack_sent;              /**< An Acknoledged bit was sent (or not) over the bus.                                             */
     bool lost_arbitration;      /**< I2C bus determines if this device has lost arbitration or not.                                 */
     bool general_call_enabled;  /**< General call flag, tells this device responds to a general call                                */
+    bool bus_busy;              /**< Used to inform the device the I2C bus is busy, which might help the device know what to do     */
+    bool available;             /**< Tells if this device is available on I2C bus (basically if it will respond on I2C bus or not)  */
 } i2c_device_interface_t;
 
-typedef void (*i2c_interface_getter_function)(i2c_device_interface_t ** const interface);
+typedef void (*i2c_interface_getter_function)(const uint8_t bus_id, i2c_device_interface_t ** const interface);
 typedef void (*i2c_process_function)(const uint8_t id);
 
 /* Common I2C device interface used by I2C Bus simulator to handle its registered devices */

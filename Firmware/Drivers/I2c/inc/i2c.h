@@ -7,6 +7,7 @@
 
 #define I2C_CMD_WRITE_BIT 0U
 #define I2C_CMD_READ_BIT  1U
+#define I2C_CMD_MASK (0x01)
 
 #ifdef __cplusplus
 extern "C"

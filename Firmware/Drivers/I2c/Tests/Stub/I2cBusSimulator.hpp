@@ -43,7 +43,9 @@ private:
 
     // Used to connect a master to its slave when a transaction is ongoing
     uint8_t master_index;
-    std::vector<uint8_t> slave_indexes;
+    // This vector is used to store all potential masters (all devices that has sent a Start condition at the exact same time)
+    std::vector<uint8_t> potential_masters_indexes;
+    std::vector<uint8_t> slaves_indexes;
     TransactionMode mode;
     StateMachine state_machine = StateMachine::Idle;
 
@@ -51,6 +53,7 @@ private:
     void slave_addressing_process(const uint8_t id);
     void active_process(const uint8_t id);
     void devices_process(const uint8_t id);
+    void active_devices_process(const uint8_t id);
 };
 
 #endif /* I2C_BUS_SIMULATOR_HEADER */
