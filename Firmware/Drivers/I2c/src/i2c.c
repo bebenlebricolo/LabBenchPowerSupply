@@ -59,7 +59,11 @@ static inline volatile uint8_t * get_current_internal_buffer_byte(const uint8_t 
 
 static inline void clear_twint(const uint8_t id)
 {
+    #ifdef UNIT_TESTING
+    *internal_configuration[id].handle.TWCR &= ~TWINT_MSK;
+    #else
     *internal_configuration[id].handle.TWCR |= TWINT_MSK;
+    #endif
 }
 
 static inline void reset_i2c_command_handling_buffers(const uint8_t id)
@@ -408,7 +412,7 @@ i2c_error_t i2c_get_status_code(const uint8_t id, uint8_t * const status_code)
         return I2C_ERROR_NULL_HANDLE;
     }
 
-    *status_code = ((*internal_configuration[id].handle.TWSR & TWS_MSK) >> TWS3_BIT);
+    *status_code = (*internal_configuration[id].handle.TWSR & TWS_MSK);
     return I2C_ERROR_OK;
 }
 
@@ -537,6 +541,7 @@ i2c_error_t i2c_init(const uint8_t id, const i2c_config_t * const config)
     }
 
     internal_configuration[id].state = I2C_STATE_READY;
+    internal_configuration[id].is_initialised = true;
 
     return local_error;
 }
@@ -594,8 +599,8 @@ static i2c_error_t i2c_master_tx_process(const uint8_t id)
     static uint8_t retries = 0;
     i2c_error_t ret = I2C_ERROR_OK;
 
-    i2c_master_transmitter_mode_status_codes_t status;
-    ret = i2c_get_status_code(id, (uint8_t * ) &status);
+    uint8_t status;
+    ret = i2c_get_status_code(id, &status);
     if (I2C_ERROR_OK != ret)
     {
         // return here because if we can't read device's registers, we should stop any execution

@@ -23,6 +23,8 @@ static struct
 
 static i2c_device_interface_t interface[I2C_DEVICES_COUNT] = {0};
 
+static inline void write_status_code_to_reg(const uint8_t id, uint8_t status_code);
+
 static void master_update_interface_from_regs(const uint8_t id);
 static void master_clear_flags_from_reg(const uint8_t id);
 
@@ -33,17 +35,23 @@ static void handle_master_rx(const uint8_t id);
 
 static void master_update_interface_from_regs(const uint8_t id)
 {
-    i2c_register_stub_t * stub = &i2c_register_stub[id];
-    i2c_device_interface_t * interface = &interface[id];
-    interface->data = stub->twdr_reg;
-    interface->start_sent = (bool) stub->twcr_reg & TWSTA_MSK;
-    interface->stop_sent = (bool) stub->twcr_reg & TWSTO_MSK;
+    interface[id].data = i2c_register_stub[id].twdr_reg;
+    interface[id].start_sent = (bool) (i2c_register_stub[id].twcr_reg & TWSTA_MSK);
+    interface[id].stop_sent = (bool) (i2c_register_stub[id].twcr_reg & TWSTO_MSK);
 }
 
 static void master_clear_flags_from_reg(const uint8_t id)
 {
-    i2c_register_stub[id].twcr_reg &= ~(TWSTA_MSK | TWSTO_MSK | TWINT_MSK);
+    i2c_register_stub[id].twcr_reg &= ~(TWSTA_MSK | TWSTO_MSK );
+    i2c_register_stub[id].twcr_reg |= TWINT_MSK;    
 }
+
+static inline void write_status_code_to_reg(const uint8_t id, uint8_t status_code)
+{
+    i2c_register_stub[id].twsr_reg &= ~TWS_MSK;
+    i2c_register_stub[id].twsr_reg |= status_code;
+}
+
 
 static void handle_master_tx(const uint8_t id)
 {
@@ -66,19 +74,21 @@ static void handle_master_tx(const uint8_t id)
             // Slave recognized itself and told the master device it is ready for next step
             if (received_ack)
             {
-                i2c_register_stub[id].twsr_reg = MAS_TX_SLAVE_WRITE_ACK;
+                write_status_code_to_reg(id,MAS_TX_SLAVE_WRITE_ACK);
             }
             else
             {
-                i2c_register_stub[id].twsr_reg = MAS_TX_SLAVE_WRITE_NACK;
+                write_status_code_to_reg(id,MAS_TX_SLAVE_WRITE_NACK);
             }
         }
     }
     else
     {
+        
         uint8_t flags = 0;
         flags |= (interface[id].start_sent ? 1 : 0);
         flags |= (interface[id].stop_sent ? 1 : 0) << 1U;
+        states[id].previous = states[id].current;
 
         switch(flags)        
         {
@@ -86,17 +96,17 @@ static void handle_master_tx(const uint8_t id)
                 // Last operation succeeded (data has been transmitted)
                 if (received_ack)
                 {
-                    i2c_register_stub[id].twsr_reg = MAS_TX_DATA_TRANSMITTED_ACK;
+                    write_status_code_to_reg(id,MAS_TX_DATA_TRANSMITTED_ACK);
                 }
                 else
                 {
-                    i2c_register_stub[id].twsr_reg = MAS_TX_DATA_TRANSMITTED_NACK;
+                    write_status_code_to_reg(id,MAS_TX_DATA_TRANSMITTED_NACK);
                 }
                 break;
             
             // Start sent, switch to REPEATED START
             case 0x01:
-                i2c_register_stub[id].twsr_reg = MAS_TX_REPEATED_START;
+                write_status_code_to_reg(id,MAS_TX_REPEATED_START);
                 break;
             
             // Stop sent
@@ -124,7 +134,6 @@ static void handle_master_tx(const uint8_t id)
 
     // Reset ack received flag
     interface[id].ack_sent = false;
-    states[id].previous = states[id].current;
 }
 
 static void handle_idle(const uint8_t id)
@@ -140,7 +149,7 @@ static void handle_idle(const uint8_t id)
     {
         master_update_interface_from_regs(id);
         states[id].current = INTERNAL_STATE_MASTER_TO_SLAVE_ADDRESSING;
-        i2c_register_stub[id].twsr_reg = MAS_TX_START_TRANSMITTED;
+        write_status_code_to_reg(id,MAS_TX_START_TRANSMITTED);
     }
     else
     {
@@ -165,56 +174,17 @@ static void handle_master_to_slave_addressing(const uint8_t id)
 
 void twi_hardware_stub_process(const uint8_t id)
 {
-    /* Clear twint flag as if the real hardware has done it */
-    i2c_register_stub[id].twcr_reg &= ~TWINT_MSK;
-
     switch(states[id].current)
     {
         case INTERNAL_STATE_IDLE:
-            /* - Check for start flag in registers, if start is there, writes this to its i2C interface and switch to 
-                    -> INTERNAL_STATE_MASTER_TO_SLAVE_ADDRESSING
-                    -> set MAS_TX_START_TRANSMITTED status code within register
-                 If not in registers and start comes from the interface instead, this device shall be put in slave addressing in waiting mode
-                    -> INTERNAL_STATE_SLAVE_TO_MASTER_ADDRESSING
-                    -> No status code available, device is still in unaddressed mode until its own address is detected
-               - Otherwise, fallback to this same INTERNAL_STATE_IDLE */
+            handle_idle(id);
             break;
 
         case INTERNAL_STATE_MASTER_TO_SLAVE_ADDRESSING:
-            // Clear start flag !
-            /*  Load slave adress + command type to interface (shall already be present in data register by now) 
-                and post it to device interface. Transition to INTERNAL_STATE_MASTER_TX */
-            states[id].previous = states[id].current;
-            states[id].current = INTERNAL_STATE_MASTER_TX;
+            handle_master_to_slave_addressing(id);
             break;
 
         case INTERNAL_STATE_MASTER_TX:
-            /* Check ack/nack state.
-
-                ~~ Handle slave addressing stuff ~~ 
-                if (previous state was INTERNAL_STATE_MASTER_TO_SLAVE_ADDRESSING)
-                    if (NACK  received)
-                        status_code = MAS_TX_SLAVE_WRITE_NACK
-                    else
-                        status_code = MAS_TX_SLAVE_WRITE_ACK
-                    
-                    check registers and select from :
-                            * proceed and load data from registers
-                            * send a repeated start
-                            * send a stop
-                            * send a stop/start
-                
-                ~~ Handle data write stuff ~~
-                else (previous state was INTERNAL_STATE_MASTER_TX)
-                    if (NACK received)
-                        status_code 
-               If previous status code was MAS_TX_START_TRANSMITTED :
-                if ack was received, switch status code to MAS_TX_SLAVE_WRITE_ACK
-                 + load data to interface
-                else set it to MAS_TX_SLAVE_WRITE_NACK
-                 + switch back to 
-               Otherwise, 
-             */
             handle_master_tx(id);
             break;
 

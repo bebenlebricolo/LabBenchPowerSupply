@@ -25,6 +25,8 @@ target_compile_definitions(i2c_driver PRIVATE
 add_executable(i2c_driver_tests
     i2c_driver_tests.cpp
     Stub/i2c_register_stub.c
+    Stub/twi_hardware_stub.c
+    Stub/I2cBusSimulator.cpp
 )
 
 target_compile_definitions(i2c_driver_tests PRIVATE

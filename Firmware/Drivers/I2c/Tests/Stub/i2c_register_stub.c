@@ -7,6 +7,9 @@ i2c_register_stub_t i2c_register_stub[I2C_DEVICES_COUNT] = {0};
 void i2c_register_stub_erase(const uint8_t id)
 {
     memset(&i2c_register_stub[id], 0, sizeof(i2c_register_stub_t));
+    
+    // TWINT is set to indicate peripheral is stopped and its registers can be manipulated
+    i2c_register_stub[id].twcr_reg |= TWINT_MSK;
 }
 
 void i2c_register_stub_init_handle(const uint8_t id, i2c_handle_t * handle)

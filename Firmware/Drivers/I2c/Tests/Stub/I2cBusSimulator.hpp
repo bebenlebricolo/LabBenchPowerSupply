@@ -11,7 +11,7 @@
 class I2cBusSimulator
 {
 public:
-    I2cBusSimulator();
+    I2cBusSimulator() = default;
 
     // Main processing interface of the I2C bus
     void process(const uint8_t id);
@@ -42,11 +42,11 @@ private:
     std::vector<i2c_device_stub_t> devices;
 
     // Used to connect a master to its slave when a transaction is ongoing
-    uint8_t master_index;
+    uint8_t master_index = 0;
     // This vector is used to store all potential masters (all devices that has sent a Start condition at the exact same time)
     std::vector<uint8_t> potential_masters_indexes;
     std::vector<uint8_t> slaves_indexes;
-    TransactionMode mode;
+    TransactionMode mode = TransactionMode::None;
     StateMachine state_machine = StateMachine::Idle;
 
     void idle_process(const uint8_t id);

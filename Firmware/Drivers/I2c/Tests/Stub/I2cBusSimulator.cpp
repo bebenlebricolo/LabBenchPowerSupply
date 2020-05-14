@@ -46,7 +46,6 @@ void I2cBusSimulator::idle_process(const uint8_t id)
 
 void I2cBusSimulator::slave_addressing_process(const uint8_t id)
 {
-    uint8_t address = (devices[master_index].interface->data & 0xFE) >> 1U;
     slaves_indexes.clear();
 
     // Perform arbitration in case more than one potential master was found
@@ -61,12 +60,14 @@ void I2cBusSimulator::slave_addressing_process(const uint8_t id)
             if (potential_masters_indexes[i] != master_index)
             {
                 devices[potential_masters_indexes[i]].interface->lost_arbitration = true;
+                devices[potential_masters_indexes[i]].process(id);
             }
         } 
     }
 
     // Only the master device needs to process its internal datas in the first place
     devices[master_index].process(id);
+    uint8_t address = (devices[master_index].interface->data & 0xFE) >> 1U;
     
     // Handle stop conditions
     if (devices[master_index].interface->stop_sent)
@@ -128,7 +129,7 @@ void I2cBusSimulator::slave_addressing_process(const uint8_t id)
     {
         // Inform the master no slave device was found
         // and loop back in SlaveAddressing mode until getting a Stop condition from master
-        devices[master_index].interface->ack_sent = I2C_ACKNOWLEDGMENT_NACK;
+        devices[master_index].interface->ack_sent = false;
     }
 }
 

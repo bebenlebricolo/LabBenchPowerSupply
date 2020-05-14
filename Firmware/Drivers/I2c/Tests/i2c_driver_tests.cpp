@@ -2,6 +2,7 @@
 #include "i2c.h"
 #include "i2c_register_stub.h"
 #include "test_isr_stub.h"
+#include "I2cBusSimulator.hpp"
 
 
 class I2cTestFixture : public ::testing::Test
@@ -23,6 +24,8 @@ protected:
         config.interrupt_enabled = true;
         config.prescaler = I2C_PRESCALER_16;
         config.slave_address = 0x23;
+
+        i2c_register_stub_init_handle(0U, &config.handle);
 
         ret = i2c_init(0U, &config);
         ASSERT_EQ(ret, I2C_ERROR_OK);
@@ -467,7 +470,7 @@ TEST(i2c_driver_tests, test_api_accessors_get_set)
     {
         uint8_t status_code = 0;
         stub->twsr_reg &= ~TWS_MSK;
-        stub->twsr_reg |= (uint8_t) MAS_TX_SLAVE_WRITE_ACK << TWS3_BIT;
+        stub->twsr_reg |= (uint8_t) MAS_TX_SLAVE_WRITE_ACK;
 
         ret = i2c_get_status_code(0U, &status_code);
         ASSERT_EQ(ret, I2C_ERROR_OK);
@@ -567,7 +570,20 @@ TEST(i2c_driver_tests, test_initialisation_deinitialisation)
     ASSERT_EQ(current_state, I2C_STATE_DISABLED);
 }
 
-//TEST_F(I2cTestFixture, test_initialisation)
+TEST_F(I2cTestFixture, test_write_on_simulator)
+{
+    I2cBusSimulator simulator;
+    uint8_t buffer[10] = {0,1,2,3,4,5,6,7,8,9};
+    // Registers a fake device called twi hardware stub, which is linked with I2C driver
+    simulator.register_device(twi_hardware_stub_get_interface, twi_hardware_stub_process);
+    auto ret = i2c_write(0U, 0x20, buffer, 10, 0);
+    uint8_t loops = 15;
+    for (uint8_t i = 0 ;  i < loops ; i++)
+    {
+        simulator.process(0U);
+    }
+    (void) ret;
+}
 
 
 
