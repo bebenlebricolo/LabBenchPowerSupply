@@ -30,22 +30,21 @@ typedef enum
     I2C_FAKE_DEVICE_CMD_UNKNOWN
 } i2c_fake_device_commands_t;
 
-/* Let the device know what kind of operation it is expected to perform at next process() call */
-typedef enum
-{
-    MODE_MASTER_TRANSMITTER,
-    MODE_MASTER_RECEIVER,
-    MODE_SLAVE_TRANSMITTER,
-    MODE_SLAVE_RECEIVER,
-    MODE_IDLE
-} i2c_fake_device_mode_t;
-
 
 /* Interface */
-void i2c_fake_device_init(const uint8_t address);
+void i2c_fake_device_init(const uint8_t address, const bool general_call_enabled);
 void i2c_fake_device_clear(void);
-void i2c_fake_device_process(void);
-void i2c_fake_device_set_mode(const i2c_fake_device_mode_t mode);
+
+/**
+ * @brief this function might be used while testing to inject some ack/nack while master is writing to the targeted slave
+*/
+void i2c_fake_device_force_ack_nack_statement(const bool ack);
+
+void i2c_fake_device_write(const uint8_t address, uint8_t * buffer, const uint8_t length, const uint8_t retries);
+void i2c_fake_device_read(const uint8_t address, uint8_t * buffer, const uint8_t length, const uint8_t retries);
+
+void i2c_fake_device_process(const uint8_t id);
+void i2c_fake_device_set_mode(const i2c_fake_device_operating_modes_t mode);
 void i2c_fake_device_get_interface(i2c_device_interface_t ** const interface);
 
 #ifdef __cplusplus
