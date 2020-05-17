@@ -75,6 +75,7 @@ static void handle_master_tx(const uint8_t id)
             if (received_ack)
             {
                 write_status_code_to_reg(id,MAS_TX_SLAVE_WRITE_ACK);
+                states[id].previous = states[id].current;
             }
             else
             {
@@ -113,6 +114,8 @@ static void handle_master_tx(const uint8_t id)
             case 0x02:
                 // Clear status register (?)
                 i2c_register_stub[id].twsr_reg = 0;
+                states[id].current = INTERNAL_STATE_IDLE;
+                states[id].previous = INTERNAL_STATE_IDLE;
                 break;
             
             // A Stop will be followed by a start action

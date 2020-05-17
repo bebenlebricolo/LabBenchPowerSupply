@@ -38,6 +38,13 @@ private:
         None,                             /**< No transaction is ongoing            */
     };
 
+    enum class StartStopConditions : uint8_t
+    {
+        None,
+        Start = 0x1,
+        Stop = 0x2
+    };
+
     // Collection of registered devices
     std::vector<i2c_device_stub_t> devices;
 
@@ -54,6 +61,8 @@ private:
     void active_process(const uint8_t id);
     void devices_process(const uint8_t id);
     void active_devices_process(const uint8_t id);
+    StartStopConditions check_bus_for_start_stop_cond();
+
 };
 
 #endif /* I2C_BUS_SIMULATOR_HEADER */

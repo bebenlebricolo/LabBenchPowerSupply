@@ -29,17 +29,22 @@ void I2cBusSimulator::idle_process(const uint8_t id)
         }
     }
 
-    // Perform the transition to Slave addressing if at least one master was discovered
+    // Propagate start condition to all devices 
     if (0 != potential_masters_indexes.size())
     {
-        // Let all devices know that one of them became the master of the i2c bus
-        for (uint8_t index = 0 ; index < devices.size() ; index++)
+        // Let all non-master devices know that one of them became the master of the i2c bus
+        for(uint8_t i = 0 ; i < devices.size(); i++)
         {
-            devices[index].interface->start_sent = true;
-            devices[index].interface->bus_busy = true;
+            auto found_item = std::find(potential_masters_indexes.begin(), potential_masters_indexes.end(), i);
+            if (found_item == potential_masters_indexes.end())
+            {
+                // Reprocess target device as the slaves has to be aware a transaction has started
+                devices[i].interface->start_sent = true;
+                devices[i].process(id);
+            }
         }
-        // Switch to next state
         state_machine = I2cBusSimulator::StateMachine::SlaveAddressing;
+        
     }
     // else, fallback to Idle mode, waiting for next change
 }
@@ -112,6 +117,7 @@ void I2cBusSimulator::slave_addressing_process(const uint8_t id)
         bool slave_recognized = false;
         for(auto slave_index : slaves_indexes)
         {
+            devices[slave_index].interface->data = devices[master_index].interface->data;
             devices[slave_index].process(id);
             slave_recognized |= devices[slave_index].interface->ack_sent;
         }
@@ -133,8 +139,9 @@ void I2cBusSimulator::slave_addressing_process(const uint8_t id)
     }
 }
 
-void I2cBusSimulator::active_process(const uint8_t id)
-{
+
+ I2cBusSimulator::StartStopConditions I2cBusSimulator::check_bus_for_start_stop_cond()
+ {
     // Check for start condition 
     bool start_sent = devices[master_index].interface->start_sent;
     bool stop_sent = devices[master_index].interface->stop_sent;
@@ -157,7 +164,7 @@ void I2cBusSimulator::active_process(const uint8_t id)
             device.interface->stop_sent = true;
             device.interface->bus_busy = false;
         }
-        return;
+        return StartStopConditions::Stop;
     }
 
     // Reverts back to SlaveAddressing state as this is a Repeated Start condition 
@@ -170,9 +177,17 @@ void I2cBusSimulator::active_process(const uint8_t id)
         {
             device.interface->start_sent = true;
         }
-        return;
+        return StartStopConditions::Start;
     }
 
+    return StartStopConditions::None;
+ }
+
+
+void I2cBusSimulator::active_process(const uint8_t id)
+{
+    
+    StartStopConditions bus_conditions = StartStopConditions::None;
     uint8_t data = 0xFF;
     bool ack_sent = false;
     switch (mode)
@@ -181,15 +196,38 @@ void I2cBusSimulator::active_process(const uint8_t id)
         case TransactionMode::GeneralCall :
             // Master process time
             devices[master_index].process(id);
+            bus_conditions = check_bus_for_start_stop_cond();            
+
+            // Handle stop condition when master decides to break execution
+            if (StartStopConditions::Stop == bus_conditions)
+            {
+                for (auto& device : devices)
+                {
+                    device.interface->stop_sent = true;
+                }
+                state_machine = StateMachine::Idle;
+            }
+            else if(StartStopConditions::Start == bus_conditions)
+            {
+                for (auto& device : devices)
+                {
+                    device.interface->start_sent = true;
+                }
+                state_machine = StateMachine::SlaveAddressing;
+            }
 
             // Transfer data to slave and call slave.process() function
             for (auto& slave_index : slaves_indexes)
             {   
-                devices[slave_index].interface->data = devices[master_index].interface->data;
+                if (StartStopConditions::None == bus_conditions)
+                {
+                    devices[slave_index].interface->data = devices[master_index].interface->data;
+                }
                 devices[slave_index].process(id);
                 ack_sent |= devices[slave_index].interface->ack_sent;
             }
             devices[master_index].interface->ack_sent = ack_sent;
+
             break;
 
         case TransactionMode::Read :

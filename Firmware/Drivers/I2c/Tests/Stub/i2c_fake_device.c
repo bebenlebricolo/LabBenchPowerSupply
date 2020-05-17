@@ -1,21 +1,13 @@
 #include <string.h>
+#include <stdio.h>
 #include "i2c_fake_device.h"
 #include "i2c_device_interface.h"
 
 #define I2C_CMD_WRITE_BIT 0U
 #define I2C_CMD_READ_BIT 1U
 
-#define MAX_MESSAGE_LENGTH 30U
 
-typedef struct
-{
-    char msg[MAX_MESSAGE_LENGTH];
-    uint8_t temperature_1;
-    uint8_t temperature_2;
-    uint8_t thermal_threshold;
-    i2c_fake_device_operating_modes_t mode;
-    i2c_fake_device_commands_t command;
-} i2c_exposed_data_t;
+
 
 /**
  * @brief gives information on the actually accessed data
@@ -25,7 +17,7 @@ typedef struct
     uint8_t * buffer;   /**< Data currently being accessed                                                  */
     uint8_t length;     /**< Length of data being accessed                                                  */
     uint8_t index;      /**< Current index of data being accessed                                           */
-    bool bad_access     /**< Indicates whether a bad command was given or out-of-bounds data was accessed   */
+    bool bad_access;    /**< Indicates whether a bad command was given or out-of-bounds data was accessed   */
 } data_access_t;
 
 /* Let the device know what kind of operation it is expected to perform at next process() call */
@@ -58,7 +50,7 @@ static struct
 
 // When a wrong command is sent, device will loop on this fake byte until the end of the master
 // operation
-static const uint8_t wrong_access_requested = 0;
+static uint8_t wrong_access_requested = 0;
 
 /**
  * @brief interpretes command written by master and sets the read / write pointer to the right location
@@ -83,13 +75,19 @@ static void handle_master_transmitting_data(void) {}
 static void handle_master_receiving_data(void) {}
 
 
+i2c_exposed_data_t * i2c_fake_device_get_exposed_data(void)
+{
+    return &exposed_data;
+}
 
 void i2c_fake_device_clear(void)
 {
     memset(&exposed_data, 0, sizeof(i2c_exposed_data_t));
+    memset(&interface, 0 , sizeof(i2c_device_interface_t));
     states.current = MODE_IDLE;
     states.previous = MODE_IDLE;
-    snprintf(exposed_data.msg, MAX_MESSAGE_LENGTH, "Hello World!" );
+    snprintf(exposed_data.msg, MAX_MESSAGE_LENGTH, "Toto est au bistro!" );
+
 }
 
 void i2c_fake_device_init(const uint8_t address, const bool general_call_enabled)
@@ -140,6 +138,7 @@ void i2c_fake_device_process(const uint8_t id)
             break;
         
         case MODE_SLAVE_RECEIVER:
+            handle_slave_receiving_data();
             break;
         
         case MODE_MASTER_TRANSMITTER:
@@ -155,8 +154,9 @@ void i2c_fake_device_process(const uint8_t id)
     }
 }
 
-void i2c_fake_device_get_interface(i2c_device_interface_t ** const p_interface)
+void i2c_fake_device_get_interface(const uint8_t bus_id, i2c_device_interface_t ** const p_interface)
 {
+    (void) bus_id;
     *p_interface = &interface;
 }
 
@@ -168,7 +168,7 @@ static inline bool interprete_command(const uint8_t command)
         case I2C_FAKE_DEVICE_CMD_MESSAGE:
             data_access.bad_access = false;
             data_access.index = 0;
-            data_access.buffer = &exposed_data.msg;
+            data_access.buffer = (uint8_t *) exposed_data.msg;
             data_access.length = MAX_MESSAGE_LENGTH;
             break;
 
@@ -196,7 +196,7 @@ static inline bool interprete_command(const uint8_t command)
         case I2C_FAKE_DEVICE_CMD_MODE_CHANGE:
             data_access.bad_access = false;
             data_access.index = 0;
-            data_access.buffer = &exposed_data.mode;
+            data_access.buffer = (uint8_t * ) &exposed_data.mode;
             data_access.length = 1U;
             break;
 
@@ -247,7 +247,7 @@ static void handle_slave_wait_for_master_addressing(void)
     //      switch to MODE_SLAVE_TRANSMITTER
     // else post NACK on interface
     //      switch back to MODE_IDLE
-    const uint8_t address = (interface.data & 0xFE >> 1U);
+    const uint8_t address = ((interface.data & 0xFE) >> 1U);
     const uint8_t command = interface.data &0x01;
 
     states.previous = states.current;
@@ -266,7 +266,7 @@ static void handle_slave_wait_for_master_addressing(void)
     // General call
     else 
     {
-        if(0x00 == (interface.data & 0xFE >> 1U))
+        if(0x00 == ((interface.data & 0xFE) >> 1U))
         {
             // Only available choice, general call cannot be sent with
             // the read command
@@ -302,6 +302,8 @@ static void handle_slave_receiving_data(void)
     {
         states.current = MODE_IDLE;
         states.previous = MODE_IDLE;
+        reset_data_access();
+        slave_clear_flags_from_interface();
         return;
     }
 
@@ -372,4 +374,5 @@ static inline void slave_clear_flags_from_interface(void)
 }
 
 
-static void handle_slave_transmitting_data(void);
+static void handle_slave_transmitting_data(void) {}
+

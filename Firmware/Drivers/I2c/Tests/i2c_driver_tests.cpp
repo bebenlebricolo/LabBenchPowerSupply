@@ -3,7 +3,7 @@
 #include "i2c_register_stub.h"
 #include "test_isr_stub.h"
 #include "I2cBusSimulator.hpp"
-
+#include "i2c_fake_device.h"
 
 class I2cTestFixture : public ::testing::Test
 {
@@ -570,22 +570,54 @@ TEST(i2c_driver_tests, test_initialisation_deinitialisation)
     ASSERT_EQ(current_state, I2C_STATE_DISABLED);
 }
 
-TEST_F(I2cTestFixture, test_write_on_simulator)
+TEST_F(I2cTestFixture, test_write_hello_to_device)
 {
     I2cBusSimulator simulator;
-    uint8_t buffer[10] = {0,1,2,3,4,5,6,7,8,9};
+    uint8_t buffer[10] = {I2C_FAKE_DEVICE_CMD_MESSAGE,'H','e','l','l','o','w','w','!',0};
+    
+    // fake device with address 0x23
+    i2c_fake_device_init(0x23, false);
     // Registers a fake device called twi hardware stub, which is linked with I2C driver
     simulator.register_device(twi_hardware_stub_get_interface, twi_hardware_stub_process);
-    auto ret = i2c_write(0U, 0x20, buffer, 10, 0);
+    simulator.register_device(i2c_fake_device_get_interface, i2c_fake_device_process);
+    auto ret = i2c_write(0U, 0x23, buffer, 10, 0);
+    ASSERT_EQ(I2C_ERROR_OK, ret);
+    
     uint8_t loops = 15;
     for (uint8_t i = 0 ;  i < loops ; i++)
     {
         simulator.process(0U);
     }
-    (void) ret;
+
+    auto* exposed_data = i2c_fake_device_get_exposed_data();
+    auto comparison = strncmp((char*) buffer + 1, (char*)exposed_data->msg, 9);
+    ASSERT_EQ(0, comparison);
+
 }
 
+TEST_F(I2cTestFixture, test_write_temperature_1_to_device)
+{
+    I2cBusSimulator simulator;
+    uint8_t buffer[2] = {I2C_FAKE_DEVICE_CMD_TEMPERATURE_1, 125};
+    
+    // fake device with address 0x23
+    i2c_fake_device_init(0x23, false);
+    // Registers a fake device called twi hardware stub, which is linked with I2C driver
+    simulator.register_device(twi_hardware_stub_get_interface, twi_hardware_stub_process);
+    simulator.register_device(i2c_fake_device_get_interface, i2c_fake_device_process);
+    auto ret = i2c_write(0U, 0x23, buffer, 2, 0);
+    ASSERT_EQ(I2C_ERROR_OK, ret);
+    
+    uint8_t loops = 5U;
+    for (uint8_t i = 0 ;  i < loops ; i++)
+    {
+        simulator.process(0U);
+    }
 
+    auto* exposed_data = i2c_fake_device_get_exposed_data();
+    ASSERT_EQ(125, exposed_data->temperature_1);
+
+}
 
 int main(int argc, char **argv)
 {
