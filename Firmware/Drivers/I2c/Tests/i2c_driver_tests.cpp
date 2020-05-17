@@ -616,7 +616,29 @@ TEST_F(I2cTestFixture, test_write_temperature_1_to_device)
 
     auto* exposed_data = i2c_fake_device_get_exposed_data();
     ASSERT_EQ(125, exposed_data->temperature_1);
+}
 
+TEST_F(I2cTestFixture, test_write_to_wrong_address)
+{
+    I2cBusSimulator simulator;
+    uint8_t buffer[2] = {I2C_FAKE_DEVICE_CMD_TEMPERATURE_1, 125};
+    
+    // fake device with address 0x23
+    i2c_fake_device_init(0x23, false);
+    // Registers a fake device called twi hardware stub, which is linked with I2C driver
+    simulator.register_device(twi_hardware_stub_get_interface, twi_hardware_stub_process);
+    simulator.register_device(i2c_fake_device_get_interface, i2c_fake_device_process);
+    auto ret = i2c_write(0U, 0x58, buffer, 2, 0);
+    ASSERT_EQ(I2C_ERROR_OK, ret);
+    
+    uint8_t loops = 5U;
+    for (uint8_t i = 0 ;  i < loops ; i++)
+    {
+        simulator.process(0U);
+    }
+
+    auto* exposed_data = i2c_fake_device_get_exposed_data();
+    ASSERT_NE(125, exposed_data->temperature_1);
 }
 
 int main(int argc, char **argv)
