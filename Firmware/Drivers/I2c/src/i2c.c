@@ -397,13 +397,13 @@ i2c_error_t i2c_get_interrupt_mode(const uint8_t id, bool * const use_interrupts
     return I2C_ERROR_OK;
 }
 
-i2c_error_t i2c_get_status_code(const uint8_t id, uint8_t * const status_code)
+i2c_error_t i2c_get_status_code(const uint8_t id, uint8_t * const status)
 {
     if (!is_id_valid(id))
     {
         return I2C_ERROR_DEVICE_NOT_FOUND;
     }
-    if (NULL == status_code)
+    if (NULL == status)
     {
         return I2C_ERROR_NULL_POINTER;
     }
@@ -412,7 +412,7 @@ i2c_error_t i2c_get_status_code(const uint8_t id, uint8_t * const status_code)
         return I2C_ERROR_NULL_HANDLE;
     }
 
-    *status_code = (*internal_configuration[id].handle.TWSR & TWS_MSK);
+    *status = (*internal_configuration[id].handle.TWSR & TWS_MSK);
     return I2C_ERROR_OK;
 }
 
@@ -643,7 +643,7 @@ static i2c_error_t i2c_master_tx_process(const uint8_t id)
                    and keeps the line busy until read operation completes, or fails.
                    Hence, the result is a shorter command [Start, payload, Start, payload, Stop] with the guarantee that the master
                    keeps the I2C bus priority for the whole communication duration */
-                internal_buffer[id].command = internal_buffer[id].target_address | I2C_CMD_READ_BIT;
+                internal_buffer[id].command = (internal_buffer[id].target_address << 1U) | I2C_CMD_READ_BIT;
                 *internal_configuration[id].handle.TWCR |= TWSTA_MSK;
                 /* Switch to TX finished state at next process loop to indicate we are ready to perform the 'real' read operation */
                 internal_configuration[id].state = I2C_STATE_MASTER_TX_FINISHED;
@@ -705,8 +705,8 @@ static i2c_error_t i2c_master_rx_process(const uint8_t id)
     i2c_error_t ret = I2C_ERROR_OK;
 
 
-    i2c_master_receiver_mode_status_codes_t status;
-    ret = i2c_get_status_code(id, (uint8_t * ) &status);
+    uint8_t status;
+    ret = i2c_get_status_code(id, &status);
     if (I2C_ERROR_OK != ret)
     {
         // return here because if we can't read device's registers, we should stop any execution
@@ -810,8 +810,8 @@ static i2c_error_t i2c_slave_tx_process(const uint8_t id)
     static uint8_t retries = 0;
     i2c_error_t ret = I2C_ERROR_OK;
 
-    i2c_slave_transmitter_mode_status_codes_t status;
-    ret = i2c_get_status_code(id, (uint8_t * ) &status);
+    uint8_t status;
+    ret = i2c_get_status_code(id, &status);
     if (I2C_ERROR_OK != ret)
     {
         // return here because if we can't read device's registers, we should stop any execution
@@ -896,8 +896,8 @@ static i2c_error_t i2c_slave_rx_process(const uint8_t id)
     static uint8_t processed_bytes = 0;
     i2c_error_t ret = I2C_ERROR_OK;
 
-    i2c_slave_receiver_mode_status_codes_t status;
-    ret = i2c_get_status_code(id, (uint8_t * ) &status);
+    uint8_t status;
+    ret = i2c_get_status_code(id, &status);
     if (I2C_ERROR_OK != ret)
     {
         // return here because if we can't read device's registers, we should stop any execution
@@ -1019,12 +1019,12 @@ static i2c_error_t i2c_slave_rx_process(const uint8_t id)
 static i2c_error_t process_helper_single(const uint8_t id)
 {
     i2c_error_t ret = I2C_ERROR_OK;
-    uint8_t status_code = 0;
+    uint8_t status = 0;
     switch(internal_configuration[id].state)
     {
         /* TWINT is raised while no operation asked : this is the slave mode being activated by I2C bus */
         case I2C_STATE_READY:
-            ret = i2c_get_status_code(id, &status_code);
+            ret = i2c_get_status_code(id, &status);
             if (I2C_ERROR_OK != ret)
             {
                 // TODO : check if this code is about an error status (misc statuses)
@@ -1032,14 +1032,14 @@ static i2c_error_t process_helper_single(const uint8_t id)
             }
 
             // Check if status code is somewhere inside SLAVE RX/TX status codes ranges
-            if((status_code >= (uint8_t) SLA_RX_SLAVE_WRITE_ACK)
-            && (status_code <= (uint8_t) SLA_RX_START_STOP_COND_RECEIVED_WHILE_OPERATING))
+            if((status >= (uint8_t) SLA_RX_SLAVE_WRITE_ACK)
+            && (status <= (uint8_t) SLA_RX_START_STOP_COND_RECEIVED_WHILE_OPERATING))
             {
                 internal_configuration[id].state = I2C_STATE_SLAVE_RECEIVING;
                 ret = i2c_slave_tx_process(id);
             }
-            else if((status_code >= (uint8_t) SLA_TX_OWN_ADDR_SLAVE_READ_ACK)
-                 && (status_code <= (uint8_t) SLA_TX_LAST_DATA_TRANSMITTED_ACK))
+            else if((status >= (uint8_t) SLA_TX_OWN_ADDR_SLAVE_READ_ACK)
+                 && (status <= (uint8_t) SLA_TX_LAST_DATA_TRANSMITTED_ACK))
             {
                 internal_configuration[id].state = I2C_STATE_SLAVE_TRANSMITTING;
                 ret = i2c_slave_rx_process(id);
@@ -1200,7 +1200,11 @@ i2c_error_t i2c_read(const uint8_t id, const uint8_t target_address, uint8_t * c
     internal_buffer[id].i2c_buffer.length = length;
     internal_buffer[id].index = 0;
     internal_buffer[id].retries = retries;
-    internal_buffer[id].command = (target_address << 1U) | I2C_CMD_READ_BIT;
+    internal_buffer[id].target_address = target_address;
+    
+    // First we need to write an operation code to our slave, so first send its address in write mode
+    // Then once addressing is done and opcode is sent, switch to read mode !
+    internal_buffer[id].command = (target_address << 1U) | I2C_CMD_WRITE_BIT;
 
     /* Switch internal state to master TX state and send a start condition on I2C bus */
     internal_configuration[id].state = I2C_STATE_MASTER_TRANSMITTING;

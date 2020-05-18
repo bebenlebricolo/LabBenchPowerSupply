@@ -9,7 +9,7 @@ extern "C"
 #include <stdint.h>
 #include "i2c_device_interface.h"
 
-#define MAX_MESSAGE_LENGTH 30U
+#define I2C_FAKE_DEVICE_MSG_LEN 30U
 
 
 /* Device operating modes */
@@ -35,7 +35,7 @@ typedef enum
 
 typedef struct
 {
-    char msg[MAX_MESSAGE_LENGTH];
+    char msg[I2C_FAKE_DEVICE_MSG_LEN];
     uint8_t temperature_1;
     uint8_t temperature_2;
     uint8_t thermal_threshold;

@@ -107,7 +107,8 @@ static void handle_master_tx(const uint8_t id)
             
             // Start sent, switch to REPEATED START
             case 0x01:
-                write_status_code_to_reg(id,MAS_TX_REPEATED_START);
+                write_status_code_to_reg(id, MAS_TX_REPEATED_START);
+                states[id].current = INTERNAL_STATE_MASTER_TO_SLAVE_ADDRESSING;
                 break;
             
             // Stop sent
@@ -138,6 +139,14 @@ static void handle_master_tx(const uint8_t id)
     // Reset ack received flag
     interface[id].ack_sent = false;
 }
+
+static void handle_master_rx(const uint8_t id)
+{
+    i2c_register_stub[id].twdr_reg = interface[id].data;
+    (void) i2c_process(id);
+    master_update_interface_from_regs(id);
+}
+
 
 static void handle_idle(const uint8_t id)
 {
@@ -171,7 +180,14 @@ static void handle_master_to_slave_addressing(const uint8_t id)
     interface[id].stop_sent = false;
     master_update_interface_from_regs(id);
     states[id].previous = states[id].current;
-    states[id].current = INTERNAL_STATE_MASTER_TX;
+    if (I2C_CMD_READ_BIT == (interface[id].data & 0x01))
+    {
+        states[id].current = INTERNAL_STATE_MASTER_RX;
+    }
+    else
+    {
+        states[id].current = INTERNAL_STATE_MASTER_TX;
+    }
 }
 
 
@@ -192,6 +208,7 @@ void twi_hardware_stub_process(const uint8_t id)
             break;
 
         case INTERNAL_STATE_MASTER_RX:
+            handle_master_rx(id);
             break;
 
         case INTERNAL_STATE_SLAVE_TX:

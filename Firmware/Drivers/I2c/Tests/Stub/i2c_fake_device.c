@@ -86,7 +86,7 @@ void i2c_fake_device_clear(void)
     memset(&interface, 0 , sizeof(i2c_device_interface_t));
     states.current = MODE_IDLE;
     states.previous = MODE_IDLE;
-    snprintf(exposed_data.msg, MAX_MESSAGE_LENGTH, "Toto est au bistro!" );
+    snprintf(exposed_data.msg, I2C_FAKE_DEVICE_MSG_LEN, "Toto est au bistro!" );
 
 }
 
@@ -135,6 +135,7 @@ void i2c_fake_device_process(const uint8_t id)
             break;
         
         case MODE_SLAVE_TRANSMITTER:
+            handle_slave_transmitting_data();
             break;
         
         case MODE_SLAVE_RECEIVER:
@@ -169,7 +170,7 @@ static inline bool interprete_command(const uint8_t command)
             data_access.bad_access = false;
             data_access.index = 0;
             data_access.buffer = (uint8_t *) exposed_data.msg;
-            data_access.length = MAX_MESSAGE_LENGTH;
+            data_access.length = I2C_FAKE_DEVICE_MSG_LEN;
             break;
 
         case I2C_FAKE_DEVICE_CMD_THERMAL_THRESHOLD:
@@ -289,10 +290,11 @@ static void handle_slave_wait_for_master_addressing(void)
 
 static void handle_slave_receiving_data(void)
 {
-    // Master wants to switch back to
+    // Master wants to switch back to addressing mode
     if (interface.start_sent)
     {
         // Fallback in slave addressing mode (next byte will contain address + command)
+        states.previous = states.current;
         states.current = MODE_SLAVE_WAIT_FOR_MASTER_ADDRESSING;
         return;
     }
@@ -374,5 +376,60 @@ static inline void slave_clear_flags_from_interface(void)
 }
 
 
-static void handle_slave_transmitting_data(void) {}
+static void handle_slave_transmitting_data(void)
+{
+    // Master wants to switch back to addressing mode
+    if (interface.start_sent)
+    {
+        // Fallback in slave addressing mode (next byte will contain address + command)
+        states.previous = states.current;
+        states.current = MODE_SLAVE_WAIT_FOR_MASTER_ADDRESSING;
+        return;
+    }
+    
+    // Stop detected, stop further processing
+    if (interface.stop_sent)
+    {
+        states.current = MODE_IDLE;
+        states.previous = MODE_IDLE;
+        reset_data_access();
+        slave_clear_flags_from_interface();
+        return;
+    }
+
+    // First byte does not contain any command : the read command assumes a write was done before to make the
+    // exposed data point to the right place. So all bytes starting from here are bytes that will be transmitted back to master
+    
+    // Check if last byte sent gave a successful response
+    if (MODE_SLAVE_WAIT_FOR_MASTER_ADDRESSING != states.previous)
+    {
+        if (true == interface.ack_sent)
+        {
+            data_access.index++;
+        }
+    }
+    
+    // Guard against wrong reads !
+    if (true == data_access.bad_access)
+    {
+        // Loop on fake data (0)
+        interface.data = *data_access.buffer;
+    }
+    else
+    {
+        if (data_access.index < data_access.length)
+        {
+            interface.data = data_access.buffer[data_access.index];
+            // Index will be incremented on next loop, only if master responded with an Acknowledgement flag
+        }
+        else
+        {
+            // Still send data, but send fake one instead!
+            data_access.bad_access = true;
+            data_access.buffer = &wrong_access_requested;
+            data_access.index = 0;
+            data_access.length = 1;
+        }
+    }
+}
 
