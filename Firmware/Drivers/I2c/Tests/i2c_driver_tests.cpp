@@ -662,7 +662,9 @@ TEST_F(I2cTestFixture, test_read_message_from_fake_device)
     }
 
     auto* exposed_data = i2c_fake_device_get_exposed_data();
-    ASSERT_NE(125, exposed_data->temperature_1);
+    const char* received_msg = reinterpret_cast<const char *>(buffer + 1);
+    auto result = strncmp(received_msg, exposed_data->msg, I2C_FAKE_DEVICE_MSG_LEN );
+    ASSERT_EQ(0, result);
 }
 
 int main(int argc, char **argv)

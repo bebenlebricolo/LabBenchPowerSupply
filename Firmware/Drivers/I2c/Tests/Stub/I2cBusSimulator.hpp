@@ -54,7 +54,11 @@ private:
     std::vector<uint8_t> potential_masters_indexes;
     std::vector<uint8_t> slaves_indexes;
     TransactionMode mode = TransactionMode::None;
-    StateMachine state_machine = StateMachine::Idle;
+    struct 
+    {
+        StateMachine previous;
+        StateMachine current;
+    } states {StateMachine::Idle, StateMachine::Idle};
 
     void idle_process(const uint8_t id);
     void slave_addressing_process(const uint8_t id);

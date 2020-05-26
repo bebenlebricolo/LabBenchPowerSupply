@@ -399,9 +399,7 @@ static void handle_slave_transmitting_data(void)
 
     // First byte does not contain any command : the read command assumes a write was done before to make the
     // exposed data point to the right place. So all bytes starting from here are bytes that will be transmitted back to master
-    
-    // Check if last byte sent gave a successful response
-    if (MODE_SLAVE_WAIT_FOR_MASTER_ADDRESSING != states.previous)
+    if( MODE_SLAVE_TRANSMITTER == states.previous)
     {
         if (true == interface.ack_sent)
         {
@@ -431,5 +429,6 @@ static void handle_slave_transmitting_data(void)
             data_access.length = 1;
         }
     }
+    states.previous = MODE_SLAVE_TRANSMITTER;
 }
 

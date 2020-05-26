@@ -43,7 +43,7 @@ void I2cBusSimulator::idle_process(const uint8_t id)
                 devices[i].process(id);
             }
         }
-        state_machine = I2cBusSimulator::StateMachine::SlaveAddressing;
+        states.current = I2cBusSimulator::StateMachine::SlaveAddressing;
         
     }
     // else, fallback to Idle mode, waiting for next change
@@ -84,7 +84,8 @@ void I2cBusSimulator::slave_addressing_process(const uint8_t id)
             device.interface->bus_busy = false;
         }
         // Revert to Idle state
-        state_machine = I2cBusSimulator::StateMachine::Idle;
+        states.previous = states.current;
+        states.current = I2cBusSimulator::StateMachine::Idle;
         return;
     }
 
@@ -129,7 +130,8 @@ void I2cBusSimulator::slave_addressing_process(const uint8_t id)
         }
         
         mode = transaction_mode;
-        state_machine = I2cBusSimulator::StateMachine::Active;
+        states.previous = states.current;
+        states.current = I2cBusSimulator::StateMachine::Active;
     }
     else
     {
@@ -158,7 +160,8 @@ void I2cBusSimulator::slave_addressing_process(const uint8_t id)
     if (stop_sent)
     {
         // Transmission is over
-        state_machine = StateMachine::Idle;
+        states.previous = states.current;
+        states.current = StateMachine::Idle;
         for (auto& device : devices)
         {
             device.interface->stop_sent = true;
@@ -172,7 +175,8 @@ void I2cBusSimulator::slave_addressing_process(const uint8_t id)
     if (start_sent)
     {
         // Transmission is over
-        state_machine = StateMachine::SlaveAddressing;
+        states.previous = states.current;
+        states.current = StateMachine::SlaveAddressing;
         for (auto& device : devices)
         {
             device.interface->start_sent = true;
@@ -205,7 +209,8 @@ void I2cBusSimulator::active_process(const uint8_t id)
                 {
                     device.interface->stop_sent = true;
                 }
-                state_machine = StateMachine::Idle;
+                states.previous = states.current;
+                states.current = StateMachine::Idle;
             }
             else if(StartStopConditions::Start == bus_conditions)
             {
@@ -213,7 +218,8 @@ void I2cBusSimulator::active_process(const uint8_t id)
                 {
                     device.interface->start_sent = true;
                 }
-                state_machine = StateMachine::SlaveAddressing;
+                states.previous = states.current;
+                states.current = StateMachine::SlaveAddressing;
             }
 
             // Transfer data to slave and call slave.process() function
@@ -231,6 +237,13 @@ void I2cBusSimulator::active_process(const uint8_t id)
             break;
 
         case TransactionMode::Read :
+            if (StateMachine::SlaveAddressing == states.previous)
+            {
+                // We need the master to consume the slave's acknowledgment before starting the transmission to update its internal states
+                devices[master_index].process(id);
+                states.previous = states.current;
+            }
+
             for (auto& slave_index : slaves_indexes)
             {
                 // Applies a binary & to the original data as if all slaves
@@ -250,13 +263,14 @@ void I2cBusSimulator::active_process(const uint8_t id)
         default:
             break;
     }
+
 }
 
 
 
 void I2cBusSimulator::process(const uint8_t id)
 {
-    switch(state_machine)
+    switch(states.current)
     {
     case I2cBusSimulator::StateMachine::Idle :
         // loop on all devices and check if a start condition was thrown by someone
@@ -267,7 +281,7 @@ void I2cBusSimulator::process(const uint8_t id)
         // to identify at this time)
         
         // When master is found, set the master_index with the device which won the fight
-        // Then go to SlaveAddressing on next call -> set state_machine to SlaveAddressing mode
+        // Then go to SlaveAddressing on next call -> set states.current to SlaveAddressing mode
         
         idle_process(id);
         break;

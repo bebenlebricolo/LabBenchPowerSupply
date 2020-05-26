@@ -21,7 +21,7 @@
 
                 "${workspaceFolder}/**",
                 "/usr/include",
-                "/usr/include/c++/9.3.0/",
+                "/usr/include/c++/*/*",
                 "/usr/include/gtest",
                 "/usr/avr/include",
                 "/usr/lib/gcc/avr/9.3.0/include"
@@ -44,10 +44,10 @@
 
                 "${workspaceFolder}/**",
                 "/usr/include",
-                "/usr/include/c++/9.3.0/",
+                "/usr/include/c++/**/*",
                 "/usr/include/gtest",
                 "/usr/avr/include",
-                "/usr/lib/gcc/avr/9.3.0/include"
+                "/usr/lib/gcc/avr/**/include/*"
             ],
             "defines": [
                 "__AVR_ATmega328__",

@@ -74,18 +74,37 @@ static void handle_master_tx(const uint8_t id)
             // Slave recognized itself and told the master device it is ready for next step
             if (received_ack)
             {
-                write_status_code_to_reg(id,MAS_TX_SLAVE_WRITE_ACK);
+                write_status_code_to_reg(id, MAS_TX_SLAVE_WRITE_ACK);
                 states[id].previous = states[id].current;
             }
             else
             {
-                write_status_code_to_reg(id,MAS_TX_SLAVE_WRITE_NACK);
+                write_status_code_to_reg(id, MAS_TX_SLAVE_WRITE_NACK);
             }
         }
     }
     else
     {
-        
+        if (received_ack)
+        {
+            write_status_code_to_reg(id, MAS_TX_DATA_TRANSMITTED_ACK);
+        }
+        else
+        {
+            write_status_code_to_reg(id, MAS_TX_DATA_TRANSMITTED_NACK);
+        }
+    }
+
+    // Clear internal flags to prevent side-effect when running the driver's process()
+    // Clears flags as if real hardware has done it
+    master_clear_flags_from_reg(id);
+    (void) i2c_process(id);
+
+    // Transfers data from registers to interface
+    master_update_interface_from_regs(id);
+
+    // Handle process results published on interface
+    {
         uint8_t flags = 0;
         flags |= (interface[id].start_sent ? 1 : 0);
         flags |= (interface[id].stop_sent ? 1 : 0) << 1U;
@@ -93,17 +112,6 @@ static void handle_master_tx(const uint8_t id)
 
         switch(flags)        
         {
-            case 0x00 :
-                // Last operation succeeded (data has been transmitted)
-                if (received_ack)
-                {
-                    write_status_code_to_reg(id,MAS_TX_DATA_TRANSMITTED_ACK);
-                }
-                else
-                {
-                    write_status_code_to_reg(id,MAS_TX_DATA_TRANSMITTED_NACK);
-                }
-                break;
             
             // Start sent, switch to REPEATED START
             case 0x01:
@@ -125,16 +133,13 @@ static void handle_master_tx(const uint8_t id)
                 states[id].current = INTERNAL_STATE_IDLE;
                 states[id].previous = INTERNAL_STATE_IDLE;
                 break;
+
+            // Nothing to do            
+            default:
+            case 0x00 :
+                break;
         }
     }
-
-    // Clear internal flags to prevent side-effect when running the driver's process()
-    // Clears flags as if real hardware has done it
-    master_clear_flags_from_reg(id);
-    (void) i2c_process(id);
-
-    // Transfers data from registers to interface
-    master_update_interface_from_regs(id);
 
     // Reset ack received flag
     interface[id].ack_sent = false;
@@ -143,8 +148,38 @@ static void handle_master_tx(const uint8_t id)
 static void handle_master_rx(const uint8_t id)
 {
     i2c_register_stub[id].twdr_reg = interface[id].data;
-    (void) i2c_process(id);
-    master_update_interface_from_regs(id);
+
+    // First time this function is called is when we have just received an acknoledgment over slave addressing
+    if (INTERNAL_STATE_MASTER_TO_SLAVE_ADDRESSING == states[id].previous)
+    {
+        if (interface[id].ack_sent)
+        {
+            write_status_code_to_reg(id, MAS_RX_SLAVE_READ_ACK);
+        }
+        else
+        {
+            write_status_code_to_reg(id, MAS_RX_SLAVE_READ_NACK);
+        }
+        states[id].previous = states[id].current;
+        interface[id].ack_sent = false;
+
+        // Then, we need to process what's coming using the i2c interface
+        (void) i2c_process(id);
+        master_update_interface_from_regs(id);
+        interface[id].ack_sent = (bool) (i2c_register_stub[id].twcr_reg & TWEA_MSK);
+    }
+    else
+    {
+        // Force accept incoming data bytes
+        interface[id].ack_sent = true;
+        write_status_code_to_reg(id, MAS_RX_DATA_RECEIVED_ACK);
+
+        // Then, we need to process what's coming using the i2c interface
+        (void) i2c_process(id);
+        master_update_interface_from_regs(id);
+        interface[id].ack_sent = (bool) (i2c_register_stub[id].twcr_reg & TWEA_MSK);
+
+    }
 }
 
 
