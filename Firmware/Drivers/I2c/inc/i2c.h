@@ -92,9 +92,9 @@ typedef enum
 */
 typedef struct
 {
-    volatile uint8_t * data;  /**< pointer to targeted buffer. NULL if command is invalid or after first initialisation */
-    volatile uint8_t length;  /**< length of the selected buffer, to prevent writing/reading past the end of the buffer */
-    volatile bool * locked;   /**< Indicates whether the selected buffer is being written to / read from.
+    uint8_t * data;  /**< pointer to targeted buffer. NULL if command is invalid or after first initialisation */
+    uint8_t length;  /**< length of the selected buffer, to prevent writing/reading past the end of the buffer */
+    bool * locked;   /**< Indicates whether the selected buffer is being written to / read from.
                                    If this boolean is set, it prevents buffer update while being accessed               */
 } i2c_command_handling_buffers_t;
 
@@ -154,6 +154,9 @@ typedef i2c_slave_handler_error_t (*i2c_command_handler_t)(volatile i2c_command_
  * performing unit testing.
 */
 void i2c_driver_reset_memory(void);
+
+uint8_t * i2c_get_internal_data_buffer(const uint8_t id);
+
 #endif
 
 /**
@@ -503,7 +506,7 @@ i2c_error_t i2c_write(const uint8_t id, const uint8_t target_address , uint8_t *
  *      I2C_ERROR_REQUEST_TOO_SHORT   : Given request's length is too short (shall be >= 2)
  *      I2C_ERROR_ALREADY_PROCESSING  : Selected instance is already processing (either in master or slave mode). @see i2c_get_state()
 */
-i2c_error_t i2c_read(const uint8_t id, const uint8_t target_address, uint8_t * const buffer, const uint8_t length, const uint8_t retries);
+i2c_error_t i2c_read(const uint8_t id, const uint8_t target_address, uint8_t * buffer, const uint8_t length, const uint8_t retries);
 
 #ifdef __cplusplus
 }

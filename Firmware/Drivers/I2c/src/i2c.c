@@ -123,6 +123,13 @@ void i2c_driver_reset_memory(void)
         memset(&internal_buffer[i], 0, sizeof(i2c_internal_buffer_t));
     }
 }
+
+
+uint8_t * i2c_get_internal_data_buffer(const uint8_t id)
+{
+    return internal_buffer[id].i2c_buffer.data;
+}
+
 #endif
 
 
@@ -923,8 +930,8 @@ static i2c_error_t i2c_slave_rx_process(const uint8_t id)
             if(0 == processed_bytes)
             {
                 /* Receiving I2C command, consumes it */
-                ret = internal_configuration[id].command_handler(&internal_buffer[id].i2c_buffer, *internal_configuration[id].handle.TWDR);
-                if (I2C_ERROR_OK == ret)
+                i2c_slave_handler_error_t err = internal_configuration[id].command_handler(&internal_buffer[id].i2c_buffer, *internal_configuration[id].handle.TWDR);
+                if (I2C_SLAVE_HANDLER_ERROR_OK == err)
                 {
                     /* Command handler has initialised data structures and buffer pointers */
                     *internal_configuration[id].handle.TWCR |= TWEA_MSK;
@@ -1168,7 +1175,7 @@ i2c_error_t i2c_write(const uint8_t id, const uint8_t target_address , uint8_t *
 }
 
 
-i2c_error_t i2c_read(const uint8_t id, const uint8_t target_address, uint8_t * const buffer, const uint8_t length, const uint8_t retries)
+i2c_error_t i2c_read(const uint8_t id, const uint8_t target_address, uint8_t * buffer, const uint8_t length, const uint8_t retries)
 {
     if (!is_id_valid(id))
     {

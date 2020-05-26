@@ -13,7 +13,7 @@
 static struct
 {
     timer_8_bit_async_handle_t handle;
-    timer_x_bit_prescaler_selection_t prescaler;
+    timer_8_bit_async_prescaler_selection_t prescaler;
     bool is_initialised;
 } internal_config[TIMER_8_BIT_ASYNC_COUNT] = {0};
 
@@ -100,7 +100,7 @@ timer_error_t timer_8_bit_async_get_default_config(timer_8_bit_async_config_t * 
     config->timing_config.counter = 0U;
     config->timing_config.ocra_val = 0U;
     config->timing_config.ocrb_val = 0U;
-    config->timing_config.prescaler = TIMERxBIT_CLK_NO_CLOCK;
+    config->timing_config.prescaler = TIMER8BIT_ASYNC_CLK_NO_CLOCK;
     config->timing_config.waveform_mode = TIMER8BIT_WG_NORMAL;
     config->timing_config.comp_match_a = TIMER8BIT_CMOD_NORMAL;
     config->timing_config.comp_match_b = TIMER8BIT_CMOD_NORMAL;

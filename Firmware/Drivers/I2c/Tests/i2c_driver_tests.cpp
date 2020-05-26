@@ -652,8 +652,17 @@ TEST_F(I2cTestFixture, test_read_message_from_fake_device)
     // Registers a fake device called twi hardware stub, which is linked with I2C driver
     simulator.register_device(twi_hardware_stub_get_interface, twi_hardware_stub_process);
     simulator.register_device(i2c_fake_device_get_interface, i2c_fake_device_process);
-    auto ret = i2c_read(0U, 0x23, buffer, I2C_FAKE_DEVICE_MSG_LEN + 1, 0);
+    
+    i2c_state_t state;
+    auto ret = i2c_get_state(0U, &state);
     ASSERT_EQ(I2C_ERROR_OK, ret);
+    ASSERT_EQ(I2C_STATE_READY, state);
+
+    ret = i2c_read(0U, 0x23, buffer, I2C_FAKE_DEVICE_MSG_LEN + 1, 0);
+    ASSERT_EQ(I2C_ERROR_OK, ret);
+    ASSERT_EQ(i2c_get_internal_data_buffer(0U), buffer);
+    
+    auto* exposed_data = i2c_fake_device_get_exposed_data();
     
     uint8_t loops = 40U;
     for (uint8_t i = 0 ;  i < loops ; i++)
@@ -661,10 +670,22 @@ TEST_F(I2cTestFixture, test_read_message_from_fake_device)
         simulator.process(0U);
     }
 
-    auto* exposed_data = i2c_fake_device_get_exposed_data();
-    const char* received_msg = reinterpret_cast<const char *>(buffer + 1);
-    auto result = strncmp(received_msg, exposed_data->msg, I2C_FAKE_DEVICE_MSG_LEN );
-    ASSERT_EQ(0, result);
+    
+    {
+        //snprintf((char*) (buffer + 1), I2C_FAKE_DEVICE_MSG_LEN, "Toto est au bistro!");
+        char* received_msg = reinterpret_cast<char *>(buffer + 1);
+        auto result = strncmp(received_msg, exposed_data->msg, I2C_FAKE_DEVICE_MSG_LEN );
+        
+        std::cout << "Received message : " ;
+        for (const char character : buffer)
+        {
+            std::cout << character;
+        }
+        std::cout << std::endl;
+        std::cout << "Original message : " << exposed_data->msg << std::endl; 
+        ASSERT_EQ(0, result);
+    }
+
 }
 
 int main(int argc, char **argv)
