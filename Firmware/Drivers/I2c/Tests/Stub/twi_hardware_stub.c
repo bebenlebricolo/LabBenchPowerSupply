@@ -1,6 +1,11 @@
 #include "twi_hardware_stub.h"
 #include "i2c_register_stub.h"
 #include "i2c.h"
+#include "string.h"
+
+/* ##############################################################################################  */
+/* ##############################################################################################  */
+/* ##############################################################################################  */
 
 typedef enum
 {
@@ -22,6 +27,12 @@ static struct
 } states[I2C_DEVICES_COUNT] = {0};
 
 static i2c_device_interface_t interface[I2C_DEVICES_COUNT] = {0};
+
+/* ##############################################################################################  */
+/* ##############################################################################################  */
+/* ##############################################################################################  */
+
+
 
 static inline void write_status_code_to_reg(const uint8_t id, uint8_t status_code);
 
@@ -52,6 +63,16 @@ static inline void write_status_code_to_reg(const uint8_t id, uint8_t status_cod
     i2c_register_stub[id].twsr_reg |= status_code;
 }
 
+void twi_hardware_stub_clear(void)
+{
+    for (uint8_t i = 0 ;  i < I2C_DEVICES_COUNT ; i++)
+    {
+        states[i].previous = INTERNAL_STATE_IDLE;
+        states[i].current = INTERNAL_STATE_IDLE;
+        write_status_code_to_reg(i, I2C_MISC_NO_RELEVANT_STATE);
+        memset(&interface[i], 0, sizeof(i2c_device_interface_t));
+    }
+}
 
 static void handle_master_tx(const uint8_t id)
 {

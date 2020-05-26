@@ -26,6 +26,7 @@ protected:
         config.slave_address = 0x23;
 
         i2c_register_stub_init_handle(0U, &config.handle);
+        twi_hardware_stub_clear();
 
         ret = i2c_init(0U, &config);
         ASSERT_EQ(ret, I2C_ERROR_OK);
@@ -649,6 +650,7 @@ TEST_F(I2cTestFixture, test_read_message_from_fake_device)
     
     // fake device with address 0x23
     i2c_fake_device_init(0x23, false);
+    
     // Registers a fake device called twi hardware stub, which is linked with I2C driver
     simulator.register_device(twi_hardware_stub_get_interface, twi_hardware_stub_process);
     simulator.register_device(i2c_fake_device_get_interface, i2c_fake_device_process);
@@ -662,29 +664,20 @@ TEST_F(I2cTestFixture, test_read_message_from_fake_device)
     ASSERT_EQ(I2C_ERROR_OK, ret);
     ASSERT_EQ(i2c_get_internal_data_buffer(0U), buffer);
     
-    auto* exposed_data = i2c_fake_device_get_exposed_data();
-    
+    // Run the simulation !
     uint8_t loops = 40U;
     for (uint8_t i = 0 ;  i < loops ; i++)
     {
         simulator.process(0U);
     }
 
-    
-    {
-        //snprintf((char*) (buffer + 1), I2C_FAKE_DEVICE_MSG_LEN, "Toto est au bistro!");
-        char* received_msg = reinterpret_cast<char *>(buffer + 1);
-        auto result = strncmp(received_msg, exposed_data->msg, I2C_FAKE_DEVICE_MSG_LEN );
-        
-        std::cout << "Received message : " ;
-        for (const char character : buffer)
-        {
-            std::cout << character;
-        }
-        std::cout << std::endl;
-        std::cout << "Original message : " << exposed_data->msg << std::endl; 
-        ASSERT_EQ(0, result);
-    }
+    // Retrieve data exposed on I2c interface by this fake device
+    auto* exposed_data = i2c_fake_device_get_exposed_data();
+
+    // Verify the transaction completes
+    char* received_msg = reinterpret_cast<char *>(buffer + 1);
+    auto result = strncmp(received_msg, exposed_data->msg, I2C_FAKE_DEVICE_MSG_LEN );
+    ASSERT_EQ(0, result);
 
 }
 
