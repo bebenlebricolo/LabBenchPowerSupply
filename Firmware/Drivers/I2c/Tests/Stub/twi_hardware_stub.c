@@ -43,6 +43,8 @@ static void handle_idle(const uint8_t id);
 static void handle_master_to_slave_addressing(const uint8_t id);
 static void handle_master_tx(const uint8_t id);
 static void handle_master_rx(const uint8_t id);
+static void master_handle_start_stop(const uint8_t id);
+static void set_twint(const uint8_t id);
 
 static void master_update_interface_from_regs(const uint8_t id)
 {
@@ -63,6 +65,12 @@ static inline void write_status_code_to_reg(const uint8_t id, uint8_t status_cod
     i2c_register_stub[id].twsr_reg |= status_code;
 }
 
+static inline uint8_t get_status_code_from_reg(const uint8_t id)
+{
+    return i2c_register_stub[id].twsr_reg & TWS_MSK;
+}
+
+
 void twi_hardware_stub_clear(void)
 {
     for (uint8_t i = 0 ;  i < I2C_DEVICES_COUNT ; i++)
@@ -73,6 +81,52 @@ void twi_hardware_stub_clear(void)
         memset(&interface[i], 0, sizeof(i2c_device_interface_t));
     }
 }
+
+static void set_twint(const uint8_t id)
+{
+    i2c_register_stub[id].twcr_reg |= TWINT_MSK;
+}
+
+
+static void master_handle_start_stop(const uint8_t id)
+{
+    // Handle process results published on interface
+    uint8_t flags = 0;
+    flags |= (interface[id].start_sent ? 1 : 0);
+    flags |= (interface[id].stop_sent ? 1 : 0) << 1U;
+    states[id].previous = states[id].current;
+
+    switch(flags)        
+    {
+        
+        // Start sent, switch to REPEATED START
+        case 0x01:
+            write_status_code_to_reg(id, MAS_TX_REPEATED_START);
+            states[id].current = INTERNAL_STATE_MASTER_TO_SLAVE_ADDRESSING;
+            break;
+        
+        // Stop sent
+        case 0x02:
+            // Clear status register (?)
+            i2c_register_stub[id].twsr_reg = 0;
+            states[id].current = INTERNAL_STATE_IDLE;
+            states[id].previous = INTERNAL_STATE_IDLE;
+            break;
+        
+        // A Stop will be followed by a start action
+        case 0x03:
+            i2c_register_stub[id].twsr_reg = 0;
+            states[id].current = INTERNAL_STATE_IDLE;
+            states[id].previous = INTERNAL_STATE_IDLE;
+            break;
+
+        // Nothing to do            
+        default:
+        case 0x00 :
+            break;
+    }
+}
+
 
 static void handle_master_tx(const uint8_t id)
 {
@@ -124,46 +178,11 @@ static void handle_master_tx(const uint8_t id)
     // Transfers data from registers to interface
     master_update_interface_from_regs(id);
 
-    // Handle process results published on interface
-    {
-        uint8_t flags = 0;
-        flags |= (interface[id].start_sent ? 1 : 0);
-        flags |= (interface[id].stop_sent ? 1 : 0) << 1U;
-        states[id].previous = states[id].current;
-
-        switch(flags)        
-        {
-            
-            // Start sent, switch to REPEATED START
-            case 0x01:
-                write_status_code_to_reg(id, MAS_TX_REPEATED_START);
-                states[id].current = INTERNAL_STATE_MASTER_TO_SLAVE_ADDRESSING;
-                break;
-            
-            // Stop sent
-            case 0x02:
-                // Clear status register (?)
-                i2c_register_stub[id].twsr_reg = 0;
-                states[id].current = INTERNAL_STATE_IDLE;
-                states[id].previous = INTERNAL_STATE_IDLE;
-                break;
-            
-            // A Stop will be followed by a start action
-            case 0x03:
-                i2c_register_stub[id].twsr_reg = 0;
-                states[id].current = INTERNAL_STATE_IDLE;
-                states[id].previous = INTERNAL_STATE_IDLE;
-                break;
-
-            // Nothing to do            
-            default:
-            case 0x00 :
-                break;
-        }
-    }
+    master_handle_start_stop(id);
 
     // Reset ack received flag
     interface[id].ack_sent = false;
+    set_twint(id);
 }
 
 static void handle_master_rx(const uint8_t id)
@@ -183,24 +202,26 @@ static void handle_master_rx(const uint8_t id)
         }
         states[id].previous = states[id].current;
         interface[id].ack_sent = false;
-
-        // Then, we need to process what's coming using the i2c interface
-        (void) i2c_process(id);
-        master_update_interface_from_regs(id);
-        interface[id].ack_sent = (bool) (i2c_register_stub[id].twcr_reg & TWEA_MSK);
     }
     else
     {
         // Force accept incoming data bytes
         interface[id].ack_sent = true;
         write_status_code_to_reg(id, MAS_RX_DATA_RECEIVED_ACK);
-
-        // Then, we need to process what's coming using the i2c interface
-        (void) i2c_process(id);
-        master_update_interface_from_regs(id);
-        interface[id].ack_sent = (bool) (i2c_register_stub[id].twcr_reg & TWEA_MSK);
-
     }
+    
+    master_handle_start_stop(id);
+    
+    // Then, we need to process what's coming using the i2c interface
+    (void) i2c_process(id);
+    master_update_interface_from_regs(id);
+
+    if (false == interface[id].start_sent && false == interface[id].stop_sent)
+    {
+        interface[id].ack_sent = (bool) (i2c_register_stub[id].twcr_reg & TWEA_MSK);
+    }
+
+    set_twint(id);
 }
 
 
@@ -222,6 +243,13 @@ static void handle_idle(const uint8_t id)
     else
     {
         // Do nothing, loop back in same state for now
+        i2c_state_t state;
+        (void) i2c_get_state(id, &state);
+        if(I2C_STATE_MASTER_TX_FINISHED == state || I2C_STATE_MASTER_RX_FINISHED == state)
+        {
+            // Reprocess the device to fall back in Idle mode 
+            (void) i2c_process(id);
+        }
     }
 }
 
@@ -244,6 +272,8 @@ static void handle_master_to_slave_addressing(const uint8_t id)
     {
         states[id].current = INTERNAL_STATE_MASTER_TX;
     }
+    set_twint(id);
+
 }
 
 

@@ -252,6 +252,7 @@ void I2cBusSimulator::active_process(const uint8_t id)
                 devices[slave_index].process(id);
                 data &= devices[slave_index].interface->data;
             }
+
             // Then transfer data to master and have master to process those datas and post ack or nack
             devices[master_index].interface->data = data;
             devices[master_index].process(id);
@@ -259,6 +260,38 @@ void I2cBusSimulator::active_process(const uint8_t id)
             {
                 devices[slave_index].interface->ack_sent = devices[master_index].interface->ack_sent;
             }
+
+            bus_conditions = check_bus_for_start_stop_cond();            
+
+            // Handle stop condition when master decides to break execution
+            if (StartStopConditions::Stop == bus_conditions)
+            {
+                for (auto& device : devices)
+                {
+                    device.interface->stop_sent = true;
+                }
+                states.previous = states.current;
+                states.current = StateMachine::Idle;
+            }
+            else if(StartStopConditions::Start == bus_conditions)
+            {
+                for (auto& device : devices)
+                {
+                    device.interface->start_sent = true;
+                }
+                states.previous = states.current;
+                states.current = StateMachine::SlaveAddressing;
+            }
+
+            if(StartStopConditions::None != bus_conditions)
+            {
+                // Reprocess all devices except master for them to take into account new bus state (either start or stop)
+                for (auto device : devices)
+                {
+                    device.process(id);
+                }
+            }
+
             break;
         default:
             break;
