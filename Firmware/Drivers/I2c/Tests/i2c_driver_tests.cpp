@@ -768,6 +768,69 @@ TEST_F(I2cTestFixture, test_write_read_message_from_fake_device)
 
 }
 
+TEST_F(I2cTestFixture, test_write_fake_device_working_mode)
+{
+    I2cBusSimulator simulator;
+    uint8_t buffer[2] = {0};
+    buffer[0] = I2C_FAKE_DEVICE_CMD_MODE_CHANGE;
+    buffer[1] = I2C_FAKE_DEVICE_OPERATING_MODE_FREE_WHEEL;
+    
+    // fake device with address 0x23
+    i2c_fake_device_init(0x23, false);
+    
+    // Registers a fake device called twi hardware stub, which is linked with I2C driver
+    simulator.register_device(twi_hardware_stub_get_interface, twi_hardware_stub_process);
+    simulator.register_device(i2c_fake_device_get_interface, i2c_fake_device_process);
+    
+    // Check device is ready before starting 
+    i2c_state_t state;
+    auto ret = i2c_get_state(0U, &state);
+    ASSERT_EQ(I2C_ERROR_OK, ret);
+    ASSERT_EQ(I2C_STATE_READY, state);
+
+    ret = i2c_write(0U, 0x23, buffer, 2U, 0U);
+    ASSERT_EQ(I2C_ERROR_OK, ret);
+    ASSERT_EQ(i2c_get_internal_data_buffer(0U), buffer);
+    
+    // Check state has changed and now indicates a Write transaction
+    ret = i2c_get_state(0U, &state);
+    ASSERT_EQ(I2C_ERROR_OK, ret);
+    ASSERT_EQ(I2C_STATE_MASTER_TRANSMITTING, state);
+
+    // Run the simulation !
+    while(state != I2C_STATE_READY)
+    {   
+        simulator.process(0U);
+        ret = i2c_get_state(0U, &state);
+        EXPECT_EQ(I2C_ERROR_OK, ret);
+    }
+
+    // Retrieve data exposed on I2c interface by this fake device
+    auto* exposed_data = i2c_fake_device_get_exposed_data();
+
+    // Verify the transaction completes
+    ASSERT_EQ(exposed_data->mode, buffer[1]);
+
+    // Reset buffer and write a new message to fake device 
+    buffer[1] = 0;
+    ret = i2c_read(0U, 0x23, buffer, 2U, 0);
+    ASSERT_EQ(I2C_ERROR_OK, ret);
+    ret = i2c_get_state(0U, &state);
+    ASSERT_EQ(I2C_ERROR_OK, ret);
+    ASSERT_EQ(I2C_STATE_MASTER_TRANSMITTING, state);
+
+    // Run the simulation !
+    while(state != I2C_STATE_READY)
+    {   
+        simulator.process(0U);
+        ret = i2c_get_state(0U, &state);
+        EXPECT_EQ(I2C_ERROR_OK, ret);
+    }
+
+    // Check fake device message and given message are identical (write successful)
+    ASSERT_EQ(exposed_data->mode, buffer[1]);
+}
+
 int main(int argc, char **argv)
 {
     ::testing::InitGoogleTest(&argc, argv);

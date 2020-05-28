@@ -124,7 +124,6 @@ void i2c_driver_reset_memory(void)
     }
 }
 
-
 uint8_t * i2c_get_internal_data_buffer(const uint8_t id)
 {
     return internal_buffer[id].i2c_buffer.data;
