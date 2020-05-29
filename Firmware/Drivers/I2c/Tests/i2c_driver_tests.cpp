@@ -4,6 +4,7 @@
 #include "test_isr_stub.h"
 #include "I2cBusSimulator.hpp"
 #include "i2c_fake_device.h"
+#include "i2c_fake_slave_application_data.h"
 
 class I2cTestFixture : public ::testing::Test
 {
@@ -23,7 +24,7 @@ protected:
         config.general_call_enabled = false;
         config.interrupt_enabled = true;
         config.prescaler = I2C_PRESCALER_16;
-        config.slave_address = 0x23;
+        config.slave_address = 0x35;
 
         i2c_register_stub_init_handle(0U, &config.handle);
         twi_hardware_stub_clear();
@@ -830,6 +831,49 @@ TEST_F(I2cTestFixture, test_write_fake_device_working_mode)
     // Check fake device message and given message are identical (write successful)
     ASSERT_EQ(exposed_data->mode, buffer[1]);
 }
+
+TEST_F(I2cTestFixture, test_twi_as_slave_receiver_only)
+{
+    I2cBusSimulator simulator;
+    uint8_t buffer[2] = {0};
+    buffer[0] = I2C_FAKE_SLAVE_APPLICATION_DATA_CMD_ENABLED;
+    buffer[1] = (uint8_t) true;
+    
+    // fake device with address 0x23
+    i2c_fake_device_init(0x23, false);
+    
+    // Registers a fake device called twi hardware stub, which is linked with I2C driver
+    simulator.register_device(twi_hardware_stub_get_interface, twi_hardware_stub_process);
+    simulator.register_device(i2c_fake_device_get_interface, i2c_fake_device_process);
+    
+    // Check device is ready before starting 
+    i2c_state_t state;
+    auto ret = i2c_get_state(0U, &state);
+    ASSERT_EQ(I2C_ERROR_OK, ret);
+    ASSERT_EQ(I2C_STATE_READY, state);
+    
+    ret = i2c_slave_set_command_handler(0U, i2c_fake_slave_command_handler);
+    ASSERT_EQ(I2C_ERROR_OK, ret);
+    auto* exposed_data = i2c_fake_slave_application_data_get_exposed_data();
+    ASSERT_EQ(exposed_data->enabled, false);
+
+
+    auto fake_dev_ret = i2c_fake_device_write(0x35, buffer, 2U, 0);
+    ASSERT_EQ(I2C_FAKE_DEVICE_ERROR_OK, fake_dev_ret);
+
+    // Run the simulation !
+    do
+    {   
+        simulator.process(0U);
+        ret = i2c_get_state(0U, &state);
+        EXPECT_EQ(I2C_ERROR_OK, ret);
+    } while(state != I2C_STATE_READY || twi_hardware_stub_is_busy(0U));
+
+    ASSERT_EQ(exposed_data->enabled, true);
+
+
+}
+
 
 int main(int argc, char **argv)
 {

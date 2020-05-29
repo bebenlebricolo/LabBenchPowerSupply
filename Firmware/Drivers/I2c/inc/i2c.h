@@ -65,6 +65,7 @@ typedef enum
 {
     I2C_SLAVE_HANDLER_ERROR_OK,              /**< Operation is successful                                   */
     I2C_SLAVE_HANDLER_ERROR_UNKNOWN_COMMAND, /**< Command written into TWI data register cannot be resolved */
+    I2C_SLAVE_HANDLER_ERROR_BUFFER_NULLPTR,  /**< Given buffer is set to NULL (uninitialized)               */
 } i2c_slave_handler_error_t;
 
 typedef enum

@@ -248,7 +248,7 @@ static void handle_idle(const uint8_t id)
     {
         master_update_interface_from_regs(id);
         states[id].current = INTERNAL_STATE_MASTER_TO_SLAVE_ADDRESSING;
-        write_status_code_to_reg(id,MAS_TX_START_TRANSMITTED);
+        write_status_code_to_reg(id, MAS_TX_START_TRANSMITTED);
     }
     else
     {
@@ -330,6 +330,10 @@ void twi_hardware_stub_get_interface(const uint8_t bus_id, i2c_device_interface_
     *p_interface = &interface[bus_id];
 }
 
+bool twi_hardware_stub_is_busy(const uint8_t id)
+{
+    return (INTERNAL_STATE_IDLE != states[id].current);
+}
 
 static void handle_slave_wait_master_addressing(const uint8_t id)
 {
@@ -353,7 +357,8 @@ static void handle_slave_wait_master_addressing(const uint8_t id)
     else
     {
         // General call ?
-        if(interface[id].general_call_enabled && (0x00 == interface[id].data & 0xFE))
+        if((interface[id].general_call_enabled )
+        && (0x00 == (interface[id].data & 0xFE)))
         {
             // Read command using General call feature is illegal, reset to idle state
             if (I2C_CMD_READ_BIT == (interface[id].data & 0x01))
@@ -432,6 +437,7 @@ void handle_slave_rx(const uint8_t id)
 
 static bool handle_slave_start_stop(const uint8_t id)
 {
+    bool break_needed = true;
     // Handle process results published on interface
     uint8_t flags = 0;
     flags |= (interface[id].start_sent ? 1 : 0);
@@ -464,6 +470,9 @@ static bool handle_slave_start_stop(const uint8_t id)
         // Nothing to do            
         default:
         case 0x00 :
+            break_needed = false;
             break;
     }
+    
+    return break_needed;
 }

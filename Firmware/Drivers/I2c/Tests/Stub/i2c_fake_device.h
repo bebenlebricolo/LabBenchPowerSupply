@@ -33,6 +33,17 @@ typedef enum
     I2C_FAKE_DEVICE_CMD_UNKNOWN
 } i2c_fake_device_commands_t;
 
+/**
+ * @brief device available error codes
+*/
+typedef enum
+{
+    I2C_FAKE_DEVICE_ERROR_OK,
+    I2C_FAKE_DEVICE_ERROR_ALREADY_PROCESSING,
+    I2C_FAKE_DEVICE_ERROR_UNKNOWN
+} i2c_fake_device_error_t;
+
+
 typedef struct
 {
     char msg[I2C_FAKE_DEVICE_MSG_LEN];
@@ -52,8 +63,8 @@ void i2c_fake_device_clear(void);
 */
 void i2c_fake_device_force_ack_nack_statement(const bool ack);
 
-void i2c_fake_device_write(const uint8_t address, uint8_t * buffer, const uint8_t length, const uint8_t retries);
-void i2c_fake_device_read(const uint8_t address, uint8_t * buffer, const uint8_t length, const uint8_t retries);
+i2c_fake_device_error_t i2c_fake_device_write(const uint8_t address, uint8_t * buffer, const uint8_t length, const uint8_t retries);
+i2c_fake_device_error_t i2c_fake_device_read(const uint8_t address, uint8_t * buffer, const uint8_t length, const uint8_t retries);
 
 void i2c_fake_device_process(const uint8_t id);
 void i2c_fake_device_set_mode(const i2c_fake_device_operating_modes_t mode);
