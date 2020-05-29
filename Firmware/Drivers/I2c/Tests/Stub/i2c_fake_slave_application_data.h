@@ -39,6 +39,7 @@ typedef struct
     uint8_t max_current;
     uint8_t max_voltage;
     bool enabled;
+    bool locked;
 } i2c_fake_slave_application_data_exposed_data_t;
 
 /**

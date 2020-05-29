@@ -19,6 +19,7 @@ i2c_slave_handler_error_t i2c_fake_slave_command_handler(volatile i2c_command_ha
         return I2C_SLAVE_HANDLER_ERROR_BUFFER_NULLPTR;
     }
 
+    buffer_data->locked = &exposed_data.locked;
     switch(command_byte)
     {
         case I2C_FAKE_SLAVE_APPLICATION_DATA_CMD_FAN_SPEED:
@@ -32,12 +33,17 @@ i2c_slave_handler_error_t i2c_fake_slave_command_handler(volatile i2c_command_ha
             break;
         
         case I2C_FAKE_SLAVE_APPLICATION_DATA_CMD_MAX_CURRENT:
-            buffer_data->data = &exposed_data.max_current;
+            buffer_data->data = (uint8_t*) &exposed_data.max_current;
             buffer_data->length = 1;
             break;
         
         case I2C_FAKE_SLAVE_APPLICATION_DATA_CMD_MAX_VOLTAGE:
-            buffer_data->data = &exposed_data.max_voltage;
+            buffer_data->data = (uint8_t*) &exposed_data.max_voltage;
+            buffer_data->length = 1;
+            break;
+        
+        case I2C_FAKE_SLAVE_APPLICATION_DATA_CMD_ENABLED:
+            buffer_data->data = (uint8_t*) &exposed_data.enabled;
             buffer_data->length = 1;
             break;
         

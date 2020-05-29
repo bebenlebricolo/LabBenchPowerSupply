@@ -242,6 +242,9 @@ static void handle_idle(const uint8_t id)
     if (interface[id].start_sent)
     {
         states[id].current = INTERNAL_STATE_SLAVE_WAIT_MASTER_ADDRESSING;
+        interface[id].address = (i2c_register_stub[id].twar_reg & 0xFE) >> 1U;
+        interface[id].start_sent = false;
+        interface[id].stop_sent = false;
         // driver has nothing to do until being addressed by another master, no need to run process() then
     }
     else if(0 != (i2c_register_stub[id].twcr_reg & TWSTA_MSK))
@@ -425,13 +428,26 @@ void handle_slave_rx(const uint8_t id)
     bool break_execution = handle_slave_start_stop(id);
     if (break_execution)
     {
-        return;
+        write_status_code_to_reg(id, SLA_RX_START_STOP_COND_RECEIVED_WHILE_OPERATING);
     }
 
     // Handle incoming data
     i2c_register_stub[id].twdr_reg = interface[id].data;
     i2c_process(id);
     slave_update_interface_from_regs(id);
+
+    if (!break_execution)
+    {
+        if (interface[id].ack_sent)
+        {
+            write_status_code_to_reg(id, SLA_RX_PREV_ADDRESSED_DATA_RECEIVED_ACK);
+        }
+        else
+        {
+            write_status_code_to_reg(id, SLA_RX_PREV_ADDRESSED_DATA_LOST_NACK);
+        }
+    }
+
     set_twint(id);
 }
 

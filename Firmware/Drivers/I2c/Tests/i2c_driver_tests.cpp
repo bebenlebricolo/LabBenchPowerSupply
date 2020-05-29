@@ -857,7 +857,7 @@ TEST_F(I2cTestFixture, test_twi_as_slave_receiver_only)
     auto* exposed_data = i2c_fake_slave_application_data_get_exposed_data();
     ASSERT_EQ(exposed_data->enabled, false);
 
-
+    // Tell the fake device to act as a master on I2C bus and write to our TWI device
     auto fake_dev_ret = i2c_fake_device_write(0x35, buffer, 2U, 0);
     ASSERT_EQ(I2C_FAKE_DEVICE_ERROR_OK, fake_dev_ret);
 

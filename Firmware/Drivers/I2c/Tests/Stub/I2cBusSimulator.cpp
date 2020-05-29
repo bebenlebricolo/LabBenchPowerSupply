@@ -69,6 +69,10 @@ void I2cBusSimulator::slave_addressing_process(const uint8_t id)
             }
         } 
     }
+    else
+    {
+        master_index = potential_masters_indexes[0];
+    }
 
     // Only the master device needs to process its internal datas in the first place
     devices[master_index].process(id);
