@@ -86,6 +86,7 @@ static inline bool interprete_command(const uint8_t command);
 static inline void reset_data_access(void);
 static inline void slave_clear_flags_from_interface(void);
 static inline void master_clear_flags_from_interface(void);
+static inline void master_stop_device(void);
 
 // Common handler for idle mode (not slave nor master)
 static void handle_idle(void);
@@ -279,6 +280,10 @@ static inline void reset_data_access(void)
 static void handle_idle(void)
 {
     reset_data_access();
+    if (states.previous != states.current)
+    {
+        slave_clear_flags_from_interface();
+    }
     states.previous = states.current;
 
     // Checks if start was sent on I2C bus and consume it (reset start_sent to false)
@@ -446,6 +451,14 @@ static inline void master_clear_flags_from_interface(void)
     interface.stop_sent = false;
 }
 
+static inline void master_stop_device(void)
+{
+    interface.start_sent = false;
+    interface.stop_sent = true;
+    master_data.master_mode = false;
+    master_data.request = I2C_FAKE_DEVICE_REQUEST_TYPE_UNKNOWN;
+}
+
 
 static void handle_slave_transmitting_data(void)
 {
@@ -570,7 +583,7 @@ static void handle_master_transmitting_data(void)
         }
         else
         {
-            interface.stop_sent = true;
+            master_stop_device();
             states.current = MODE_IDLE;
         }
     }
@@ -578,7 +591,7 @@ static void handle_master_transmitting_data(void)
     // Max retries count hit : release control on I2C bus and reset device
     if ((retries != 0 ) && (retries >= master_data.retries))
     {
-        interface.stop_sent = true;
+        master_stop_device();
         states.current = MODE_IDLE;
     }
 
@@ -587,18 +600,39 @@ static void handle_master_transmitting_data(void)
 static void handle_master_receiving_data(void)
 {
     master_clear_flags_from_interface();
-    states.previous = states.current;
-
-    if (master_data.index < master_data.length)
+    
+    // We just switched to this mode : this means the last byte
+    // in interface.data still contains the address + read bit. Master needs to consume the 
+    // Acknowledgment first, then it might start to effectively read data
+    if (states.previous != states.current)
     {
-        master_data.buffer[master_data.index] = interface.data;
-        interface.ack_sent = true;
-        master_data.index++;
-        // If we reach the end of the buffer, next call to this function will send the stop condition over the bus
+        if(interface.ack_sent)
+        {
+            states.previous = states.current;
+        }
+        else
+        {
+            // Slave did not recognize itself in read mode, retry or stop here.
+            interface.stop_sent = true;
+            master_stop_device();
+            states.current = MODE_IDLE;
+        }
     }
     else
     {
-        interface.stop_sent = true;
-        states.current = MODE_IDLE;
+        if (master_data.index < master_data.length)
+        {
+            master_data.buffer[master_data.index] = interface.data;
+            interface.ack_sent = true;
+            master_data.index++;
+            // If we reach the end of the buffer, next call to this function will send the stop condition over the bus
+        }
+        else
+        {
+            interface.ack_sent = false;
+            master_stop_device();
+
+            states.current = MODE_IDLE;
+        }
     }
 }

@@ -830,7 +830,7 @@ static i2c_error_t i2c_slave_tx_process(const uint8_t id)
         case SLA_TX_OWN_ADDR_SLAVE_READ_ACK:
         case SLA_TX_ARBITRATION_LOST_OWN_ADDR_RECEIVED_ACK:
             // A previous write command was issued and i2c handling buffers shall have been initialised
-            if ((NULL == internal_buffer[id].i2c_buffer.data)
+            if ((NULL != internal_buffer[id].i2c_buffer.data)
             &&  (internal_buffer[id].index < internal_buffer[id].i2c_buffer.length))
             {
                 // Read data bytes from buffer
@@ -958,7 +958,6 @@ static i2c_error_t i2c_slave_rx_process(const uint8_t id)
         case SLA_RX_START_STOP_COND_RECEIVED_WHILE_OPERATING:
             /* Only one byte processed : we have just consumed the opcode, ready to switch to the not addressed Slave mode
                And allow this slave to recognize its own address (or general call, if enabled) */
-            reset_i2c_command_handling_buffers(id);
             *internal_configuration[id].handle.TWCR |= TWEA_MSK;
             internal_buffer[id].index = 0;
             internal_configuration[id].state = I2C_STATE_READY;

@@ -387,27 +387,28 @@ void handle_slave_tx(const uint8_t id)
 {
     // Check start stop conditions
     bool break_execution = handle_slave_start_stop(id);
-    if (break_execution)
-    {
-        return;
-    }
     
-    // If we were listening a master before 
-    if (INTERNAL_STATE_SLAVE_WAIT_MASTER_ADDRESSING == states[id].previous)
+    if (!break_execution)
     {
-        states[id].previous = states[id].current;
-        interface[id].data = i2c_register_stub[id].twdr_reg;
-    }
-    else
-    {
-        // Check if last I2C command succeeded
-        if (true == interface[id].ack_sent)
+        // If we were listening a master before 
+        if (INTERNAL_STATE_SLAVE_WAIT_MASTER_ADDRESSING == states[id].previous)
         {
-            write_status_code_to_reg(id, SLA_TX_DATA_TRANSMITTED_ACK);
+            states[id].previous = states[id].current;
+            interface[id].data = i2c_register_stub[id].twdr_reg;
+            states[id].previous = states[id].current;
+
         }
         else
         {
-            write_status_code_to_reg(id, SLA_TX_DATA_TRANSMITTED_NACK);
+            // Check if last I2C command succeeded
+            if (true == interface[id].ack_sent)
+            {
+                write_status_code_to_reg(id, SLA_TX_DATA_TRANSMITTED_ACK);
+            }
+            else
+            {
+                write_status_code_to_reg(id, SLA_TX_DATA_TRANSMITTED_NACK);
+            }
         }
     }
 
@@ -415,8 +416,7 @@ void handle_slave_tx(const uint8_t id)
     // Clears flags as if real hardware has done it
     (void) i2c_process(id);
 
-    // Transfers data from registers to interface
-    slave_update_interface_from_regs(id);
+    interface[id].data = i2c_register_stub[id].twdr_reg;
 
     // Reset ack received flag
     interface[id].ack_sent = false;
@@ -426,6 +426,8 @@ void handle_slave_tx(const uint8_t id)
 void handle_slave_rx(const uint8_t id)
 {
     bool break_execution = handle_slave_start_stop(id);
+    states[id].previous = states[id].current;
+    
     if (break_execution)
     {
         write_status_code_to_reg(id, SLA_RX_START_STOP_COND_RECEIVED_WHILE_OPERATING);
@@ -458,7 +460,6 @@ static bool handle_slave_start_stop(const uint8_t id)
     uint8_t flags = 0;
     flags |= (interface[id].start_sent ? 1 : 0);
     flags |= (interface[id].stop_sent ? 1 : 0) << 1U;
-    states[id].previous = states[id].current;
 
     switch(flags)        
     {
@@ -490,5 +491,8 @@ static bool handle_slave_start_stop(const uint8_t id)
             break;
     }
     
+    // Clear flags, as if the twi hardware had consumed them
+    interface[id].start_sent = false;
+    interface[id].stop_sent = false;
     return break_needed;
 }
