@@ -1064,6 +1064,7 @@ TEST_F(I2cTestFixture, test_twi_as_slave_transmitter_all_in_one)
 
     auto* fake_device_data = i2c_fake_device_get_exposed_data();
     buffer[0] = I2C_FAKE_DEVICE_CMD_MESSAGE;
+    memset(buffer + 1, 0, I2C_FAKE_SLAVE_APPLICATION_DATA_MAX_BYTE_ARRAY_LENGTH);
     snprintf((char *) (buffer + 1), 20, "Write test !");
 
     ret = i2c_write(0U, 0x23, buffer, 21, 0U);
