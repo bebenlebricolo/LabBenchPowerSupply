@@ -2,7 +2,27 @@
 A Diy lab bench power supply, made as simple as possible, from an Arduino Nano and generic discrete parts
 
 ## Motivation(s)
+### A complete design, built from the ground up, for everyone
 The main goal of this project is indeed to build a bench power supply, but I really wanted to provide a complete project including all the electronical design, mechanical design and software design that goes with it.
+
+### Keep it simple, and as cheap as possible!
+#### The Electronical side of the force
+This project is built around simple electronic devices/parts which we could find in almost any electronic store with a decent collection of parts. The parts were chosen with 2 main things in mind :
+* **They need to be cheap !** If cheaper does not always correlates with better, cheap parts are often related to products that have been around for a long time and have demonstrated their capabilities more times than we can ever count them.
+* **They need to fulfill their task without compromises** : the chosen parts shall largely fit the requirements of power, size, etc.. This is essentially a safety requirement, there is no usage for us here to size the parts so close to the requirements we don't have any error margin left.
+* **They need to be available** almost everywhere, and not only restricted to some obscure parts of the world. If not, they need to have a compatible part we can rely on.
+* **They need to be well-documented** : who wants to use parts with poor datasheets? This requirement is pretty standard anyway, however having a good datasheet allows a better understanding of its internal mechanics, and sometimes even provides equivalent parts/complementary parts.
+* Ideally, they should be still in production. Just because it seems better to have recent parts ...
+
+### Keep it open!
+As a final motivation, I want the firmware to be as open as possible, I hope by doing so that anyone with a little coding experience can tweak the firmware to more specifically meet his/her needs.
+
+## Built around an Arduino Nano
+This choice was made for several reason, the biggest one being that Arduino has built a gigantic ecosystel around their product, that almost every hobbyist interested into electronic will have lying around, somewhere, lying under a pile of other projects.
+
+In the other hand, the cheapest Arduinos are built around Atmel's 8 bit chips, which are quite simple to work with. Transitionning from Arduino's IDE to a more software-oriented workflow is relatively easy, using the right tools. We can even seamlessly integrate a firmware which is built completely out of the Arduino world within an Arduino, without having to use any of the Arduino tools
+
+*Note: working with Arduino tools such as Arduino IDE is totally fine and provides a super fun experience for small projects or when learning embedded systems, my point here is simply to emphasize on the transition between the Arduino world, to the "my toolchain and that's all" world*
 
 Also, despite using an Arduino as the "brain" of this project, I also wanted to decouple the software from any Arduino-based code, because I thougth it was a good occasion to show how "simple" it could be to directly target the chip, not using any framework to hide any detail.
 
@@ -21,7 +41,7 @@ Here is a list of the features I wanted to integrate within this project :
 * Easy to tune with few interactions needed
 * User interface such as an LCD screen, cheap and neat!
 * Voltage and current regulations
-* Allow to connect/disconnect the load using a button/lever switch 
+* Allow to connect/disconnect the load using a button/lever switch
 
 ### Safety features
 * Low voltages only : I want this project to only output voltages that are well below the hazardous range. I plan to output a maximum 16 Volts
@@ -43,7 +63,7 @@ While developping the software for this project, I needed a way to consolidate m
 
 ### Approach for drivers testing
 #### Using GoogleTest testing framework
-Testing an application is rather easy to do when developping application software as it is rather simple to substitute components, because already abstracted. 
+Testing an application is rather easy to do when developping application software as it is rather simple to substitute components, because already abstracted.
 However, it is a quite different topic when working on drivers, because they are completely dependent of the hardware they rely on. This is why I had to use a dependency injection approach, substituting the internal peripheral's interface register by stubbed ones, allowing me to 'simulate' the actual behavior of the peripheral.
 
 #### Using simulators, such as simavr!
@@ -65,7 +85,7 @@ So their interface is quite complete (and tested), but we still need some more s
 To continue with the Timer example, let's think about a PWM module : let's say I want a PWM module, which configures one of the available timer to produce an accurate, hardware-based pwm signal.
 This module will one of the 8 bit timer, and perform all the necessary driver manipulation to achieve its goal.
 
-We could then have something like this : 
+We could then have something like this :
 ```C
 /* Error handling should be done in between calls but is eluded for clarity */
 pwm_error_t ret = PWM_ERROR_OK;
@@ -87,6 +107,7 @@ Those flags are defined within the `avr-gcc-toolchain.cmake` file, which also de
 # Required tools to build on Linux :
 ## Building application firmware
 ### Avr gcc toolchain and ABI
+* gcc (version >= 8.3.0)
 * gcc-avr (version >= 8.3.0)
 * avr-libc
 * binutils-avr
@@ -104,5 +125,5 @@ To build the tests, make sure you have `libgtest-dev`installed on your machine
     * googletest
 
 * GCC tools :
-    * build-essentials or 
+    * build-essentials or
     * gcc (version >= 8.3.0)

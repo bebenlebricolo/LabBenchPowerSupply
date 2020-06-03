@@ -1,0 +1,6 @@
+#ifndef CONFIG_HEADER
+#define CONFIG_HEADER
+
+#define I2C_DEVICES_COUNT 1
+
+#endif /* CONFIG_HEADER */

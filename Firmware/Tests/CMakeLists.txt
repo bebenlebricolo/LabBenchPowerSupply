@@ -13,8 +13,8 @@ add_definitions(
 
 set(AVR_INCLUDES /usr/avr/include)
 
-set(CMAKE_CXX_FLAGS_DEBUG "-Og -g -Wall -Wextra")
-set(CMAKE_C_FLAGS_DEBUG "-Og -g -Wall -Wextra")
+set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 -Wall -Wextra")
+set(CMAKE_C_FLAGS_DEBUG "-O0 -g3 -Wall -Wextra")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -Wextra")
 set(CMAKE_C_FLAGS_RELEASE "-O3 -Wall -Wextra")
 
@@ -32,4 +32,8 @@ add_subdirectory( ${CMAKE_SOURCE_DIR}/../Drivers/Timers/Timer_8_bit_async/Tests
 )
 add_subdirectory( ${CMAKE_SOURCE_DIR}/../Drivers/Timers/Timer_16_bit/Tests
     ${CMAKE_BINARY_DIR}/Tests/Timers/Timer_16_bit
+)
+
+add_subdirectory( ${CMAKE_SOURCE_DIR}/../Drivers/I2c/Tests
+    ${CMAKE_BINARY_DIR}/Tests/I2c
 )

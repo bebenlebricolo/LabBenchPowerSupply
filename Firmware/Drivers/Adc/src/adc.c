@@ -237,14 +237,22 @@ adc_state_t adc_stop(void)
 adc_error_t adc_register_channel(const adc_mux_t channel)
 {
     adc_error_t ret = ADC_ERROR_OK;
-    ret = adc_stack_register_channel(&registered_channels, channel);
+    adc_stack_error_t err = adc_stack_register_channel(&registered_channels, channel);
+    if (ADC_STACK_ERROR_OK != err)
+    {
+        ret = ADC_ERROR_CONFIG;
+    }
     return ret;
 }
 
 adc_error_t adc_unregister_channel(const adc_mux_t channel)
 {
     adc_error_t ret = ADC_ERROR_OK;
-    ret = adc_stack_unregister_channel(&registered_channels, channel);
+    adc_stack_error_t err = adc_stack_unregister_channel(&registered_channels, channel);
+    if (ADC_STACK_ERROR_OK != err)
+    {
+        ret = ADC_ERROR_CONFIG;
+    }
     return ret;
 }
 
