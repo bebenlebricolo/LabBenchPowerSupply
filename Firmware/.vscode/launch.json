@@ -10,7 +10,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/Tests/build/bin/I2c/i2c_driver_tests",
-            "args": ["--gtest_filter=I2cTestFixture.test_twi_as_slave_transmitter_all_in_one"],
+            "args": ["--gtest_filter=I2cTestFixture.test_twi_master_receives_nack_while_writing"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

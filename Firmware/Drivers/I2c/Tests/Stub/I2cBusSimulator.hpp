@@ -19,6 +19,14 @@ public:
     // Allows to register a device which is implemeting an i2c_device_interface_t within the internal collection of devices of this class
     void register_device(i2c_interface_getter_function get_interface_function,
                          i2c_process_function process_function);
+    /**
+     * @brief Gives the current byte being transmitted on the bus by the transmitter.
+     * @return uint8_t byte
+     *      0 if simulator is in Idle state or no master was detected
+     *      X otherwise
+     * */ 
+    uint8_t get_current_byte_on_bus();
+
 private:
     enum class StateMachine
     {

@@ -1084,6 +1084,61 @@ TEST_F(I2cTestFixture, test_twi_as_slave_transmitter_all_in_one)
 }
 
 
+TEST_F(I2cTestFixture, test_twi_master_receives_nack_while_writing)
+{
+    I2cBusSimulator simulator;
+    uint8_t buffer[I2C_FAKE_DEVICE_MSG_LEN] = {0};
+    buffer[0] = I2C_FAKE_DEVICE_CMD_MESSAGE;
+    snprintf((char *) (buffer + 1), I2C_FAKE_DEVICE_MSG_LEN, "New message to be written");
+    
+    // fake device with address 0x23
+    i2c_fake_device_init(0x23, false);
+    
+    // Registers a fake device called twi hardware stub, which is linked with I2C driver
+    simulator.register_device(twi_hardware_stub_get_interface, twi_hardware_stub_process);
+    simulator.register_device(i2c_fake_device_get_interface, i2c_fake_device_process);
+    
+    // Check device is ready before starting 
+    i2c_state_t state;
+    auto ret = i2c_get_state(0U, &state);
+    ASSERT_EQ(I2C_ERROR_OK, ret);
+    ASSERT_EQ(I2C_STATE_READY, state);
+    
+    // Tell the fake device to act as a master on I2C bus and write to our TWI device
+    auto fake_dev_ret = i2c_write(0U, 0x23, buffer, I2C_FAKE_DEVICE_MSG_LEN, 0);
+    ASSERT_EQ(I2C_FAKE_DEVICE_ERROR_OK, fake_dev_ret);
+
+    // Run the simulation !
+    uint8_t loop_count = 0;
+    uint8_t previous_byte = 0;
+    do
+    {   
+        if (loop_count == 5)
+        {
+            i2c_fake_device_force_nack();
+        }
+        else if(loop_count == 6)
+        {
+            // Same byte shall be resent on bus at next call
+            EXPECT_EQ(previous_byte, simulator.get_current_byte_on_bus());
+        }
+
+        simulator.process(0U);
+        ret = i2c_get_state(0U, &state);
+        EXPECT_EQ(I2C_ERROR_OK, ret);
+
+        // Capture the current byte to be compared with the next one, after a NACK is received by the master        
+        if (loop_count == 5)
+        {
+            previous_byte = simulator.get_current_byte_on_bus();
+        }
+        loop_count++;
+    } while(state != I2C_STATE_READY || twi_hardware_stub_is_busy(0U));
+
+    i2c_fake_slave_application_data_clear();
+
+}
+
 int main(int argc, char **argv)
 {
     ::testing::InitGoogleTest(&argc, argv);

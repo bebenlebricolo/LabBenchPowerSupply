@@ -119,6 +119,11 @@ void i2c_fake_device_clear(void)
     reset_data_access();
 }
 
+void i2c_fake_device_force_nack(void)
+{
+    force_nack = true;
+}
+
 void i2c_fake_device_init(const uint8_t address, const bool general_call_enabled)
 {
     i2c_fake_device_clear();

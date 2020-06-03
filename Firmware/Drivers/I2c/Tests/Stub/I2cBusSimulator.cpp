@@ -363,3 +363,39 @@ void I2cBusSimulator::register_device(i2c_interface_getter_function get_interfac
         devices.push_back(device);
     }
 }
+
+
+uint8_t I2cBusSimulator::get_current_byte_on_bus()
+{
+    if( I2cBusSimulator::StateMachine::Active == states.current)
+    {
+        if( TransactionMode::Read == mode) 
+        {
+            uint8_t data = 0xFF;
+            if (0 != slaves_indexes.size())
+            {
+                for( auto slave : slaves_indexes)
+                {
+                    data &= devices[slave].interface->data;
+                }
+                return data;
+            }
+            else
+            {
+                return 0;
+            }
+        }
+        else if(TransactionMode::Write == mode || TransactionMode::GeneralCall == mode)
+        {
+            return devices[master_index].interface->data;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+    else
+    {
+        return 0;
+    }
+}

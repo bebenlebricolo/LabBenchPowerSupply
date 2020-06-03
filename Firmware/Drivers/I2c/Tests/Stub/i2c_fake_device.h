@@ -61,7 +61,7 @@ void i2c_fake_device_clear(void);
 /**
  * @brief this function might be used while testing to inject some ack/nack while master is writing to the targeted slave
 */
-void i2c_fake_device_force_ack_nack_statement(const bool ack);
+void i2c_fake_device_force_nack(void);
 
 i2c_fake_device_error_t i2c_fake_device_write(const uint8_t address, uint8_t * buffer, const uint8_t length, const uint8_t retries);
 i2c_fake_device_error_t i2c_fake_device_read(const uint8_t address, uint8_t * buffer, const uint8_t length, const uint8_t retries);
