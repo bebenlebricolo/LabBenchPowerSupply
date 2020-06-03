@@ -27,3 +27,104 @@ As a consequence, I've written a rather complete I2C bus simulator which registe
 This is why I had to write a simulator for the TWI peripheral (which is called **twi_hardware_stub**), the I2c bus simulator itself, called **I2cBusSimulator** (and which is the only written in C++, because why not!), and another virtual I2C device which is called **i2c_fake_device**.
 
 This design allows to test the driver under many scenarios, as a master, transmitting mode, master receveiver, slave transmitter, slave receiver, and even mixing all modes together in a sequence to assert that the driver handles mode transitions just fine. 
+
+# How to use the driver
+Note that the examples below are only here to depict how this driver works and does not reflect any application firmware design.
+For more details about the inner mechanics, a good look at **i2c_driver_tests.cpp** located in Tests/ might give a more detailed picture on how the driver might be used.
+
+## Initialisation
+First, you will need to configure it in the initialisation step:
+
+```C
+#include "i2c.h"
+...
+...
+// In application code : (for instance in a function called init_transmission() =
+i2c_config_t config;
+i2c_error_t ret = i2c_get_default_config(&config);
+// Check that everything's fine
+if (I2C_ERROR_OK != ret)
+{
+    // Handle error here
+}
+
+// Initialise the handle with the right data :
+// Note : step of using pointer to memory might appear weird, or even a bad idea.
+// However, this is the key to handle several TWI devices as well as enabling Dependency Injection for testing purposes
+// Furthermore, those registers are not accessed very often (we are not accessing them like we would if those were GPIO registers with precise PWM timing requirements!)
+config.handle.TWCR = &TWCR;
+config.handle.TWBR = &TWBR;
+config.handle.TWSR = &TWSR;
+config.handle.TWDR = &TWDR;
+config.handle.TWAR = &TWAR;
+config.handle.TWAMR = &TWAMR;
+
+// Set whatever parameter you want in config object
+config.slave_address = 0x34;
+
+// Assuming this is the only device used by your application firmware
+// Note : to be able to do this, application firmware shall provide a "config.h" file which defines the I2C_DEVICES_COUNT macro like so : 
+// #define I2C_DEVICES_COUNT (1U)
+ret = i2c_init(0U, &config);
+if (I2C_ERROR_OK != ret)
+{
+    // Handle error here
+}
+i2c_state_t state;
+ret = i2c_get_state(0U, &state);
+if (I2C_ERROR_OK != ret || I2C_STATE_READY != state)
+{
+    // Handle error here
+}
+```
+
+## Starting a transmission as master (for instance, a write transmission)
+
+```C
+// Within some application code :
+
+...
+...
+
+// Define a buffer with enough space to carry all required data
+uint8_t buffer[MULTI_BYTES_ARRAY_LEN + 1] = {0};
+
+// First byte of the buffer contains the operation code / command which will be interpreted by targeted device
+buffer[0] = TARGET_DEVICE_COMMAND_MESSAGE;
+
+// Fill in the message ...
+snprintf((char *) (buffer + 1), MULTI_BYTES_ARRAY_LEN, "Some message to be written");
+
+// If you want to use interrupts :
+// sei();
+
+// Device is in its READY state, time to ask it to start a write transaction
+ret = i2c_write(0U, 0x23, buffer, 25, 0U);
+if (I2C_ERROR_OK != ret)
+{
+    // Handle error here
+}
+
+``` 
+
+## Processing data (if not interrupt based)
+
+```C
+// If NOT using interrupts, you will have to call :
+i2c_process(0U);
+// Otherwise, interrupt service routine will do that for you automatically
+
+// Polling the device state to know if the transaction has completed :
+i2c_state_t state;
+ret = i2c_get_state(0U, &state);
+if (I2C_ERROR_OK != ret)
+{
+    // Handle error here
+}
+
+if (I2C_STATE_READY == state)
+{
+    // Proceed with next operation
+}
+
+```
