@@ -24,7 +24,7 @@
                 "/usr/include/c++/*/*",
                 "/usr/include/gtest",
                 "/usr/avr/include",
-                "/usr/lib/gcc/avr/9.3.0/include"
+                "/usr/lib/gcc/avr/10.1.0/include"
             ],
             "defines": [
                 "__AVR_ATmega328__",
@@ -70,10 +70,10 @@
                 "${workspaceFolder}/Drivers/Timers/Timer_16_bit/inc",
                 "${workspaceFolder}/**",
                 "/usr/include",
-                "/usr/include/c++/9.3.0/",
+                "/usr/include/c++/**/",
                 "/usr/include/gtest",
                 "/usr/avr/include",
-                "/usr/lib/gcc/avr/9.3.0/include"
+                "/usr/lib/gcc/avr/10.1.0/include"
             ],
             "defines": [
                 "__AVR_ATmega328__"
