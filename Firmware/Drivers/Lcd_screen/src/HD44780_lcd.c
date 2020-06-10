@@ -165,7 +165,6 @@ typedef union
 */
 typedef struct
 {
-    process_commands_t command;                 /**< Command enum which encodes what command is currently being processed                       */
     void (*process_command)(void);              /**< Pointer to the private function to be called                                               */
     process_commands_parameters_t parameters;   /**< Stores all necessary parameters to perform requested commands                              */
     uint8_t sequence_number;                    /**< Gives the current sequence number to allow each command to know where it should resume     */
@@ -271,7 +270,7 @@ hd44780_lcd_error_t hd44780_lcd_init(hd44780_lcd_config_t const * const config)
 
     // Update commands sequencer to handle the initialisation command at next process() call
     internal_state = HD44780_LCD_STATE_INITIALISING;
-    commands_sequencer.command = INTERNAL_CMD_INIT;
+    commands_sequencer.process_command = internal_command_init;
     commands_sequencer.sequence_number = 0;
 
     return HD44780_LCD_ERROR_OK;
@@ -285,65 +284,8 @@ hd44780_lcd_error_t hd44780_lcd_process(void)
         return HD44780_LCD_ERROR_DEVICE_WRONG_STATE;
     }
 
-    switch(commands_sequencer.command)
-    {
-        case INTERNAL_CMD_INIT :
-            internal_command_init();
-            break;
-
-        case INTERNAL_CMD_DEINIT :
-            internal_command_deinit();
-            break;
-
-        case INTERNAL_CMD_HOME :
-            internal_command_home();
-            break;
-
-        case INTERNAL_CMD_CLEAR :
-            internal_command_clear();
-            break;
-
-        case INTERNAL_CMD_SET_BACKLIGHT :
-            internal_command_set_backlight();
-            break;
-
-        case INTERNAL_CMD_SET_BLINKING_CURSOR :
-            internal_command_set_blinking_cursor();
-            break;
-
-        case INTERNAL_CMD_SET_CURSOR_VISIBLE :
-            internal_command_set_cursor_visible();
-            break;
-
-        case INTERNAL_CMD_SET_DISPLAY_ON_OFF :
-            internal_command_set_display_on_off();
-            break;
-
-        case INTERNAL_CMD_SET_ENTRY_MODE :
-            internal_command_set_entry_mode();
-            break;
-
-        case INTERNAL_CMD_MOVE_CURSOR_ABS :
-            internal_command_move_cursor_to_coord();
-            break;
-
-        case INTERNAL_CMD_MOVE_CURSOR_REL :
-            internal_command_move_relative();
-            break;
-
-        case INTERNAL_CMD_SHIFT_DISPLAY :
-            internal_command_shift_display();
-            break;
-
-        case INTERNAL_CMD_PRINT :
-            internal_command_print();
-            break;
-
-        case INTERNAL_CMD_IDLE :
-        default:
-            process_command_idling();
-            break;
-    }
+    // Process stuff !
+    commands_sequencer.process_command();
 
     return HD44780_LCD_ERROR_OK;
 }
