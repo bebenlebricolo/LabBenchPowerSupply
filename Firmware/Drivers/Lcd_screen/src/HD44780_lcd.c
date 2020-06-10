@@ -1,4 +1,5 @@
 #include <stddef.h>
+#include <string.h>
 
 #include "HD44780_lcd.h"
 #include "i2c.h"
@@ -165,9 +166,24 @@ typedef union
 typedef struct
 {
     process_commands_t command;                 /**< Command enum which encodes what command is currently being processed                       */
+    void (*process_command)(void);              /**< Pointer to the private function to be called                                               */
     process_commands_parameters_t parameters;   /**< Stores all necessary parameters to perform requested commands                              */
     uint8_t sequence_number;                    /**< Gives the current sequence number to allow each command to know where it should resume     */
 } process_commands_sequencer_t;
+
+
+/* Only there to prevent pointing to NULL memory within process_commands_sequencer */
+static inline void process_command_idling(void)
+{
+    return;
+}
+
+static void process_commands_sequencer_reset(process_commands_sequencer_t * sequencer)
+{
+    memset(sequencer, 0, sizeof(process_commands_sequencer_t));
+    sequencer->process_command = process_command_idling;
+}
+
 
 /* ##################################################################################################
    ################################### Internal data management #####################################
