@@ -32,13 +32,13 @@ typedef enum
     HD44780_LCD_ERROR_UNSUPPORTED_VALUE, /**< A general error telling a given enumerate value is not supported   */
 
     /* I2C related errors */
-    HD44780_LCD_INVALID_ADDRESS,         /**< Unsupported I2C address (exceeds 127)                              */
-    HD44780_LCD_DEVICE_NOT_LISTENING,    /**< I/O expander did not respond to its address                        */
+    HD44780_LCD_ERROR_INVALID_ADDRESS,         /**< Unsupported I2C address (exceeds 127)                              */
+    HD44780_LCD_ERROR_DEVICE_NOT_LISTENING,    /**< I/O expander did not respond to its address                        */
 
     /* Sequence-related errors (wrong states) */
-    HD44780_LCD_DEVICE_BUSY,             /**< Device is already processing and will not accept new instructions  */
-    HD44780_LCD_DEVICE_NOT_INITIALISED,  /**< Device is not initialised and cannot receive instructions          */
-    HD44780_LCD_DEVICE_WRONG_STATE,      /**< Current device state does not allow the requested operation        */
+    HD44780_LCD_ERROR_DEVICE_BUSY,             /**< Device is already processing and will not accept new instructions  */
+    HD44780_LCD_ERROR_DEVICE_NOT_INITIALISED,  /**< Device is not initialised and cannot receive instructions          */
+    HD44780_LCD_ERROR_DEVICE_WRONG_STATE,      /**< Current device state does not allow the requested operation        */
 
     HD44780_LCD_ERROR_UNKNOWN,           /**< Failure for an unsupported reason                                  */
 } hd44780_lcd_error_t;
