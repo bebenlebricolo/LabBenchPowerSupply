@@ -109,15 +109,27 @@ typedef struct
 */
 typedef enum
 {
+    /* General purpose commands */
     INTERNAL_CMD_IDLE = 0,              /**< Idling command, nothing to do                      */
     INTERNAL_CMD_INIT,                  /**< Initialisation command                             */
     INTERNAL_CMD_DEINIT,                /**< Deinitialisation command                           */
     INTERNAL_CMD_CLEAR,                 /**< Clear display command                              */
-    INTERNAL_CMD_HOME,                  /**< Go home command                                    */
+
+    /* Unitary setters  */
+    INTERNAL_CMD_SET_ENTRY_MODE,        /**< Set entry mode command                             */
     INTERNAL_CMD_SET_DISPLAY_ON_OFF,    /**< Set display on or off command                      */
     INTERNAL_CMD_SET_CURSOR_VISIBLE,    /**< Set cursor visibility command                      */
     INTERNAL_CMD_SET_BLINKING_CURSOR,   /**< Set blinking cursor command                        */
     INTERNAL_CMD_SET_BACKLIGHT,         /**< Set backlight command                              */
+
+    /* Move commands */
+    INTERNAL_CMD_HOME,                  /**< Go home command                                    */
+    INTERNAL_CMD_MOVE_CURSOR_ABS,       /**< Move cursor to coordinates command                 */
+    INTERNAL_CMD_MOVE_CURSOR_REL,       /**< Move cursor relatively command                     */
+    INTERNAL_CMD_SHIFT_DISPLAY,         /**< Shift display command                              */
+
+    /* Text related commands */
+    INTERNAL_CMD_PRINT,                 /**< Print text command                                 */
 } process_commands_t;
 
 /**
@@ -225,6 +237,12 @@ hd44780_lcd_error_t hd44780_lcd_init(hd44780_lcd_config_t const * const config)
         return HD44780_LCD_ERROR_NULL_POINTER;
     }
 
+    // Prevents double initialisation, maybe this is not really useful here (...?)
+    if(HD44780_LCD_STATE_NOT_INITIALISED != internal_state)
+    {
+        return HD44780_LCD_ERROR_DEVICE_WRONG_STATE;
+    }
+
     /* Copy user configuration to internal representation */
     internal_configuration.i2c_address = config->i2c_address;
     internal_configuration.display.backlight = config->display_controls.with_backlight;
@@ -236,12 +254,83 @@ hd44780_lcd_error_t hd44780_lcd_init(hd44780_lcd_config_t const * const config)
     internal_configuration.display.entry_mode = config->entry_mode;
 
     // Update commands sequencer to handle the initialisation command at next process() call
-    internal_state = HD44780_LCD_STATE_PROCESSING;
+    internal_state = HD44780_LCD_STATE_INITIALISING;
     commands_sequencer.command = INTERNAL_CMD_INIT;
+    commands_sequencer.sequence_number = 0;
 
     return HD44780_LCD_ERROR_OK;
 }
 
+hd44780_lcd_error_t hd44780_lcd_process(void)
+{
+    // Shall be initialised before process is called
+    if (HD44780_LCD_STATE_NOT_INITIALISED == internal_state)
+    {
+        return HD44780_LCD_ERROR_DEVICE_WRONG_STATE;
+    }
+
+    switch(commands_sequencer.command)
+    {
+        case INTERNAL_CMD_INIT :
+            internal_command_init();
+            break;
+
+        case INTERNAL_CMD_DEINIT :
+            internal_command_deinit();
+            break;
+
+        case INTERNAL_CMD_HOME :
+            internal_command_home();
+            break;
+
+        case INTERNAL_CMD_CLEAR :
+            internal_command_clear();
+            break;
+
+        case INTERNAL_CMD_SET_BACKLIGHT :
+            internal_command_set_backlight();
+            break;
+
+        case INTERNAL_CMD_SET_BLINKING_CURSOR :
+            internal_command_set_blinking_cursor();
+            break;
+
+        case INTERNAL_CMD_SET_CURSOR_VISIBLE :
+            internal_command_set_cursor_visible();
+            break;
+
+        case INTERNAL_CMD_SET_DISPLAY_ON_OFF :
+            internal_command_set_display_on_off();
+            break;
+
+        case INTERNAL_CMD_SET_ENTRY_MODE :
+            internal_command_set_entry_mode();
+            break;
+
+        case INTERNAL_CMD_MOVE_CURSOR_ABS :
+            internal_command_move_cursor_to_coord();
+            break;
+
+        case INTERNAL_CMD_MOVE_CURSOR_REL :
+            internal_command_move_relative();
+            break;
+
+        case INTERNAL_CMD_SHIFT_DISPLAY :
+            internal_command_shift_display();
+            break;
+
+        case INTERNAL_CMD_PRINT :
+            internal_command_print();
+            break;
+
+        case INTERNAL_CMD_IDLE :
+        default:
+            process_command_idling();
+            break;
+    }
+
+    return HD44780_LCD_ERROR_OK;
+}
 
 /* ##################################################################################################
    ################################### Static functions definition ##################################
