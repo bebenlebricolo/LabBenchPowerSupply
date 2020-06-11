@@ -18,6 +18,7 @@
 
                 "${workspaceFolder}/Drivers/I2c/inc",
                 "${workspaceFolder}/Drivers/I2c/Tests",
+                "${workspaceFolder}/Modules/TimeBase/inc",
 
                 "${workspaceFolder}/**",
                 "/usr/include",

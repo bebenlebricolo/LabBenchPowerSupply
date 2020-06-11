@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "HD44780_lcd.h"
+#include "timebase.h"
 #include "i2c.h"
 
 /* ##################################################################################################
@@ -37,6 +38,10 @@
 /* ##################################################################################################
    ################################### HD44780 commands payload #####################################
    ################################################################################################## */
+
+#define HD44780_LCD_BOOTUP_TIME_MS              (40U)   /**< We have to wait more than 40 ms in the case (worst case) where LCD screen is powered with 2.7 Volts            */
+#define HD44780_LCD_FUNCTION_SET_FIRST_WAIT_MS  (5U)    /**< Should be more than 4.1ms, 5ms is fine                                                                         */
+#define HD44780_LCD_FUNCTION_SET_SECOND_WAIT_MS (1U)    /**< Normally, 100 µs are sufficient, but this is only for initialisation so 1 ms resolution will do it just fine   */
 
 /* Function set command payload mapping */
 #define HD44780_LCD_FUNTION_SET_FONT_BIT        (2)
@@ -74,9 +79,9 @@ typedef enum
     HD44780_LCD_CMD_ENTRY_MODE_SET     = 0x04,  /**< Controls how LCD screen behaves (cursor and display shift) when a new character is written into DDRAM/CGRAM    */
     HD44780_LCD_CMD_DISPLAY_CONTROL    = 0x08,  /**< Controls general settings about the display (general display, cursor, blink )                                  */
     HD44780_LCD_CMD_CURSOR_SHIFT       = 0x10,  /**< Controls the cursor position and display shift. Used to move cursor or dislay unitarily                        */
-    HD44780_LCD_CMD_FUNCTION_SET       = 0x12,  /**< Allows to select the bus data length, line count and font used to display characters                           */
-    HD44780_LCD_CMD_SET_CG_RAM_ADDR    = 0x14,  /**< Sets the current character generation circuit address (from 0 to 63 )                                          */
-    HD44780_LCD_CMD_SET_DD_RAM_ADDR    = 0x18,  /**< Sets the current address pointer of DDRAM (from 0 to 127)                                                      */
+    HD44780_LCD_CMD_FUNCTION_SET       = 0x20,  /**< Allows to select the bus data length, line count and font used to display characters                           */
+    HD44780_LCD_CMD_SET_CG_RAM_ADDR    = 0x40,  /**< Sets the current character generation circuit address (from 0 to 63 )                                          */
+    HD44780_LCD_CMD_SET_DD_RAM_ADDR    = 0x80,  /**< Sets the current address pointer of DDRAM (from 0 to 127)                                                      */
 } hd44780_lcd_command_t;
 
 /**
@@ -85,7 +90,12 @@ typedef enum
 */
 typedef struct
 {
-    uint8_t i2c_address;    /**< I/O expander address */
+    uint8_t i2c_address;    /**< I/O expander address       */
+
+    struct {
+        uint8_t timebase : 4;    /**< Used timebase module id    */
+        uint8_t i2c : 4;         /**< I2C module index           */
+    } indexes;
 
     // Bitfield storing persistent data about display state
     // All fields might be encoded within one CPU word (8 bits)
@@ -167,7 +177,13 @@ typedef struct
 {
     void (*process_command)(void);              /**< Pointer to the private function to be called                                               */
     process_commands_parameters_t parameters;   /**< Stores all necessary parameters to perform requested commands                              */
-    uint8_t sequence_number;                    /**< Gives the current sequence number to allow each command to know where it should resume     */
+    struct
+    {
+        uint8_t count : 5;                      /**< Gives the current sequence number to allow each command to know where it should resume     */
+        bool pulse_sent : 1;                    /**< Persistent flag which tells if a pulse (HD44780 'E' pin was sent or not                    */
+        bool waiting : 1;                       /**< States whether the command sequence is waiting for LCD to settle or not                    */
+        bool data_sent : 1;                     /**< States whether useful data was sent or not                                                 */
+    } sequence;
 } process_commands_sequencer_t;
 
 
@@ -191,7 +207,18 @@ static void process_commands_sequencer_reset(process_commands_sequencer_t * sequ
 // Internal state machine persistent memory
 static hd44780_lcd_state_t          internal_state = HD44780_LCD_STATE_NOT_INITIALISED;
 static internal_configuration_t     internal_configuration = {0};
-static process_commands_sequencer_t commands_sequencer = {0};
+static process_commands_sequencer_t command_sequencer =
+{
+    .process_command = process_command_idling,
+    .parameters = {0},
+    .sequence =
+    {
+        .count = 0,
+        .pulse_sent = false,
+        .waiting = true
+    }
+};
+static uint8_t i2c_buffer = 0;
 
 /* ##################################################################################################
    ################################### Static functions declaration #################################
@@ -231,10 +258,12 @@ hd44780_lcd_error_t hd44780_lcd_get_default_config(hd44780_lcd_config_t * const 
     config->display_controls.cursor_visible = true;
     config->display_controls.display_enabled = true;
     config->display_controls.with_backlight = true;
-    config->entry_mode = HD44780_LCD_ENTRY_MODE_CURSOR_MOVE_RIGHT;
-    config->font = HD44780_LCD_FONT_5x8;
-    config->lines_mode = HD44780_LCD_LINES_2_LINES;
+    config->print_controls.entry_mode = HD44780_LCD_ENTRY_MODE_CURSOR_MOVE_RIGHT;
+    config->print_controls.font = HD44780_LCD_FONT_5x8;
+    config->print_controls.lines_mode = HD44780_LCD_LINES_2_LINES;
     config->i2c_address = PCF8574_I2C_ADDRESS_DEFAULT;
+    config->indexes.i2c = 0;
+    config->indexes.timebase = 0;
 
     return HD44780_LCD_ERROR_OK;
 }
@@ -264,14 +293,17 @@ hd44780_lcd_error_t hd44780_lcd_init(hd44780_lcd_config_t const * const config)
     internal_configuration.display.cursor_visible = config->display_controls.cursor_visible;
     internal_configuration.display.cursor_blinking = config->display_controls.cursor_blinking;
     internal_configuration.display.enabled = config->display_controls.display_enabled;
-    internal_configuration.display.two_lines_mode = (config->lines_mode == HD44780_LCD_LINES_2_LINES);
-    internal_configuration.display.small_font = (config->font == HD44780_LCD_FONT_5x8);
-    internal_configuration.display.entry_mode = config->entry_mode;
+    internal_configuration.display.two_lines_mode = (config->print_controls.lines_mode == HD44780_LCD_LINES_2_LINES);
+    internal_configuration.display.small_font = (config->print_controls.font == HD44780_LCD_FONT_5x8);
+    internal_configuration.display.entry_mode = config->print_controls.entry_mode;
+    internal_configuration.indexes.i2c = config->indexes.i2c;
+    internal_configuration.indexes.timebase = config->indexes.timebase;
 
     // Update commands sequencer to handle the initialisation command at next process() call
     internal_state = HD44780_LCD_STATE_INITIALISING;
-    commands_sequencer.process_command = internal_command_init;
-    commands_sequencer.sequence_number = 0;
+    command_sequencer.process_command = internal_command_init;
+    command_sequencer.sequence.count = 0;
+    command_sequencer.sequence.pulse_sent = false;
 
     return HD44780_LCD_ERROR_OK;
 }
@@ -285,7 +317,7 @@ hd44780_lcd_error_t hd44780_lcd_process(void)
     }
 
     // Process stuff !
-    commands_sequencer.process_command();
+    command_sequencer.process_command();
 
     return HD44780_LCD_ERROR_OK;
 }
@@ -296,5 +328,171 @@ hd44780_lcd_error_t hd44780_lcd_process(void)
 
 static void internal_command_init(void)
 {
+    static uint16_t start_time = 0;
+    static uint16_t duration = 0;
 
+    i2c_state_t i2c_state;
+    i2c_error_t i2c_err = I2C_ERROR_OK;
+    timebase_error_t tim_err = TIMEBASE_ERROR_OK;
+
+    switch(command_sequencer.sequence.count)
+    {
+        // First, wait for more than 40 ms to account for screen bootup time
+        case 0 :
+            tim_err = timebase_get_duration_now(internal_configuration.indexes.timebase, start_time, &duration);
+            if (TIMEBASE_ERROR_OK == tim_err)
+            {
+                if(duration >= HD44780_LCD_BOOTUP_TIME_MS)
+                {
+                    i2c_buffer = (HD44780_LCD_CMD_FUNCTION_SET | HD44780_LCD_DATA_LENGTH_8_BITS);
+                    i2c_buffer |= internal_configuration.display.backlight << PCF8574_BACKLIGHT_BIT
+                                |  PCF8574_PULSE_START_MSK;
+                    i2c_err = i2c_write(internal_configuration.indexes.i2c, internal_configuration.i2c_address, &i2c_buffer, 1U, 3U);
+                    if (I2C_ERROR_OK == i2c_err )
+                    {
+                        command_sequencer.sequence.count++;
+                        command_sequencer.sequence.pulse_sent = true;
+                    }
+                }
+            }
+            break;
+
+        case 1 :
+            i2c_err = i2c_get_state(internal_configuration.indexes.i2c, &i2c_state);
+            if( I2C_ERROR_OK == i2c_err && I2C_STATE_READY == i2c_state)
+            {
+                // First time we got there, we just sent the data over the bus
+                if(command_sequencer.sequence.pulse_sent)
+                {
+                    command_sequencer.sequence.pulse_sent = false;
+
+                    // Shut down enable pulse
+                    i2c_buffer &= PCF8574_PULSE_START_MSK;
+                    i2c_err = i2c_write(internal_configuration.indexes.i2c, internal_configuration.i2c_address, &i2c_buffer, 1U, 3U);
+                    if( I2C_ERROR_OK != i2c_err)
+                    {
+                        // Placeholder for error handling
+                    }
+                }
+                else
+                {
+                    // HD44780 pulse was reset to 0
+                    tim_err = timebase_get_tick(internal_configuration.indexes.timebase, &start_time);
+                    if (TIMEBASE_ERROR_OK == tim_err)
+                    {
+                        command_sequencer.sequence.count++;
+                    }
+                }
+            }
+            // else, I2C transaction has not finished yet
+            break;
+
+        case 2:
+            tim_err = timebase_get_duration_now(internal_configuration.indexes.timebase, start_time, &duration);
+            if (TIMEBASE_ERROR_OK == tim_err)
+            {
+                if(duration >= HD44780_LCD_FUNCTION_SET_FIRST_WAIT_MS)
+                {
+                    // i2c buffer is unchanged : data is exactly identical to the previous writes, restart the write operation
+                    i2c_buffer |= PCF8574_PULSE_START_MSK;
+                    i2c_err = i2c_write(internal_configuration.indexes.i2c, internal_configuration.i2c_address, &i2c_buffer, 1U, 3U);
+                    if( I2C_ERROR_OK != i2c_err)
+                    {
+                        // Placeholder for error handling
+                    }
+                    else
+                    {
+                        command_sequencer.sequence.count++;
+                        command_sequencer.sequence.pulse_sent = true;
+                    }
+                }
+            }
+            break;
+
+        case 3:
+            i2c_err = i2c_get_state(internal_configuration.indexes.i2c, &i2c_state);
+            if( I2C_ERROR_OK == i2c_err && I2C_STATE_READY == i2c_state)
+            {
+                if(command_sequencer.sequence.pulse_sent)
+                {
+                    command_sequencer.sequence.pulse_sent = false;
+
+                    // Shut down enable pulse
+                    i2c_buffer &= PCF8574_PULSE_START_MSK;
+                    i2c_err = i2c_write(internal_configuration.indexes.i2c, internal_configuration.i2c_address, &i2c_buffer, 1U, 3U);
+                    if( I2C_ERROR_OK != i2c_err)
+                    {
+                        // Placeholder for error handling
+                    }
+                }
+                else
+                {
+                    // HD44780 pulse was reset to 0
+                    tim_err = timebase_get_tick(internal_configuration.indexes.timebase, &start_time);
+                    if (TIMEBASE_ERROR_OK == tim_err)
+                    {
+                        command_sequencer.sequence.count++;
+                    }
+                }
+            }
+            // else, I2C transaction has not finished yet
+            break;
+
+        // Final Function_Set command write for initialisation before to be able to send 'real' data to screen
+        case 4:
+            tim_err = timebase_get_duration_now(internal_configuration.indexes.timebase, start_time, &duration);
+            if (TIMEBASE_ERROR_OK == tim_err)
+            {
+                if(duration >= HD44780_LCD_FUNCTION_SET_SECOND_WAIT_MS)
+                {
+                    // i2c buffer is unchanged : data is exactly identical to the previous writes, restart the write operation
+                    i2c_buffer |= PCF8574_PULSE_START_MSK;
+                    i2c_err = i2c_write(internal_configuration.indexes.i2c, internal_configuration.i2c_address, &i2c_buffer, 1U, 3U);
+                    if( I2C_ERROR_OK != i2c_err)
+                    {
+                        // Placeholder for error handling
+                    }
+                    else
+                    {
+                        command_sequencer.sequence.count++;
+                        command_sequencer.sequence.pulse_sent = true;
+                    }
+                }
+            }
+            break;
+
+        case 5:
+            i2c_err = i2c_get_state(internal_configuration.indexes.i2c, &i2c_state);
+            if( I2C_ERROR_OK == i2c_err && I2C_STATE_READY == i2c_state)
+            {
+                if(command_sequencer.sequence.pulse_sent)
+                {
+                    command_sequencer.sequence.pulse_sent = false;
+
+                    // Shut down enable pulse
+                    i2c_buffer &= PCF8574_PULSE_START_MSK;
+                    i2c_err = i2c_write(internal_configuration.indexes.i2c, internal_configuration.i2c_address, &i2c_buffer, 1U, 3U);
+                    if( I2C_ERROR_OK != i2c_err)
+                    {
+                        // Placeholder for error handling
+                    }
+                }
+                else
+                {
+                    // HD44780 pulse was reset to 0
+                    tim_err = timebase_get_tick(internal_configuration.indexes.timebase, &start_time);
+                    if (TIMEBASE_ERROR_OK == tim_err)
+                    {
+                        command_sequencer.sequence.count++;
+                    }
+                }
+            }
+            // else, I2C transaction has not finished yet
+            break;
+
+        default:
+            break;
+
+
+    }
 }

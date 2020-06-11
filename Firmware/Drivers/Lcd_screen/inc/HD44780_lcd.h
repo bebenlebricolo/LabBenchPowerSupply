@@ -116,18 +116,28 @@ typedef enum
 */
 typedef struct
 {
-    uint8_t i2c_address;                    /**< Gives the I2C address of I/O expander PCF8574 (defaults to 0x27 if pins are not pulled to ground)  */
-    hd44780_lcd_entry_mode_t entry_mode;    /**< Selects the kind of entry mode which is requested by the user upon typing                          */
-    hd44780_lcd_lines_mode_t lines_mode;    /**< Selects the number of lines to be used                                                             */
-    hd44780_lcd_font_t font;                /**< Selects the adequate font style between 5x8 dots and 5x10 dots                                     */
+    uint8_t i2c_address;                            /**< Gives the I2C address of I/O expander PCF8574 (defaults to 0x27 if pins are not pulled to ground)  */
 
-    struct                                  /**< Handles display's specific flags                                                                   */
-    {
-        bool display_enabled : 1;           /**< Tells whether the display is enabled or not (if disabled, data can still be written into controller's
-                                                memory but nothing is displayed until it is enabled back)                                           */
-        bool with_backlight  : 1;           /**< Selects whether the display uses a backlight (integrated LED controlled by I/O expander directly   */
-        bool cursor_visible  : 1;           /**< Tells whether the cursor is enabled or not (i.e. visible on screen or not)                         */
-        bool cursor_blinking : 1;           /**< Selects if the cursor is blinking or not                                                           */
+    /* Handles dependencies indexes */
+    struct {
+        uint8_t timebase : 4;                       /**< Selects which timebase will be used to operate with proper timing                                  */
+        uint8_t i2c : 4;                            /**< Gives the I2C instance index                                                                       */
+    } indexes;
+
+    /* Handles lcd printing parameters */
+    struct {
+        hd44780_lcd_entry_mode_t entry_mode : 3;    /**< Selects the kind of entry mode which is requested by the user upon typing                          */
+        hd44780_lcd_lines_mode_t lines_mode : 3;    /**< Selects the number of lines to be used                                                             */
+        hd44780_lcd_font_t font : 2;                /**< Selects the adequate font style between 5x8 dots and 5x10 dots                                     */
+    } print_controls;
+
+    /* Handles display's specific flags */
+    struct {
+        bool display_enabled : 1;                   /**< Tells whether the display is enabled or not (if disabled, data can still be written into controller's
+                                                        memory but nothing is displayed until it is enabled back)                                           */
+        bool with_backlight  : 1;                   /**< Selects whether the display uses a backlight (integrated LED controlled by I/O expander directly   */
+        bool cursor_visible  : 1;                   /**< Tells whether the cursor is enabled or not (i.e. visible on screen or not)                         */
+        bool cursor_blinking : 1;                   /**< Selects if the cursor is blinking or not                                                           */
     } display_controls;
 } hd44780_lcd_config_t;
 

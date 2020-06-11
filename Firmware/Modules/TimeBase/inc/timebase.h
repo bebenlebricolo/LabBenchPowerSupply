@@ -41,13 +41,9 @@ typedef struct
 timebase_error_t timebase_init(uint8_t id, timebase_config_t const * const config);
 timebase_error_t timebase_deinit(uint8_t id);
 
-timebase_error_t timebase_get_tick_u8(uint8_t id, uint8_t * tick);
-timebase_error_t timebase_get_tick_u16(uint8_t id, uint16_t * tick);
-
-timebase_error_t timebase_get_duration_u8(uint8_t reference, uint8_t new_tick, uint8_t * duration);
-timebase_error_t timebase_get_duration_u16(uint16_t reference, uint16_t new_tick, uint16_t * duration);
-timebase_error_t timebase_get_duration_u8_now(uint8_t id, uint8_t reference, uint8_t * duration);
-timebase_error_t timebase_get_duration_u16_now(uint8_t id, uint16_t reference, uint16_t * duration);
+timebase_error_t timebase_get_tick(uint8_t id, uint16_t * tick);
+timebase_error_t timebase_get_duration(uint16_t reference, uint16_t new_tick, uint16_t * duration);
+timebase_error_t timebase_get_duration_now(uint8_t id, uint16_t reference, uint16_t * duration);
 
 
 
