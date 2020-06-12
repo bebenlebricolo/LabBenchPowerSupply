@@ -39,6 +39,12 @@
    ################################### HD44780 commands payload #####################################
    ################################################################################################## */
 
+
+#ifdef HD44780_LCD_USE_MICROSECONDS_TIMER
+    #define HD44780_LCD_ENABLE_PULSE_DURATION_WAIT (37U)    /**< 37 microseconds, absolute minimum to wait for an instruction to complete */
+#else
+    #define HD44780_LCD_ENABLE_PULSE_DURATION_WAIT (1U)     /**< 1 millisecond wait, minimum resolution                                   */
+#endif
 #define HD44780_LCD_BOOTUP_TIME_MS              (40U)   /**< We have to wait more than 40 ms in the case (worst case) where LCD screen is powered with 2.7 Volts            */
 #define HD44780_LCD_FUNCTION_SET_FIRST_WAIT_MS  (5U)    /**< Should be more than 4.1ms, 5ms is fine                                                                         */
 #define HD44780_LCD_FUNCTION_SET_SECOND_WAIT_MS (1U)    /**< Normally, 100 µs are sufficient, but this is only for initialisation so 1 ms resolution will do it just fine   */
@@ -177,12 +183,14 @@ typedef struct
 {
     void (*process_command)(void);              /**< Pointer to the private function to be called                                               */
     process_commands_parameters_t parameters;   /**< Stores all necessary parameters to perform requested commands                              */
+    uint16_t start_time;
+    uint16_t duration;
     struct
     {
         uint8_t count : 5;                      /**< Gives the current sequence number to allow each command to know where it should resume     */
         bool pulse_sent : 1;                    /**< Persistent flag which tells if a pulse (HD44780 'E' pin was sent or not                    */
         bool waiting : 1;                       /**< States whether the command sequence is waiting for LCD to settle or not                    */
-        bool data_sent : 1;                     /**< States whether useful data was sent or not                                                 */
+        bool reentering : 1;                    /**< Tells if current sequence has already been entered once and is being reentered             */
     } sequence;
 } process_commands_sequencer_t;
 
@@ -215,7 +223,8 @@ static process_commands_sequencer_t command_sequencer =
     {
         .count = 0,
         .pulse_sent = false,
-        .waiting = true
+        .waiting = true,
+        .reentering = false
     }
 };
 static uint8_t i2c_buffer = 0;
@@ -326,10 +335,91 @@ hd44780_lcd_error_t hd44780_lcd_process(void)
    ################################### Static functions definition ##################################
    ################################################################################################## */
 
+static void bootup_sequence_handler(uint8_t time_to_wait, uint8_t data)
+{
+    timebase_error_t tim_err = TIMEBASE_ERROR_OK;
+    i2c_error_t i2c_err = I2C_ERROR_OK;
+    i2c_state_t i2c_state = I2C_STATE_READY;
+
+    if(false == command_sequencer.sequence.reentering)
+    {
+        tim_err = timebase_get_tick(internal_configuration.indexes.timebase, &command_sequencer.duration);
+        if( TIMEBASE_ERROR_OK != tim_err)
+        {
+            // Error handling placeholder
+        }
+        command_sequencer.sequence.reentering = true;
+    }
+
+    // Check if I2C transaction completed
+    i2c_err = i2c_get_state(internal_configuration.indexes.i2c, &i2c_state);
+    if (I2C_ERROR_OK != i2c_err)
+    {
+        // Error handling placeholder
+    }
+
+
+    // Check if we are waiting something (usually this is about bootup time)
+    if( (true == command_sequencer.sequence.waiting)
+     && (I2C_STATE_READY == i2c_state))
+    {
+        bool time_has_passed = false;
+        tim_err = timebase_get_duration_now(internal_configuration.indexes.timebase,
+                                            command_sequencer.start_time,
+                                            &command_sequencer.duration);
+        if(true == command_sequencer.sequence.pulse_sent)
+        {
+            if(command_sequencer.duration >= HD44780_LCD_ENABLE_PULSE_DURATION_WAIT)
+            {
+                time_has_passed = true;
+                i2c_buffer &= PCF8574_PULSE_START_MSK;
+                command_sequencer.sequence.waiting = false;
+                command_sequencer.sequence.pulse_sent = false;
+            }
+        }
+        else
+        {
+            if(command_sequencer.duration >= time_to_wait)
+            {
+                time_has_passed = true;
+                i2c_buffer |= PCF8574_PULSE_START_MSK;
+                command_sequencer.sequence.waiting = false;
+                command_sequencer.sequence.pulse_sent = true;
+            }
+        }
+
+        if(time_has_passed)
+        {
+            i2c_err = i2c_write(internal_configuration.indexes.i2c, internal_configuration.i2c_address, &i2c_buffer, 1U, 3U);
+            if( I2C_ERROR_OK != i2c_err)
+            {
+                // Error handling placeholder
+            }
+        }
+    }
+    else
+    {
+        if(true == command_sequencer.sequence.pulse_sent)
+        {
+            command_sequencer.sequence.waiting = true;
+            // Will wait 1 ms at next call (or 37 microseconds if used timer is set to work on a microsecond basis)
+        }
+        else
+        {
+            // Transaction finished, we can make the transition to next sequence number !
+            command_sequencer.sequence.count++;
+            command_sequencer.sequence.reentering = false;
+            command_sequencer.sequence.waiting = true;
+            command_sequencer.sequence.pulse_sent = false;
+        }
+    }
+
+}
+
+
 static void internal_command_init(void)
 {
-    static uint16_t start_time = 0;
-    static uint16_t duration = 0;
+
 
     i2c_state_t i2c_state;
     i2c_error_t i2c_err = I2C_ERROR_OK;
@@ -339,155 +429,20 @@ static void internal_command_init(void)
     {
         // First, wait for more than 40 ms to account for screen bootup time
         case 0 :
-            tim_err = timebase_get_duration_now(internal_configuration.indexes.timebase, start_time, &duration);
-            if (TIMEBASE_ERROR_OK == tim_err)
-            {
-                if(duration >= HD44780_LCD_BOOTUP_TIME_MS)
-                {
-                    i2c_buffer = (HD44780_LCD_CMD_FUNCTION_SET | HD44780_LCD_DATA_LENGTH_8_BITS);
-                    i2c_buffer |= internal_configuration.display.backlight << PCF8574_BACKLIGHT_BIT
-                                |  PCF8574_PULSE_START_MSK;
-                    i2c_err = i2c_write(internal_configuration.indexes.i2c, internal_configuration.i2c_address, &i2c_buffer, 1U, 3U);
-                    if (I2C_ERROR_OK == i2c_err )
-                    {
-                        command_sequencer.sequence.count++;
-                        command_sequencer.sequence.pulse_sent = true;
-                    }
-                }
-            }
+            i2c_buffer = (HD44780_LCD_CMD_FUNCTION_SET | HD44780_LCD_DATA_LENGTH_8_BITS);
+            i2c_buffer |= internal_configuration.display.backlight << PCF8574_BACKLIGHT_BIT;
+            bootup_sequence_handler(HD44780_LCD_BOOTUP_TIME_MS, i2c_buffer);
             break;
 
         case 1 :
-            i2c_err = i2c_get_state(internal_configuration.indexes.i2c, &i2c_state);
-            if( I2C_ERROR_OK == i2c_err && I2C_STATE_READY == i2c_state)
-            {
-                // First time we got there, we just sent the data over the bus
-                if(command_sequencer.sequence.pulse_sent)
-                {
-                    command_sequencer.sequence.pulse_sent = false;
-
-                    // Shut down enable pulse
-                    i2c_buffer &= PCF8574_PULSE_START_MSK;
-                    i2c_err = i2c_write(internal_configuration.indexes.i2c, internal_configuration.i2c_address, &i2c_buffer, 1U, 3U);
-                    if( I2C_ERROR_OK != i2c_err)
-                    {
-                        // Placeholder for error handling
-                    }
-                }
-                else
-                {
-                    // HD44780 pulse was reset to 0
-                    tim_err = timebase_get_tick(internal_configuration.indexes.timebase, &start_time);
-                    if (TIMEBASE_ERROR_OK == tim_err)
-                    {
-                        command_sequencer.sequence.count++;
-                    }
-                }
-            }
-            // else, I2C transaction has not finished yet
+            bootup_sequence_handler(HD44780_LCD_FUNCTION_SET_FIRST_WAIT_MS, i2c_buffer);
             break;
 
         case 2:
-            tim_err = timebase_get_duration_now(internal_configuration.indexes.timebase, start_time, &duration);
-            if (TIMEBASE_ERROR_OK == tim_err)
-            {
-                if(duration >= HD44780_LCD_FUNCTION_SET_FIRST_WAIT_MS)
-                {
-                    // i2c buffer is unchanged : data is exactly identical to the previous writes, restart the write operation
-                    i2c_buffer |= PCF8574_PULSE_START_MSK;
-                    i2c_err = i2c_write(internal_configuration.indexes.i2c, internal_configuration.i2c_address, &i2c_buffer, 1U, 3U);
-                    if( I2C_ERROR_OK != i2c_err)
-                    {
-                        // Placeholder for error handling
-                    }
-                    else
-                    {
-                        command_sequencer.sequence.count++;
-                        command_sequencer.sequence.pulse_sent = true;
-                    }
-                }
-            }
+            bootup_sequence_handler(HD44780_LCD_FUNCTION_SET_SECOND_WAIT_MS, i2c_buffer);
             break;
 
         case 3:
-            i2c_err = i2c_get_state(internal_configuration.indexes.i2c, &i2c_state);
-            if( I2C_ERROR_OK == i2c_err && I2C_STATE_READY == i2c_state)
-            {
-                if(command_sequencer.sequence.pulse_sent)
-                {
-                    command_sequencer.sequence.pulse_sent = false;
-
-                    // Shut down enable pulse
-                    i2c_buffer &= PCF8574_PULSE_START_MSK;
-                    i2c_err = i2c_write(internal_configuration.indexes.i2c, internal_configuration.i2c_address, &i2c_buffer, 1U, 3U);
-                    if( I2C_ERROR_OK != i2c_err)
-                    {
-                        // Placeholder for error handling
-                    }
-                }
-                else
-                {
-                    // HD44780 pulse was reset to 0
-                    tim_err = timebase_get_tick(internal_configuration.indexes.timebase, &start_time);
-                    if (TIMEBASE_ERROR_OK == tim_err)
-                    {
-                        command_sequencer.sequence.count++;
-                    }
-                }
-            }
-            // else, I2C transaction has not finished yet
-            break;
-
-        // Final Function_Set command write for initialisation before to be able to send 'real' data to screen
-        case 4:
-            tim_err = timebase_get_duration_now(internal_configuration.indexes.timebase, start_time, &duration);
-            if (TIMEBASE_ERROR_OK == tim_err)
-            {
-                if(duration >= HD44780_LCD_FUNCTION_SET_SECOND_WAIT_MS)
-                {
-                    // i2c buffer is unchanged : data is exactly identical to the previous writes, restart the write operation
-                    i2c_buffer |= PCF8574_PULSE_START_MSK;
-                    i2c_err = i2c_write(internal_configuration.indexes.i2c, internal_configuration.i2c_address, &i2c_buffer, 1U, 3U);
-                    if( I2C_ERROR_OK != i2c_err)
-                    {
-                        // Placeholder for error handling
-                    }
-                    else
-                    {
-                        command_sequencer.sequence.count++;
-                        command_sequencer.sequence.pulse_sent = true;
-                    }
-                }
-            }
-            break;
-
-        case 5:
-            i2c_err = i2c_get_state(internal_configuration.indexes.i2c, &i2c_state);
-            if( I2C_ERROR_OK == i2c_err && I2C_STATE_READY == i2c_state)
-            {
-                if(command_sequencer.sequence.pulse_sent)
-                {
-                    command_sequencer.sequence.pulse_sent = false;
-
-                    // Shut down enable pulse
-                    i2c_buffer &= PCF8574_PULSE_START_MSK;
-                    i2c_err = i2c_write(internal_configuration.indexes.i2c, internal_configuration.i2c_address, &i2c_buffer, 1U, 3U);
-                    if( I2C_ERROR_OK != i2c_err)
-                    {
-                        // Placeholder for error handling
-                    }
-                }
-                else
-                {
-                    // HD44780 pulse was reset to 0
-                    tim_err = timebase_get_tick(internal_configuration.indexes.timebase, &start_time);
-                    if (TIMEBASE_ERROR_OK == tim_err)
-                    {
-                        command_sequencer.sequence.count++;
-                    }
-                }
-            }
-            // else, I2C transaction has not finished yet
             break;
 
         default:
