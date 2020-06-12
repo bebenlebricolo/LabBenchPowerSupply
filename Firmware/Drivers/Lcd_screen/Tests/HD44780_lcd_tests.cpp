@@ -1,4 +1,6 @@
 #include "gtest/gtest.h"
+#include "HD44780_lcd.h"
+
 
 
 int main(int argc, char **argv)
