@@ -37,3 +37,7 @@ add_subdirectory( ${CMAKE_SOURCE_DIR}/../Drivers/Timers/Timer_16_bit/Tests
 add_subdirectory( ${CMAKE_SOURCE_DIR}/../Drivers/I2c/Tests
     ${CMAKE_BINARY_DIR}/Tests/I2c
 )
+
+add_subdirectory( ${CMAKE_SOURCE_DIR}/../Drivers/Lcd_screen/Tests
+    ${CMAKE_BINARY_DIR}/Tests/Lcd_screen
+)

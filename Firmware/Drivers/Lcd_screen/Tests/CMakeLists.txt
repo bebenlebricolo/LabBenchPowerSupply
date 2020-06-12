@@ -24,6 +24,8 @@ target_compile_definitions(HD44780_lcd_driver PRIVATE
 
 add_executable(HD44780_lcd_driver_tests
     HD44780_lcd_tests.cpp
+    Stub/i2c_stub.c
+    Stub/timebase_stub.c
 )
 
 target_compile_definitions(HD44780_lcd_driver_tests PRIVATE

@@ -126,9 +126,9 @@ typedef struct
 
     /* Handles lcd printing parameters */
     struct {
-        hd44780_lcd_entry_mode_t entry_mode : 3;    /**< Selects the kind of entry mode which is requested by the user upon typing                          */
-        hd44780_lcd_lines_mode_t lines_mode : 3;    /**< Selects the number of lines to be used                                                             */
-        hd44780_lcd_font_t font : 2;                /**< Selects the adequate font style between 5x8 dots and 5x10 dots                                     */
+        hd44780_lcd_entry_mode_t entry_mode;    /**< Selects the kind of entry mode which is requested by the user upon typing                          */
+        hd44780_lcd_lines_mode_t lines_mode;    /**< Selects the number of lines to be used                                                             */
+        hd44780_lcd_font_t font;                /**< Selects the adequate font style between 5x8 dots and 5x10 dots                                     */
     } print_controls;
 
     /* Handles display's specific flags */

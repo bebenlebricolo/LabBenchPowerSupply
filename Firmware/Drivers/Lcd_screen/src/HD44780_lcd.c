@@ -234,22 +234,22 @@ static uint8_t i2c_buffer = 0;
    ################################################################################################## */
 
 static void internal_command_init(void);
-static void internal_command_deinit(void);
+static void internal_command_deinit(void) {}
 
-static void internal_command_clear(void);
-static void internal_command_home(void);
+static void internal_command_clear(void) {}
+static void internal_command_home(void) {}
 
-static void internal_command_set_display_on_off(void);
-static void internal_command_set_cursor_visible(void);
-static void internal_command_set_blinking_cursor(void);
-static void internal_command_set_backlight(void);
-static void internal_command_set_entry_mode(void);
+static void internal_command_set_display_on_off(void) {}
+static void internal_command_set_cursor_visible(void) {}
+static void internal_command_set_blinking_cursor(void) {}
+static void internal_command_set_backlight(void) {}
+static void internal_command_set_entry_mode(void) {}
 
-static void internal_command_move_cursor_to_coord(void);
-static void internal_command_move_relative(void);
-static void internal_command_shift_display(void);
+static void internal_command_move_cursor_to_coord(void) {}
+static void internal_command_move_relative(void) {}
+static void internal_command_shift_display(void) {}
 
-static void internal_command_print(void);
+static void internal_command_print(void) {}
 
 
 /* ##################################################################################################
@@ -335,7 +335,7 @@ hd44780_lcd_error_t hd44780_lcd_process(void)
    ################################### Static functions definition ##################################
    ################################################################################################## */
 
-static void bootup_sequence_handler(uint8_t time_to_wait, uint8_t data)
+static void bootup_sequence_handler(uint8_t time_to_wait)
 {
     timebase_error_t tim_err = TIMEBASE_ERROR_OK;
     i2c_error_t i2c_err = I2C_ERROR_OK;
@@ -343,7 +343,7 @@ static void bootup_sequence_handler(uint8_t time_to_wait, uint8_t data)
 
     if(false == command_sequencer.sequence.reentering)
     {
-        tim_err = timebase_get_tick(internal_configuration.indexes.timebase, &command_sequencer.duration);
+        tim_err = timebase_get_tick(internal_configuration.indexes.timebase, &command_sequencer.start_time);
         if( TIMEBASE_ERROR_OK != tim_err)
         {
             // Error handling placeholder
@@ -419,27 +419,21 @@ static void bootup_sequence_handler(uint8_t time_to_wait, uint8_t data)
 
 static void internal_command_init(void)
 {
-
-
-    i2c_state_t i2c_state;
-    i2c_error_t i2c_err = I2C_ERROR_OK;
-    timebase_error_t tim_err = TIMEBASE_ERROR_OK;
-
     switch(command_sequencer.sequence.count)
     {
         // First, wait for more than 40 ms to account for screen bootup time
         case 0 :
             i2c_buffer = (HD44780_LCD_CMD_FUNCTION_SET | HD44780_LCD_DATA_LENGTH_8_BITS);
             i2c_buffer |= internal_configuration.display.backlight << PCF8574_BACKLIGHT_BIT;
-            bootup_sequence_handler(HD44780_LCD_BOOTUP_TIME_MS, i2c_buffer);
+            bootup_sequence_handler(HD44780_LCD_BOOTUP_TIME_MS);
             break;
 
         case 1 :
-            bootup_sequence_handler(HD44780_LCD_FUNCTION_SET_FIRST_WAIT_MS, i2c_buffer);
+            bootup_sequence_handler(HD44780_LCD_FUNCTION_SET_FIRST_WAIT_MS);
             break;
 
         case 2:
-            bootup_sequence_handler(HD44780_LCD_FUNCTION_SET_SECOND_WAIT_MS, i2c_buffer);
+            bootup_sequence_handler(HD44780_LCD_FUNCTION_SET_SECOND_WAIT_MS);
             break;
 
         case 3:

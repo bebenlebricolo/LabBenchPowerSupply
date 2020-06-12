@@ -16,6 +16,10 @@ static inline uint16_t get_stubbed_value(stubbed_data_fifo_t * const source)
     uint16_t returned_value = source->values[source->index];
     source->index++;
     // Loopback to 0 when reached the end of pre-programmed data array
+    if(source->length == 0)
+    {
+        return 0;
+    }
     source->index %= source->length;
     return returned_value;
 }
@@ -38,6 +42,7 @@ timebase_error_t timebase_get_duration(uint16_t reference, uint16_t new_tick, ui
 timebase_error_t timebase_get_duration_now(uint8_t id, uint16_t reference, uint16_t * duration)
 {
     (void) id;
+    (void) reference;
     return timebase_get_duration(0,0,duration);
 }
 
@@ -46,6 +51,7 @@ void timebase_stub_set_times(uint16_t const * const ticks, const uint8_t len)
     memset(&ticks_data, 0, sizeof(stubbed_data_fifo_t));
     uint8_t length = (len <= TIMEBASE_STUB_MAX_STUBBED_TIMES) ? len : TIMEBASE_STUB_MAX_STUBBED_TIMES;
     memcpy(ticks_data.values, ticks, length);
+    ticks_data.length = length;
 }
 
 void timebase_stub_set_durations(uint16_t const * const durations, const uint8_t len)
@@ -53,6 +59,7 @@ void timebase_stub_set_durations(uint16_t const * const durations, const uint8_t
     memset(&durations_data, 0, sizeof(stubbed_data_fifo_t));
     uint8_t length = (len <= TIMEBASE_STUB_MAX_STUBBED_TIMES) ? len : TIMEBASE_STUB_MAX_STUBBED_TIMES;
     memcpy(durations_data.values, durations, length);
+    durations_data.length = length;
 }
 
 void timebase_stub_clear(void)
