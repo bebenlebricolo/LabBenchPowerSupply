@@ -187,10 +187,11 @@ typedef struct
     uint16_t duration;
     struct
     {
-        uint8_t count : 5;                      /**< Gives the current sequence number to allow each command to know where it should resume     */
+        uint8_t count : 4;                      /**< Gives the current sequence number to allow each command to know where it should resume     */
         bool pulse_sent : 1;                    /**< Persistent flag which tells if a pulse (HD44780 'E' pin was sent or not                    */
         bool waiting : 1;                       /**< States whether the command sequence is waiting for LCD to settle or not                    */
-        bool reentering : 1;                    /**< Tells if current sequence has already been entered once and is being reentered             */
+        bool first_pass : 1;                    /**< Tells if current sequence has already been entered once and is being reentered             */
+        bool lower_bits : 1;                    /**< When sending a byte of information, selects which 4 bits to send from 8 bits data          */
     } sequence;
 } process_commands_sequencer_t;
 
@@ -223,11 +224,17 @@ static process_commands_sequencer_t command_sequencer =
     {
         .count = 0,
         .pulse_sent = false,
-        .waiting = true,
-        .reentering = false
+        .waiting = false,
+        .first_pass = true,
+        .lower_bits = false
     }
 };
+
+// i2c buffer represents the after being mapped to PCF8574 pins
 static uint8_t i2c_buffer = 0;
+
+// Data byte represents the actual data we want to send to the LCD screen
+static uint8_t data_byte = 0;
 
 /* ##################################################################################################
    ################################### Static functions declaration #################################
@@ -341,14 +348,14 @@ static void bootup_sequence_handler(uint8_t time_to_wait, bool end_with_wait)
     i2c_error_t i2c_err = I2C_ERROR_OK;
     i2c_state_t i2c_state = I2C_STATE_READY;
 
-    if(false == command_sequencer.sequence.reentering)
+    if(true == command_sequencer.sequence.first_pass)
     {
         tim_err = timebase_get_tick(internal_configuration.indexes.timebase, &command_sequencer.start_time);
         if( TIMEBASE_ERROR_OK != tim_err)
         {
             // Error handling placeholder
         }
-        command_sequencer.sequence.reentering = true;
+        command_sequencer.sequence.first_pass = false;
     }
 
     // Check if I2C transaction completed
@@ -415,7 +422,7 @@ static void bootup_sequence_handler(uint8_t time_to_wait, bool end_with_wait)
         {
             // Transaction finished, we can make the transition to next sequence number !
             command_sequencer.sequence.count++;
-            command_sequencer.sequence.reentering = false;
+            command_sequencer.sequence.first_pass = true;
             command_sequencer.sequence.pulse_sent = false;
             command_sequencer.sequence.waiting = end_with_wait;
         }
@@ -429,8 +436,9 @@ static inline void set_backlight_flag_in_i2c_buffer(void)
     i2c_buffer |= internal_configuration.display.backlight << PCF8574_BACKLIGHT_BIT;
 }
 
-static void handle_bootup_4_bits_mode(void)
+static bool write_buffer(bool byte_handling)
 {
+    bool write_completed = false;
     i2c_state_t i2c_state = I2C_STATE_NOT_INITIALISED;
     i2c_error_t i2c_err = I2C_ERROR_OK;
     timebase_error_t tim_err = TIMEBASE_ERROR_OK;
@@ -460,10 +468,7 @@ static void handle_bootup_4_bits_mode(void)
             {
                 // Error handling here
             }
-            command_sequencer.sequence.count++;
-            command_sequencer.sequence.pulse_sent = false;
-            command_sequencer.sequence.reentering = false;
-            command_sequencer.sequence.waiting = false;
+            write_completed = true;
         }
         else
         {
@@ -486,12 +491,8 @@ static void handle_bootup_4_bits_mode(void)
             }
             else
             {
-                // Clear data from buffer
-                i2c_buffer &= 0x0F;
-                i2c_buffer |= ( 1 << PCF8574_D5_BIT);   // Code for 4 bits instruction
+                // Raise "Enable" pin high first
                 i2c_buffer |= PCF8574_PULSE_START_MSK;
-                i2c_buffer &= ~ (PCF8574_READ_WRITE_MSK | PCF8574_REGISTER_SELECT_MSK);
-                set_backlight_flag_in_i2c_buffer();
 
                 i2c_err = i2c_write(internal_configuration.indexes.i2c, internal_configuration.i2c_address,&i2c_buffer, 1U, 3U);
                 if (I2C_ERROR_OK != i2c_err)
@@ -509,7 +510,14 @@ static void handle_bootup_4_bits_mode(void)
         }
 
     }
+    return write_completed;
+}
 
+static inline void handle_function_set(void)
+{
+    data_byte = (uint8_t) HD44780_LCD_CMD_FUNCTION_SET;
+    data_byte |= (true == internal_configuration.display.two_lines_mode) ? HD44780_LCD_LINES_2_LINES : HD44780_LCD_LINES_1_LINE;
+    data_byte |= (true == internal_configuration.display.small_font) ? HD44780_LCD_FONT_5x8 : HD44780_LCD_FONT_5x10;
 }
 
 static void internal_command_init(void)
@@ -518,10 +526,10 @@ static void internal_command_init(void)
     {
         // First, wait for more than 40 ms to account for screen bootup time
         case 0 :
-            if (false == command_sequencer.sequence.reentering)
+            if (false == command_sequencer.sequence.first_pass)
             {
                 i2c_buffer = (HD44780_LCD_CMD_FUNCTION_SET | HD44780_LCD_DATA_LENGTH_8_BITS);
-                }
+            }
             set_backlight_flag_in_i2c_buffer();
             bootup_sequence_handler(HD44780_LCD_BOOTUP_TIME_MS, true);
             break;
@@ -535,11 +543,61 @@ static void internal_command_init(void)
             break;
 
         case 3:
-            handle_bootup_4_bits_mode();
+            if (command_sequencer.sequence.first_pass)
+            {
+                i2c_buffer &= 0x0F;
+                set_backlight_flag_in_i2c_buffer();
+                i2c_buffer &= ~ (PCF8574_READ_WRITE_MSK | PCF8574_REGISTER_SELECT_MSK);
+                i2c_buffer |= ( 1 << PCF8574_D5_BIT);   // Code for 4 bits instruction
+                command_sequencer.sequence.first_pass = false;
+            }
+            {
+                bool write_completed = write_buffer(false);
+                if (write_completed)
+                {
+                    command_sequencer.sequence.count++;
+                    command_sequencer.sequence.pulse_sent = false;
+                    command_sequencer.sequence.first_pass = true;
+                    command_sequencer.sequence.waiting = false;
+                }
+            }
             break;
 
         case 4:
-            //configure_font_and_lines_count();
+            if (command_sequencer.sequence.first_pass)
+            {
+                handle_function_set();
+                i2c_buffer &= 0x0F;
+                set_backlight_flag_in_i2c_buffer();
+                i2c_buffer &= ~ (PCF8574_READ_WRITE_MSK | PCF8574_REGISTER_SELECT_MSK);
+                if( true == command_sequencer.sequence.lower_bits)
+                {
+                    i2c_buffer |= (data_byte & 0x0F) << 4U;
+                }
+                else
+                {
+                    i2c_buffer |= (data_byte & 0xF0);
+                }
+                command_sequencer.sequence.first_pass = false;
+            }
+            {
+                bool write_completed = write_buffer(true);
+                if (write_completed)
+                {
+                    if (true == command_sequencer.sequence.lower_bits)
+                    {
+                        command_sequencer.sequence.count++;
+                    }
+                    else
+                    {
+                        // Higher bits will be sent at next call
+                        command_sequencer.sequence.lower_bits = true;
+                    }
+                    command_sequencer.sequence.pulse_sent = false;
+                    command_sequencer.sequence.first_pass = true;
+                    command_sequencer.sequence.waiting = false;
+                }
+            }
             break;
 
 
