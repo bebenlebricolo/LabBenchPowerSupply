@@ -335,7 +335,7 @@ hd44780_lcd_error_t hd44780_lcd_process(void)
    ################################### Static functions definition ##################################
    ################################################################################################## */
 
-static void bootup_sequence_handler(uint8_t time_to_wait)
+static void bootup_sequence_handler(uint8_t time_to_wait, bool end_with_wait)
 {
     timebase_error_t tim_err = TIMEBASE_ERROR_OK;
     i2c_error_t i2c_err = I2C_ERROR_OK;
@@ -359,44 +359,51 @@ static void bootup_sequence_handler(uint8_t time_to_wait)
     }
 
 
-    // Check if we are waiting something (usually this is about bootup time)
-    if( (true == command_sequencer.sequence.waiting)
-     && (I2C_STATE_READY == i2c_state))
+    // Check if we are waiting waiting for device to bootup ...
+    if (true == command_sequencer.sequence.waiting)
     {
-        bool time_has_passed = false;
-        tim_err = timebase_get_duration_now(internal_configuration.indexes.timebase,
-                                            command_sequencer.start_time,
-                                            &command_sequencer.duration);
-        if(true == command_sequencer.sequence.pulse_sent)
+        if (I2C_STATE_READY == i2c_state)
         {
-            if(command_sequencer.duration >= HD44780_LCD_ENABLE_PULSE_DURATION_WAIT)
+            bool time_has_passed = false;
+            tim_err = timebase_get_duration_now(internal_configuration.indexes.timebase,
+                                                command_sequencer.start_time,
+                                                &command_sequencer.duration);
+            if(true == command_sequencer.sequence.pulse_sent)
             {
-                time_has_passed = true;
-                i2c_buffer &= PCF8574_PULSE_START_MSK;
-                command_sequencer.sequence.waiting = false;
-                command_sequencer.sequence.pulse_sent = false;
+                if(command_sequencer.duration >= HD44780_LCD_ENABLE_PULSE_DURATION_WAIT)
+                {
+                    time_has_passed = true;
+                    i2c_buffer &= ~PCF8574_PULSE_START_MSK;
+                    command_sequencer.sequence.waiting = false;
+                    command_sequencer.sequence.pulse_sent = false;
+                }
+            }
+            else
+            {
+                if(command_sequencer.duration >= time_to_wait)
+                {
+                    time_has_passed = true;
+                    i2c_buffer |= PCF8574_PULSE_START_MSK;
+                    command_sequencer.sequence.waiting = false;
+                    command_sequencer.sequence.pulse_sent = true;
+                }
+            }
+
+            if(time_has_passed)
+            {
+                i2c_err = i2c_write(internal_configuration.indexes.i2c, internal_configuration.i2c_address, &i2c_buffer, 1U, 3U);
+                if( I2C_ERROR_OK != i2c_err)
+                {
+                    // Error handling placeholder
+                }
             }
         }
         else
         {
-            if(command_sequencer.duration >= time_to_wait)
-            {
-                time_has_passed = true;
-                i2c_buffer |= PCF8574_PULSE_START_MSK;
-                command_sequencer.sequence.waiting = false;
-                command_sequencer.sequence.pulse_sent = true;
-            }
-        }
-
-        if(time_has_passed)
-        {
-            i2c_err = i2c_write(internal_configuration.indexes.i2c, internal_configuration.i2c_address, &i2c_buffer, 1U, 3U);
-            if( I2C_ERROR_OK != i2c_err)
-            {
-                // Error handling placeholder
-            }
+            // I2C device is not ready yet, nothing to do except from checking later
         }
     }
+    // We are not waiting anymore
     else
     {
         if(true == command_sequencer.sequence.pulse_sent)
@@ -409,13 +416,101 @@ static void bootup_sequence_handler(uint8_t time_to_wait)
             // Transaction finished, we can make the transition to next sequence number !
             command_sequencer.sequence.count++;
             command_sequencer.sequence.reentering = false;
-            command_sequencer.sequence.waiting = true;
             command_sequencer.sequence.pulse_sent = false;
+            command_sequencer.sequence.waiting = end_with_wait;
         }
     }
 
 }
 
+static inline void set_backlight_flag_in_i2c_buffer(void)
+{
+    i2c_buffer &= ~PCF8574_BACKLIGHT_MSK;
+    i2c_buffer |= internal_configuration.display.backlight << PCF8574_BACKLIGHT_BIT;
+}
+
+static void handle_bootup_4_bits_mode(void)
+{
+    i2c_state_t i2c_state = I2C_STATE_NOT_INITIALISED;
+    i2c_error_t i2c_err = I2C_ERROR_OK;
+    timebase_error_t tim_err = TIMEBASE_ERROR_OK;
+
+    i2c_err = i2c_get_state(internal_configuration.indexes.i2c, &i2c_state);
+    if (I2C_ERROR_OK != i2c_err)
+    {
+        // Error handling here
+    }
+
+    if (true == command_sequencer.sequence.waiting)
+    {
+        tim_err = timebase_get_duration_now(internal_configuration.indexes.timebase,
+                                            &command_sequencer.start_time,
+                                            &command_sequencer.duration);
+        if (TIMEBASE_ERROR_OK != tim_err)
+        {
+            // Error handling here
+        }
+
+        // Time to reset the "enable" pulse
+        if (command_sequencer.duration >= HD44780_LCD_ENABLE_PULSE_DURATION_WAIT)
+        {
+            i2c_buffer &= ~PCF8574_PULSE_START_MSK;
+            i2c_err = i2c_write(internal_configuration.indexes.i2c, internal_configuration.i2c_address,&i2c_buffer, 1U, 3U);
+            if (I2C_ERROR_OK != i2c_err)
+            {
+                // Error handling here
+            }
+            command_sequencer.sequence.count++;
+            command_sequencer.sequence.pulse_sent = false;
+            command_sequencer.sequence.reentering = false;
+            command_sequencer.sequence.waiting = false;
+        }
+        else
+        {
+            // Do nothing and return
+        }
+    }
+    else
+    {
+        // Ready to accept new instruction
+        if (I2C_STATE_READY == i2c_state)
+        {
+            if (true == command_sequencer.sequence.pulse_sent)
+            {
+                tim_err = timebase_get_tick(internal_configuration.indexes.timebase, &command_sequencer.start_time);
+                if (TIMEBASE_ERROR_OK != tim_err)
+                {
+                    // Error handling here
+                }
+                command_sequencer.sequence.waiting = true;
+            }
+            else
+            {
+                // Clear data from buffer
+                i2c_buffer &= 0x0F;
+                i2c_buffer |= ( 1 << PCF8574_D5_BIT);   // Code for 4 bits instruction
+                i2c_buffer |= PCF8574_PULSE_START_MSK;
+                i2c_buffer &= ~ (PCF8574_READ_WRITE_MSK | PCF8574_REGISTER_SELECT_MSK);
+                set_backlight_flag_in_i2c_buffer();
+
+                i2c_err = i2c_write(internal_configuration.indexes.i2c, internal_configuration.i2c_address,&i2c_buffer, 1U, 3U);
+                if (I2C_ERROR_OK != i2c_err)
+                {
+                    // Error handling here
+                }
+
+                command_sequencer.sequence.pulse_sent = true;
+                command_sequencer.sequence.waiting = false;
+            }
+        }
+        else
+        {
+            //Do nothing until I2C device becomes available again
+        }
+
+    }
+
+}
 
 static void internal_command_init(void)
 {
@@ -423,21 +518,30 @@ static void internal_command_init(void)
     {
         // First, wait for more than 40 ms to account for screen bootup time
         case 0 :
-            i2c_buffer = (HD44780_LCD_CMD_FUNCTION_SET | HD44780_LCD_DATA_LENGTH_8_BITS);
-            i2c_buffer |= internal_configuration.display.backlight << PCF8574_BACKLIGHT_BIT;
-            bootup_sequence_handler(HD44780_LCD_BOOTUP_TIME_MS);
+            if (false == command_sequencer.sequence.reentering)
+            {
+                i2c_buffer = (HD44780_LCD_CMD_FUNCTION_SET | HD44780_LCD_DATA_LENGTH_8_BITS);
+                }
+            set_backlight_flag_in_i2c_buffer();
+            bootup_sequence_handler(HD44780_LCD_BOOTUP_TIME_MS, true);
             break;
 
         case 1 :
-            bootup_sequence_handler(HD44780_LCD_FUNCTION_SET_FIRST_WAIT_MS);
+            bootup_sequence_handler(HD44780_LCD_FUNCTION_SET_FIRST_WAIT_MS, true);
             break;
 
         case 2:
-            bootup_sequence_handler(HD44780_LCD_FUNCTION_SET_SECOND_WAIT_MS);
+            bootup_sequence_handler(HD44780_LCD_FUNCTION_SET_SECOND_WAIT_MS, false);
             break;
 
         case 3:
+            handle_bootup_4_bits_mode();
             break;
+
+        case 4:
+            //configure_font_and_lines_count();
+            break;
+
 
         default:
             break;

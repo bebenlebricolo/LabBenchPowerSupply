@@ -58,7 +58,7 @@ void timebase_stub_set_durations(uint16_t const * const durations, const uint8_t
 {
     memset(&durations_data, 0, sizeof(stubbed_data_fifo_t));
     uint8_t length = (len <= TIMEBASE_STUB_MAX_STUBBED_TIMES) ? len : TIMEBASE_STUB_MAX_STUBBED_TIMES;
-    memcpy(durations_data.values, durations, length);
+    memcpy(durations_data.values, durations, length * sizeof(uint16_t));
     durations_data.length = length;
 }
 
