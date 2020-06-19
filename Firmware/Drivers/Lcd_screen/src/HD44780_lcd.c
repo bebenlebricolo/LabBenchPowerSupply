@@ -230,6 +230,19 @@ static process_commands_sequencer_t command_sequencer =
     }
 };
 
+static void reset_command_sequencer(void)
+{
+    command_sequencer.start_time = 0;
+    command_sequencer.duration = 0;
+    memset(&command_sequencer.parameters, 0, sizeof(process_commands_parameters_t));
+    command_sequencer.process_command = process_command_idling;
+    command_sequencer.sequence.count = 0;
+    command_sequencer.sequence.first_pass = true;
+    command_sequencer.sequence.lower_bits = false;
+    command_sequencer.sequence.pulse_sent = false;
+    command_sequencer.sequence.waiting = false;
+}
+
 // i2c buffer represents the after being mapped to PCF8574 pins
 static uint8_t i2c_buffer = 0;
 
@@ -241,12 +254,17 @@ static uint8_t data_byte = 0;
    ################################################################################################## */
 
 static void internal_command_init(void);
+
+static void init_bootup_ping_handler();
+static void init_4_bits_selection_handler();
+
 static void internal_command_deinit(void) {}
 
 static void internal_command_clear(void) {}
 static void internal_command_home(void) {}
 
 static void internal_command_set_display_on_off(void) {}
+static void internal_command_handle_function_set(void);
 static void internal_command_set_cursor_visible(void) {}
 static void internal_command_set_blinking_cursor(void) {}
 static void internal_command_set_backlight(void) {}
@@ -257,6 +275,9 @@ static void internal_command_move_relative(void) {}
 static void internal_command_shift_display(void) {}
 
 static void internal_command_print(void) {}
+
+static inline void set_backlight_flag_in_i2c_buffer(void);
+
 
 
 /* ##################################################################################################
@@ -320,6 +341,12 @@ hd44780_lcd_error_t hd44780_lcd_init(hd44780_lcd_config_t const * const config)
     command_sequencer.process_command = internal_command_init;
     command_sequencer.sequence.count = 0;
     command_sequencer.sequence.pulse_sent = false;
+
+    if (false == command_sequencer.sequence.first_pass)
+    {
+        i2c_buffer = (HD44780_LCD_CMD_FUNCTION_SET | HD44780_LCD_DATA_LENGTH_8_BITS);
+    }
+    set_backlight_flag_in_i2c_buffer();
 
     return HD44780_LCD_ERROR_OK;
 }
@@ -520,90 +547,116 @@ static inline void handle_function_set(void)
     data_byte |= (true == internal_configuration.display.small_font) ? HD44780_LCD_FONT_5x8 : HD44780_LCD_FONT_5x10;
 }
 
+static void init_4_bits_selection_handler(void)
+{
+    if (command_sequencer.sequence.first_pass)
+    {
+        i2c_buffer &= 0x0F;
+        set_backlight_flag_in_i2c_buffer();
+        i2c_buffer &= ~ (PCF8574_READ_WRITE_MSK | PCF8574_REGISTER_SELECT_MSK);
+        i2c_buffer |= ( 1 << PCF8574_D5_BIT);   // Code for 4 bits instruction
+        command_sequencer.sequence.first_pass = false;
+    }
+    {
+        bool write_completed = write_buffer(false);
+        if (write_completed)
+        {
+            command_sequencer.sequence.count++;
+            command_sequencer.sequence.pulse_sent = false;
+            command_sequencer.sequence.first_pass = true;
+            command_sequencer.sequence.waiting = false;
+        }
+    }
+}
+
+static void internal_command_handle_function_set(void)
+{
+    if (command_sequencer.sequence.first_pass)
+    {
+        handle_function_set();
+        i2c_buffer &= 0x0F;
+        set_backlight_flag_in_i2c_buffer();
+        i2c_buffer &= ~ (PCF8574_READ_WRITE_MSK | PCF8574_REGISTER_SELECT_MSK);
+        if( true == command_sequencer.sequence.lower_bits)
+        {
+            i2c_buffer |= (data_byte & 0x0F) << 4U;
+        }
+        else
+        {
+            i2c_buffer |= (data_byte & 0xF0);
+        }
+        command_sequencer.sequence.first_pass = false;
+    }
+    {
+        bool write_completed = write_buffer(true);
+        if (write_completed)
+        {
+            if (true == command_sequencer.sequence.lower_bits)
+            {
+                command_sequencer.sequence.count++;
+            }
+            else
+            {
+                // Higher bits will be sent at next call
+                command_sequencer.sequence.lower_bits = true;
+            }
+            command_sequencer.sequence.pulse_sent = false;
+            command_sequencer.sequence.first_pass = true;
+            command_sequencer.sequence.waiting = false;
+        }
+    }
+}
+
+
+
 static void internal_command_init(void)
 {
     switch(command_sequencer.sequence.count)
     {
         // First, wait for more than 40 ms to account for screen bootup time
         case 0 :
-            if (false == command_sequencer.sequence.first_pass)
-            {
-                i2c_buffer = (HD44780_LCD_CMD_FUNCTION_SET | HD44780_LCD_DATA_LENGTH_8_BITS);
-            }
-            set_backlight_flag_in_i2c_buffer();
             bootup_sequence_handler(HD44780_LCD_BOOTUP_TIME_MS, true);
             break;
 
+        // Second ping
         case 1 :
             bootup_sequence_handler(HD44780_LCD_FUNCTION_SET_FIRST_WAIT_MS, true);
             break;
 
+        // Last ping to let the device wake up
         case 2:
             bootup_sequence_handler(HD44780_LCD_FUNCTION_SET_SECOND_WAIT_MS, false);
             break;
 
+        // Set 4 bits mode interface
         case 3:
-            if (command_sequencer.sequence.first_pass)
-            {
-                i2c_buffer &= 0x0F;
-                set_backlight_flag_in_i2c_buffer();
-                i2c_buffer &= ~ (PCF8574_READ_WRITE_MSK | PCF8574_REGISTER_SELECT_MSK);
-                i2c_buffer |= ( 1 << PCF8574_D5_BIT);   // Code for 4 bits instruction
-                command_sequencer.sequence.first_pass = false;
-            }
-            {
-                bool write_completed = write_buffer(false);
-                if (write_completed)
-                {
-                    command_sequencer.sequence.count++;
-                    command_sequencer.sequence.pulse_sent = false;
-                    command_sequencer.sequence.first_pass = true;
-                    command_sequencer.sequence.waiting = false;
-                }
-            }
+            init_4_bits_selection_handler();
             break;
 
+        // Set print controls (data length, lines count, font i.e. "Function set" command of HD44780 LCD screen
         case 4:
-            if (command_sequencer.sequence.first_pass)
-            {
-                handle_function_set();
-                i2c_buffer &= 0x0F;
-                set_backlight_flag_in_i2c_buffer();
-                i2c_buffer &= ~ (PCF8574_READ_WRITE_MSK | PCF8574_REGISTER_SELECT_MSK);
-                if( true == command_sequencer.sequence.lower_bits)
-                {
-                    i2c_buffer |= (data_byte & 0x0F) << 4U;
-                }
-                else
-                {
-                    i2c_buffer |= (data_byte & 0xF0);
-                }
-                command_sequencer.sequence.first_pass = false;
-            }
-            {
-                bool write_completed = write_buffer(true);
-                if (write_completed)
-                {
-                    if (true == command_sequencer.sequence.lower_bits)
-                    {
-                        command_sequencer.sequence.count++;
-                    }
-                    else
-                    {
-                        // Higher bits will be sent at next call
-                        command_sequencer.sequence.lower_bits = true;
-                    }
-                    command_sequencer.sequence.pulse_sent = false;
-                    command_sequencer.sequence.first_pass = true;
-                    command_sequencer.sequence.waiting = false;
-                }
-            }
+            internal_command_handle_function_set();
             break;
 
+        // Set display off
+        case 5:
+            internal_command_set_display_on_off();
+            break;
 
+        // Clear display
+        case 6:
+            internal_command_clear();
+            break;
+
+        // Configure the entry mode
+        case 7:
+            internal_command_set_entry_mode();
+            break;
+
+        // Stop execution
         default:
+            reset_command_sequencer();
+            internal_state = HD44780_LCD_STATE_READY;
             break;
-
-
     }
 }
