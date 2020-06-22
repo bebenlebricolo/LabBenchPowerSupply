@@ -260,15 +260,15 @@ static void init_4_bits_selection_handler();
 
 static void internal_command_deinit(void) {}
 
-static void internal_command_clear(void) {}
+static void internal_command_clear(void);
 static void internal_command_home(void) {}
 
-static void internal_command_set_display_on_off(void) {}
+static void internal_command_set_display_on_off(void);
 static void internal_command_handle_function_set(void);
 static void internal_command_set_cursor_visible(void) {}
 static void internal_command_set_blinking_cursor(void) {}
 static void internal_command_set_backlight(void) {}
-static void internal_command_set_entry_mode(void) {}
+static void internal_command_set_entry_mode(void);
 
 static void internal_command_move_cursor_to_coord(void) {}
 static void internal_command_move_relative(void) {}
@@ -400,7 +400,7 @@ static void bootup_sequence_handler(uint8_t time_to_wait, bool end_with_wait)
         {
             bool time_has_passed = false;
             tim_err = timebase_get_duration_now(internal_configuration.indexes.timebase,
-                                                command_sequencer.start_time,
+                                                &command_sequencer.start_time,
                                                 &command_sequencer.duration);
             if(true == command_sequencer.sequence.pulse_sent)
             {
@@ -547,6 +547,21 @@ static inline void handle_function_set(void)
     data_byte |= (true == internal_configuration.display.small_font) ? HD44780_LCD_FONT_5x8 : HD44780_LCD_FONT_5x10;
 }
 
+static inline void handle_display_controls(void)
+{
+    data_byte = (uint8_t) HD44780_LCD_CMD_DISPLAY_CONTROL;
+    data_byte |= internal_configuration.display.enabled ? HD44780_LCD_DISPLAY_CTRL_DISPLAY_MSK : 0x00 ;
+    data_byte |= internal_configuration.display.cursor_visible ? HD44780_LCD_DISPLAY_CTRL_CURSOR_MSK : 0x00 ;
+    data_byte |= internal_configuration.display.cursor_blinking ? HD44780_LCD_DISPLAY_CTRL_BLINKING_MSK : 0x00 ;
+}
+
+static inline void handle_entry_mode(void)
+{
+    data_byte = (uint8_t) HD44780_LCD_CMD_ENTRY_MODE_SET;
+    data_byte |= internal_configuration.display.entry_mode;
+}
+
+
 static void init_4_bits_selection_handler(void)
 {
     if (command_sequencer.sequence.first_pass)
@@ -557,56 +572,118 @@ static void init_4_bits_selection_handler(void)
         i2c_buffer |= ( 1 << PCF8574_D5_BIT);   // Code for 4 bits instruction
         command_sequencer.sequence.first_pass = false;
     }
+
+    // Handle data write in 4 bits mode only (one exception where we do not need to send the full 8 bits)
+    bool write_completed = write_buffer(false);
+    if (write_completed)
     {
-        bool write_completed = write_buffer(false);
-        if (write_completed)
+        command_sequencer.sequence.count++;
+        command_sequencer.sequence.pulse_sent = false;
+        command_sequencer.sequence.first_pass = true;
+        command_sequencer.sequence.waiting = false;
+    }
+}
+
+static inline void handle_byte_sending(void)
+{
+    if( true == command_sequencer.sequence.lower_bits)
+    {
+        i2c_buffer |= (data_byte & 0x0F) << 4U;
+    }
+    else
+    {
+        i2c_buffer |= (data_byte & 0xF0);
+    }
+
+    bool write_completed = write_buffer(true);
+    if (write_completed)
+    {
+        if (true == command_sequencer.sequence.lower_bits)
         {
             command_sequencer.sequence.count++;
-            command_sequencer.sequence.pulse_sent = false;
-            command_sequencer.sequence.first_pass = true;
-            command_sequencer.sequence.waiting = false;
         }
+        else
+        {
+            // Higher bits will be sent at next call
+            command_sequencer.sequence.lower_bits = true;
+        }
+        command_sequencer.sequence.pulse_sent = false;
+        command_sequencer.sequence.first_pass = true;
+        command_sequencer.sequence.waiting = false;
     }
 }
 
 static void internal_command_handle_function_set(void)
 {
+    // Set the right data into PCF8475 buffer
     if (command_sequencer.sequence.first_pass)
     {
         handle_function_set();
         i2c_buffer &= 0x0F;
         set_backlight_flag_in_i2c_buffer();
         i2c_buffer &= ~ (PCF8574_READ_WRITE_MSK | PCF8574_REGISTER_SELECT_MSK);
-        if( true == command_sequencer.sequence.lower_bits)
-        {
-            i2c_buffer |= (data_byte & 0x0F) << 4U;
-        }
-        else
-        {
-            i2c_buffer |= (data_byte & 0xF0);
-        }
+
+        // Send higher bits first (D7 to D4)
+        command_sequencer.sequence.lower_bits = false;
         command_sequencer.sequence.first_pass = false;
     }
-    {
-        bool write_completed = write_buffer(true);
-        if (write_completed)
-        {
-            if (true == command_sequencer.sequence.lower_bits)
-            {
-                command_sequencer.sequence.count++;
-            }
-            else
-            {
-                // Higher bits will be sent at next call
-                command_sequencer.sequence.lower_bits = true;
-            }
-            command_sequencer.sequence.pulse_sent = false;
-            command_sequencer.sequence.first_pass = true;
-            command_sequencer.sequence.waiting = false;
-        }
-    }
+
+    handle_byte_sending();
 }
 
+static void internal_command_set_display_on_off(void)
+{
+    // Set the right data into PCF8475 buffer
+    if (command_sequencer.sequence.first_pass)
+    {
+        handle_display_controls();
+        i2c_buffer &= 0x0F;
+        set_backlight_flag_in_i2c_buffer();
+        i2c_buffer &= ~ (PCF8574_READ_WRITE_MSK | PCF8574_REGISTER_SELECT_MSK);
+
+        // Send higher bits first (D7 to D4)
+        command_sequencer.sequence.lower_bits = false;
+        command_sequencer.sequence.first_pass = false;
+    }
+
+    handle_byte_sending();
+}
+
+static void internal_command_clear(void)
+{
+    // Set the right data into PCF8475 buffer
+    if (command_sequencer.sequence.first_pass)
+    {
+        data_byte = HD44780_LCD_CMD_CLEAR_DISPLAY;
+        i2c_buffer &= 0x0F;
+        set_backlight_flag_in_i2c_buffer();
+        i2c_buffer &= ~ (PCF8574_READ_WRITE_MSK | PCF8574_REGISTER_SELECT_MSK);
+
+        // Send higher bits first (D7 to D4)
+        command_sequencer.sequence.lower_bits = false;
+        command_sequencer.sequence.first_pass = false;
+    }
+
+    handle_byte_sending();
+}
+
+static void internal_command_set_entry_mode(void)
+{
+    // Set the right data into PCF8475 buffer
+    if (command_sequencer.sequence.first_pass)
+    {
+        handle_entry_mode();
+        i2c_buffer &= 0x0F;
+        set_backlight_flag_in_i2c_buffer();
+        i2c_buffer &= ~ (PCF8574_READ_WRITE_MSK | PCF8574_REGISTER_SELECT_MSK);
+
+        // Send higher bits first (D7 to D4)
+        command_sequencer.sequence.lower_bits = false;
+        command_sequencer.sequence.first_pass = false;
+    }
+
+    handle_byte_sending();
+}
 
 
 static void internal_command_init(void)

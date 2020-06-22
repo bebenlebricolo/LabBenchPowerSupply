@@ -24,14 +24,14 @@ static inline uint16_t get_stubbed_value(stubbed_data_fifo_t * const source)
     return returned_value;
 }
 
-timebase_error_t timebase_get_tick(uint8_t id, uint16_t * tick)
+timebase_error_t timebase_get_tick(uint8_t id, uint16_t * const tick)
 {
     (void) id;
     *tick = get_stubbed_value(&ticks_data);
     return TIMEBASE_ERROR_OK;
 }
 
-timebase_error_t timebase_get_duration(uint16_t reference, uint16_t new_tick, uint16_t * duration)
+timebase_error_t timebase_get_duration(uint16_t const * const reference, uint16_t * const new_tick, uint16_t * const duration)
 {
     (void) reference;
     (void) new_tick;
@@ -39,7 +39,7 @@ timebase_error_t timebase_get_duration(uint16_t reference, uint16_t new_tick, ui
     return TIMEBASE_ERROR_OK;
 }
 
-timebase_error_t timebase_get_duration_now(uint8_t id, uint16_t reference, uint16_t * duration)
+timebase_error_t timebase_get_duration_now(uint8_t id, uint16_t const * const reference, uint16_t * const duration)
 {
     (void) id;
     (void) reference;
