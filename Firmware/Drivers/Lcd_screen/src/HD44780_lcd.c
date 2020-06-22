@@ -193,6 +193,7 @@ typedef struct
         bool first_pass : 1;                    /**< Tells if current sequence has already been entered once and is being reentered             */
         bool lower_bits : 1;                    /**< When sending a byte of information, selects which 4 bits to send from 8 bits data          */
     } sequence;
+    bool nested_sequence_mode;                  /**< Tells whether a command is nested within a high-level sequence or not (such as in initialisation sequence for instance) */
 } process_commands_sequencer_t;
 
 
@@ -241,6 +242,7 @@ static void reset_command_sequencer(void)
     command_sequencer.sequence.lower_bits = false;
     command_sequencer.sequence.pulse_sent = false;
     command_sequencer.sequence.waiting = false;
+    command_sequencer.nested_sequence_mode = false;
 }
 
 // i2c buffer represents the after being mapped to PCF8574 pins
@@ -277,6 +279,8 @@ static void internal_command_shift_display(void) {}
 static void internal_command_print(void) {}
 
 static inline void set_backlight_flag_in_i2c_buffer(void);
+static inline hd44780_lcd_error_t is_ready_to_accept_instruction(void);
+
 
 
 
@@ -338,18 +342,208 @@ hd44780_lcd_error_t hd44780_lcd_init(hd44780_lcd_config_t const * const config)
 
     // Update commands sequencer to handle the initialisation command at next process() call
     internal_state = HD44780_LCD_STATE_INITIALISING;
-    command_sequencer.process_command = internal_command_init;
-    command_sequencer.sequence.count = 0;
-    command_sequencer.sequence.pulse_sent = false;
 
-    if (false == command_sequencer.sequence.first_pass)
-    {
-        i2c_buffer = (HD44780_LCD_CMD_FUNCTION_SET | HD44780_LCD_DATA_LENGTH_8_BITS);
-    }
-    set_backlight_flag_in_i2c_buffer();
+    reset_command_sequencer();
+    command_sequencer.process_command = internal_command_init;
+    command_sequencer.nested_sequence_mode = true;
 
     return HD44780_LCD_ERROR_OK;
 }
+
+hd44780_lcd_error_t hd44780_lcd_clear(void)
+{
+    hd44780_lcd_error_t err = is_ready_to_accept_instruction();
+    if (HD44780_LCD_ERROR_OK != err)
+    {
+        return err;
+    }
+
+    // Update commands sequencer to handle the initialisation command at next process() call
+    internal_state = HD44780_LCD_STATE_PROCESSING;
+    reset_command_sequencer();
+    command_sequencer.process_command = internal_command_clear;
+
+    return HD44780_LCD_ERROR_OK;
+}
+
+hd44780_lcd_error_t hd44780_lcd_home(void)
+{
+    hd44780_lcd_error_t err = is_ready_to_accept_instruction();
+    if (HD44780_LCD_ERROR_OK != err)
+    {
+        return err;
+    }
+
+    // Update commands sequencer to handle the initialisation command at next process() call
+    internal_state = HD44780_LCD_STATE_PROCESSING;
+    reset_command_sequencer();
+    command_sequencer.process_command = internal_command_home;
+
+    return HD44780_LCD_ERROR_OK;
+}
+
+hd44780_lcd_error_t hd44780_lcd_set_display_on_off(const bool enabled)
+{
+    hd44780_lcd_error_t err = is_ready_to_accept_instruction();
+    if (HD44780_LCD_ERROR_OK != err)
+    {
+        return err;
+    }
+
+    internal_configuration.display.enabled = enabled;
+
+    // Update commands sequencer to handle the initialisation command at next process() call
+    internal_state = HD44780_LCD_STATE_PROCESSING;
+    reset_command_sequencer();
+    command_sequencer.process_command = internal_command_set_display_on_off;
+
+    return HD44780_LCD_ERROR_OK;
+}
+
+hd44780_lcd_error_t hd44780_lcd_set_cursor_visible(const bool visible)
+{
+    hd44780_lcd_error_t err = is_ready_to_accept_instruction();
+    if (HD44780_LCD_ERROR_OK != err)
+    {
+        return err;
+    }
+
+    internal_configuration.display.cursor_visible = visible;
+
+    // Update commands sequencer to handle the initialisation command at next process() call
+    internal_state = HD44780_LCD_STATE_PROCESSING;
+    reset_command_sequencer();
+    command_sequencer.process_command = internal_command_set_cursor_visible;
+
+    return HD44780_LCD_ERROR_OK;
+}
+
+hd44780_lcd_error_t hd44780_lcd_set_blinking_cursor(const bool blinking)
+{
+    hd44780_lcd_error_t err = is_ready_to_accept_instruction();
+    if (HD44780_LCD_ERROR_OK != err)
+    {
+        return err;
+    }
+
+    internal_configuration.display.cursor_blinking = blinking;
+
+    // Update commands sequencer to handle the initialisation command at next process() call
+    internal_state = HD44780_LCD_STATE_PROCESSING;
+    reset_command_sequencer();
+    command_sequencer.process_command = internal_command_set_blinking_cursor;
+
+    return HD44780_LCD_ERROR_OK;
+}
+
+hd44780_lcd_error_t hd44780_lcd_set_backlight(const bool enabled)
+{
+    hd44780_lcd_error_t err = is_ready_to_accept_instruction();
+    if (HD44780_LCD_ERROR_OK != err)
+    {
+        return err;
+    }
+
+    internal_configuration.display.backlight = enabled;
+
+    // Update commands sequencer to handle the initialisation command at next process() call
+    internal_state = HD44780_LCD_STATE_PROCESSING;
+    reset_command_sequencer();
+    command_sequencer.process_command = internal_command_set_backlight;
+
+    return HD44780_LCD_ERROR_OK;
+}
+
+hd44780_lcd_error_t hd44780_lcd_set_entry_mode(const hd44780_lcd_entry_mode_t entry_mode)
+{
+    hd44780_lcd_error_t err = is_ready_to_accept_instruction();
+    if (HD44780_LCD_ERROR_OK != err)
+    {
+        return err;
+    }
+
+    internal_configuration.display.entry_mode = entry_mode;
+
+    // Update commands sequencer to handle the initialisation command at next process() call
+    internal_state = HD44780_LCD_STATE_PROCESSING;
+    reset_command_sequencer();
+    command_sequencer.process_command = internal_command_set_entry_mode;
+
+    return HD44780_LCD_ERROR_OK;
+}
+
+hd44780_lcd_error_t hd44780_lcd_move_cursor_to_coord(const uint8_t line, const uint8_t column)
+{
+    hd44780_lcd_error_t err = is_ready_to_accept_instruction();
+    if (HD44780_LCD_ERROR_OK != err)
+    {
+        return err;
+    }
+
+    command_sequencer.parameters.cursor_position.line = line;
+    command_sequencer.parameters.cursor_position.column = column;
+    // Update commands sequencer to handle the initialisation command at next process() call
+    internal_state = HD44780_LCD_STATE_PROCESSING;
+    reset_command_sequencer();
+    command_sequencer.process_command = internal_command_move_cursor_to_coord;
+
+    return HD44780_LCD_ERROR_OK;
+}
+
+hd44780_lcd_error_t hd44780_lcd_move_relative(const hd44780_lcd_cursor_move_action_t move)
+{
+    hd44780_lcd_error_t err = is_ready_to_accept_instruction();
+    if (HD44780_LCD_ERROR_OK != err)
+    {
+        return err;
+    }
+
+    command_sequencer.parameters.move = move;
+    // Update commands sequencer to handle the initialisation command at next process() call
+    internal_state = HD44780_LCD_STATE_PROCESSING;
+    reset_command_sequencer();
+    command_sequencer.process_command = internal_command_move_cursor_to_coord;
+
+    return HD44780_LCD_ERROR_OK;
+}
+
+
+hd44780_lcd_error_t hd44780_lcd_shift_display(const hd44780_lcd_display_shift_t shift)
+{
+    hd44780_lcd_error_t err = is_ready_to_accept_instruction();
+    if (HD44780_LCD_ERROR_OK != err)
+    {
+        return err;
+    }
+
+    command_sequencer.parameters.shift = shift;
+    // Update commands sequencer to handle the initialisation command at next process() call
+    internal_state = HD44780_LCD_STATE_PROCESSING;
+    reset_command_sequencer();
+    command_sequencer.process_command = internal_command_shift_display;
+
+    return HD44780_LCD_ERROR_OK;
+}
+
+hd44780_lcd_error_t hd44780_lcd_print(const uint8_t length, char const * const buffer)
+{
+    hd44780_lcd_error_t err = is_ready_to_accept_instruction();
+    if (HD44780_LCD_ERROR_OK != err)
+    {
+        return err;
+    }
+
+    command_sequencer.parameters.message.length = length;
+    command_sequencer.parameters.message.index = 0;
+    command_sequencer.parameters.message.buffer = buffer;
+    // Update commands sequencer to handle the initialisation command at next process() call
+    internal_state = HD44780_LCD_STATE_PROCESSING;
+    reset_command_sequencer();
+    command_sequencer.process_command = internal_command_print;
+
+    return HD44780_LCD_ERROR_OK;
+}
+
 
 hd44780_lcd_error_t hd44780_lcd_process(void)
 {
@@ -368,6 +562,26 @@ hd44780_lcd_error_t hd44780_lcd_process(void)
 /* ##################################################################################################
    ################################### Static functions definition ##################################
    ################################################################################################## */
+
+static inline hd44780_lcd_error_t is_ready_to_accept_instruction(void)
+{
+    // Asserts the device is ready to accept instructions
+    if( (HD44780_LCD_STATE_READY != internal_state)
+    &&  (HD44780_LCD_STATE_PROCESSING != internal_state))
+    {
+        return HD44780_LCD_ERROR_DEVICE_NOT_INITIALISED;
+    }
+
+    // Checks if the device is already being serviced by another command
+    if (HD44780_LCD_STATE_PROCESSING == internal_state)
+    {
+        return HD44780_LCD_ERROR_DEVICE_BUSY;
+    }
+
+    return HD44780_LCD_ERROR_OK;
+}
+
+
 
 static void bootup_sequence_handler(uint8_t time_to_wait, bool end_with_wait)
 {
@@ -463,7 +677,7 @@ static inline void set_backlight_flag_in_i2c_buffer(void)
     i2c_buffer |= internal_configuration.display.backlight << PCF8574_BACKLIGHT_BIT;
 }
 
-static bool write_buffer(bool byte_handling)
+static bool write_buffer(void)
 {
     bool write_completed = false;
     i2c_state_t i2c_state = I2C_STATE_NOT_INITIALISED;
@@ -540,6 +754,10 @@ static bool write_buffer(bool byte_handling)
     return write_completed;
 }
 
+/* ##################################################################################################
+   ######################## Data-related internal functions implementation ##########################
+   ################################################################################################## */
+
 static inline void handle_function_set(void)
 {
     data_byte = (uint8_t) HD44780_LCD_CMD_FUNCTION_SET;
@@ -561,6 +779,9 @@ static inline void handle_entry_mode(void)
     data_byte |= internal_configuration.display.entry_mode;
 }
 
+/* ##################################################################################################
+   #################################### Internal handlers ###########################################
+   ################################################################################################## */
 
 static void init_4_bits_selection_handler(void)
 {
@@ -574,13 +795,14 @@ static void init_4_bits_selection_handler(void)
     }
 
     // Handle data write in 4 bits mode only (one exception where we do not need to send the full 8 bits)
-    bool write_completed = write_buffer(false);
+    bool write_completed = write_buffer();
     if (write_completed)
     {
         command_sequencer.sequence.count++;
         command_sequencer.sequence.pulse_sent = false;
         command_sequencer.sequence.first_pass = true;
         command_sequencer.sequence.waiting = false;
+        command_sequencer.sequence.lower_bits = false;
     }
 }
 
@@ -595,12 +817,14 @@ static inline void handle_byte_sending(void)
         i2c_buffer |= (data_byte & 0xF0);
     }
 
-    bool write_completed = write_buffer(true);
+    bool write_completed = write_buffer();
     if (write_completed)
     {
         if (true == command_sequencer.sequence.lower_bits)
         {
             command_sequencer.sequence.count++;
+            command_sequencer.sequence.lower_bits = false;
+            command_sequencer.sequence.first_pass = true;
         }
         else
         {
@@ -608,7 +832,6 @@ static inline void handle_byte_sending(void)
             command_sequencer.sequence.lower_bits = true;
         }
         command_sequencer.sequence.pulse_sent = false;
-        command_sequencer.sequence.first_pass = true;
         command_sequencer.sequence.waiting = false;
     }
 }

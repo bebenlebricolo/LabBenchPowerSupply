@@ -242,7 +242,7 @@ hd44780_lcd_error_t hd44780_lcd_home(void);
  *      HD44780_LCD_DEVICE_BUSY             :   Device is already processing instructions
  *      HD44780_LCD_DEVICE_NOT_INITIALISED  :   Device is not initialised yet, perform an initialisation cycle before using this function
 */
-hd44780_lcd_error_t hd44780_lcd_set_display_on_off(bool enabled);
+hd44780_lcd_error_t hd44780_lcd_set_display_on_off(const bool enabled);
 
 /**
  * @brief Sets the visibility of the cursor.
@@ -253,7 +253,7 @@ hd44780_lcd_error_t hd44780_lcd_set_display_on_off(bool enabled);
  *      HD44780_LCD_DEVICE_BUSY             :   Device is already processing instructions
  *      HD44780_LCD_DEVICE_NOT_INITIALISED  :   Device is not initialised yet, perform an initialisation cycle before using this function
 */
-hd44780_lcd_error_t hd44780_lcd_set_cursor_visible(bool visible);
+hd44780_lcd_error_t hd44780_lcd_set_cursor_visible(const bool visible);
 
 /**
  * @brief Sets the blinking function of the cursor on and off
@@ -264,7 +264,7 @@ hd44780_lcd_error_t hd44780_lcd_set_cursor_visible(bool visible);
  *      HD44780_LCD_DEVICE_BUSY             :   Device is already processing instructions
  *      HD44780_LCD_DEVICE_NOT_INITIALISED  :   Device is not initialised yet, perform an initialisation cycle before using this function
 */
-hd44780_lcd_error_t hd44780_lcd_set_blinking_cursor(bool blinking);
+hd44780_lcd_error_t hd44780_lcd_set_blinking_cursor(const bool blinking);
 
 /**
  * @brief Enables or disables the LCD backlight LED
@@ -275,7 +275,7 @@ hd44780_lcd_error_t hd44780_lcd_set_blinking_cursor(bool blinking);
  *      HD44780_LCD_DEVICE_BUSY             :   Device is already processing instructions
  *      HD44780_LCD_DEVICE_NOT_INITIALISED  :   Device is not initialised yet, perform an initialisation cycle before using this function
 */
-hd44780_lcd_error_t hd44780_lcd_set_backlight(bool enabled);
+hd44780_lcd_error_t hd44780_lcd_set_backlight(const bool enabled);
 
 /**
  * @brief Configures the entry mode of the LCD.
@@ -291,7 +291,7 @@ hd44780_lcd_error_t hd44780_lcd_set_backlight(bool enabled);
  *      HD44780_LCD_DEVICE_BUSY             :   Device is already processing instructions
  *      HD44780_LCD_DEVICE_NOT_INITIALISED  :   Device is not initialised yet, perform an initialisation cycle before using this function
 */
-hd44780_lcd_error_t hd44780_lcd_set_entry_mode(hd44780_lcd_entry_mode_t entry_mode);
+hd44780_lcd_error_t hd44780_lcd_set_entry_mode(const hd44780_lcd_entry_mode_t entry_mode);
 
 /**
  * @brief Moves the cursor to a given location (absolute, origin point located at screen top left corner (0,0))
@@ -306,7 +306,7 @@ hd44780_lcd_error_t hd44780_lcd_set_entry_mode(hd44780_lcd_entry_mode_t entry_mo
  *      HD44780_LCD_DEVICE_BUSY             :   Device is already processing instructions
  *      HD44780_LCD_DEVICE_NOT_INITIALISED  :   Device is not initialised yet, perform an initialisation cycle before using this function
 */
-hd44780_lcd_error_t hd44780_lcd_move_cursor_to_coord(uint8_t line, uint8_t column);
+hd44780_lcd_error_t hd44780_lcd_move_cursor_to_coord(const uint8_t line, const uint8_t column);
 
 /**
  * @brief Moves the cursor relatively to its current location
@@ -318,7 +318,7 @@ hd44780_lcd_error_t hd44780_lcd_move_cursor_to_coord(uint8_t line, uint8_t colum
  *      HD44780_LCD_DEVICE_BUSY             :   Device is already processing instructions
  *      HD44780_LCD_DEVICE_NOT_INITIALISED  :   Device is not initialised yet, perform an initialisation cycle before using this function
 */
-hd44780_lcd_error_t hd44780_lcd_move_relative(hd44780_lcd_cursor_move_action_t move);
+hd44780_lcd_error_t hd44780_lcd_move_relative(const hd44780_lcd_cursor_move_action_t move);
 
 /**
  * @brief Shifts the whole display left or right (1 character wide movement)
@@ -330,7 +330,7 @@ hd44780_lcd_error_t hd44780_lcd_move_relative(hd44780_lcd_cursor_move_action_t m
  *      HD44780_LCD_DEVICE_BUSY             :   Device is already processing instructions
  *      HD44780_LCD_DEVICE_NOT_INITIALISED  :   Device is not initialised yet, perform an initialisation cycle before using this function
 */
-hd44780_lcd_error_t hd44780_lcd_shift_display(hd44780_lcd_display_shift_t shift);
+hd44780_lcd_error_t hd44780_lcd_shift_display(const hd44780_lcd_display_shift_t shift);
 
 /**
  * @brief Inputs all message characters into LCD Screen internal RAM
@@ -344,7 +344,7 @@ hd44780_lcd_error_t hd44780_lcd_shift_display(hd44780_lcd_display_shift_t shift)
  *      HD44780_LCD_DEVICE_BUSY             :   Device is already processing instructions
  *      HD44780_LCD_DEVICE_NOT_INITIALISED  :   Device is not initialised yet, perform an initialisation cycle before using this function
 */
-hd44780_lcd_error_t hd44780_lcd_print(uint8_t length, char* buffer);
+hd44780_lcd_error_t hd44780_lcd_print(const uint8_t length, char const * const buffer);
 
 
 
