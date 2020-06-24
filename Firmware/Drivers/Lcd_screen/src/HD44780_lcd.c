@@ -39,6 +39,7 @@
    ################################### HD44780 commands payload #####################################
    ################################################################################################## */
 
+#define HD44780_LCD_DEFAULT_I2C_RETRIES_COUNT (3U)
 
 #ifdef HD44780_LCD_USE_MICROSECONDS_TIMER
     #define HD44780_LCD_ENABLE_PULSE_DURATION_WAIT (37U)    /**< 37 microseconds, absolute minimum to wait for an instruction to complete */
@@ -67,6 +68,11 @@
 #define HD44780_LCD_DISPLAY_CTRL_CURSOR_MSK     (0x02)
 #define HD44780_LCD_DISPLAY_CTRL_DISPLAY_MSK    (0x04)
 
+#define HD44780_LCD_CURSOR_OR_SHIFT_CURSOR_ONLY (0x00)
+#define HD44780_LCD_CURSOR_OR_SHIFT_SHIFT_ONLY  (0x08)
+#define HD44780_LCD_CURSOR_OR_SHIFT_LEFT        (0x00)
+#define HD44780_LCD_CURSOR_OR_SHIFT_RIGHT       (0x04)
+
 /* Set CGRAM Address command payload mapping */
 #define HD44780_LCD_CGRAM_ADDRESS_START_BIT     (0)
 #define HD44780_LCD_CGRAM_ADDRESS_MSK           (0x3F)
@@ -74,6 +80,9 @@
 /* Set DDRAM Address command payload mapping */
 #define HD44780_LCD_DDRAM_ADDRESS_START_BIT     (0)
 #define HD44780_LCD_DDRAM_ADDRESS_MSK           (0x7F)
+
+#define HD44780_LCD_DDRAM_START_ADDRESS         (0x00)
+#define HD44780_LCD_MAX_CHARACTERS              (80U)
 
 /**
  * @brief Describes the HD44780 valid instruction set, to be used in write mode
@@ -263,21 +272,20 @@ static void init_4_bits_selection_handler();
 static void internal_command_deinit(void) {}
 
 static void internal_command_clear(void);
-static void internal_command_home(void) {}
+static void internal_command_home(void);
 
-static void internal_command_set_display_on_off(void);
+static void internal_command_handle_display_controls(void);
 static void internal_command_handle_function_set(void);
-static void internal_command_set_cursor_visible(void) {}
-static void internal_command_set_blinking_cursor(void) {}
-static void internal_command_set_backlight(void) {}
+static void internal_command_set_backlight(void);
 static void internal_command_set_entry_mode(void);
 
-static void internal_command_move_cursor_to_coord(void) {}
-static void internal_command_move_relative(void) {}
-static void internal_command_shift_display(void) {}
+static void internal_command_move_cursor_to_coord(void);
+static void internal_command_move_relative(void);
+static void internal_command_shift_display(void);
 
 static void internal_command_print(void) {}
 
+static inline void initialise_buffer_and_sequencer(void);
 static inline void set_backlight_flag_in_i2c_buffer(void);
 static inline hd44780_lcd_error_t is_ready_to_accept_instruction(void);
 
@@ -382,6 +390,8 @@ hd44780_lcd_error_t hd44780_lcd_home(void)
     return HD44780_LCD_ERROR_OK;
 }
 
+/* ############################ Display controls related functions #######################################*/
+
 hd44780_lcd_error_t hd44780_lcd_set_display_on_off(const bool enabled)
 {
     hd44780_lcd_error_t err = is_ready_to_accept_instruction();
@@ -395,7 +405,7 @@ hd44780_lcd_error_t hd44780_lcd_set_display_on_off(const bool enabled)
     // Update commands sequencer to handle the initialisation command at next process() call
     internal_state = HD44780_LCD_STATE_PROCESSING;
     reset_command_sequencer();
-    command_sequencer.process_command = internal_command_set_display_on_off;
+    command_sequencer.process_command = internal_command_handle_display_controls;
 
     return HD44780_LCD_ERROR_OK;
 }
@@ -413,7 +423,7 @@ hd44780_lcd_error_t hd44780_lcd_set_cursor_visible(const bool visible)
     // Update commands sequencer to handle the initialisation command at next process() call
     internal_state = HD44780_LCD_STATE_PROCESSING;
     reset_command_sequencer();
-    command_sequencer.process_command = internal_command_set_cursor_visible;
+    command_sequencer.process_command = internal_command_handle_display_controls;
 
     return HD44780_LCD_ERROR_OK;
 }
@@ -431,10 +441,13 @@ hd44780_lcd_error_t hd44780_lcd_set_blinking_cursor(const bool blinking)
     // Update commands sequencer to handle the initialisation command at next process() call
     internal_state = HD44780_LCD_STATE_PROCESSING;
     reset_command_sequencer();
-    command_sequencer.process_command = internal_command_set_blinking_cursor;
+    command_sequencer.process_command = internal_command_handle_display_controls;
 
     return HD44780_LCD_ERROR_OK;
 }
+
+/* ############################ end of Display controls related functions #######################################*/
+
 
 hd44780_lcd_error_t hd44780_lcd_set_backlight(const bool enabled)
 {
@@ -480,8 +493,27 @@ hd44780_lcd_error_t hd44780_lcd_move_cursor_to_coord(const uint8_t line, const u
         return err;
     }
 
+    // Reject wrong parameters before trying to send the command
+    if (internal_configuration.display.two_lines_mode)
+    {
+        if ((line >= 2U)
+        || (column >= (HD44780_LCD_MAX_CHARACTERS / 2U)))
+        {
+            return HD44780_LCD_ERROR_UNSUPPORTED_VALUE;
+        }
+    }
+    else
+    {
+        if((line != 0)
+        || (column >= HD44780_LCD_MAX_CHARACTERS))
+        {
+            return HD44780_LCD_ERROR_UNSUPPORTED_VALUE;
+        }
+    }
+
     command_sequencer.parameters.cursor_position.line = line;
     command_sequencer.parameters.cursor_position.column = column;
+
     // Update commands sequencer to handle the initialisation command at next process() call
     internal_state = HD44780_LCD_STATE_PROCESSING;
     reset_command_sequencer();
@@ -562,6 +594,18 @@ hd44780_lcd_error_t hd44780_lcd_process(void)
 /* ##################################################################################################
    ################################### Static functions definition ##################################
    ################################################################################################## */
+
+static inline void initialise_buffer_and_sequencer(void)
+{
+    i2c_buffer &= 0x0F;
+    set_backlight_flag_in_i2c_buffer();
+    i2c_buffer &= ~ (PCF8574_READ_WRITE_MSK | PCF8574_REGISTER_SELECT_MSK);
+
+    // Send higher bits first (D7 to D4)
+    command_sequencer.sequence.lower_bits = false;
+    command_sequencer.sequence.first_pass = false;
+}
+
 
 static inline hd44780_lcd_error_t is_ready_to_accept_instruction(void)
 {
@@ -838,35 +882,11 @@ static inline void handle_byte_sending(void)
 
 static void internal_command_handle_function_set(void)
 {
-    // Set the right data into PCF8475 buffer
+    // Set the right data into PCF8574 buffer
     if (command_sequencer.sequence.first_pass)
     {
         handle_function_set();
-        i2c_buffer &= 0x0F;
-        set_backlight_flag_in_i2c_buffer();
-        i2c_buffer &= ~ (PCF8574_READ_WRITE_MSK | PCF8574_REGISTER_SELECT_MSK);
-
-        // Send higher bits first (D7 to D4)
-        command_sequencer.sequence.lower_bits = false;
-        command_sequencer.sequence.first_pass = false;
-    }
-
-    handle_byte_sending();
-}
-
-static void internal_command_set_display_on_off(void)
-{
-    // Set the right data into PCF8475 buffer
-    if (command_sequencer.sequence.first_pass)
-    {
-        handle_display_controls();
-        i2c_buffer &= 0x0F;
-        set_backlight_flag_in_i2c_buffer();
-        i2c_buffer &= ~ (PCF8574_READ_WRITE_MSK | PCF8574_REGISTER_SELECT_MSK);
-
-        // Send higher bits first (D7 to D4)
-        command_sequencer.sequence.lower_bits = false;
-        command_sequencer.sequence.first_pass = false;
+        initialise_buffer_and_sequencer();
     }
 
     handle_byte_sending();
@@ -874,17 +894,11 @@ static void internal_command_set_display_on_off(void)
 
 static void internal_command_clear(void)
 {
-    // Set the right data into PCF8475 buffer
+    // Set the right data into PCF8574 buffer
     if (command_sequencer.sequence.first_pass)
     {
         data_byte = HD44780_LCD_CMD_CLEAR_DISPLAY;
-        i2c_buffer &= 0x0F;
-        set_backlight_flag_in_i2c_buffer();
-        i2c_buffer &= ~ (PCF8574_READ_WRITE_MSK | PCF8574_REGISTER_SELECT_MSK);
-
-        // Send higher bits first (D7 to D4)
-        command_sequencer.sequence.lower_bits = false;
-        command_sequencer.sequence.first_pass = false;
+        initialise_buffer_and_sequencer();
     }
 
     handle_byte_sending();
@@ -892,17 +906,11 @@ static void internal_command_clear(void)
 
 static void internal_command_set_entry_mode(void)
 {
-    // Set the right data into PCF8475 buffer
+    // Set the right data into PCF8574 buffer
     if (command_sequencer.sequence.first_pass)
     {
         handle_entry_mode();
-        i2c_buffer &= 0x0F;
-        set_backlight_flag_in_i2c_buffer();
-        i2c_buffer &= ~ (PCF8574_READ_WRITE_MSK | PCF8574_REGISTER_SELECT_MSK);
-
-        // Send higher bits first (D7 to D4)
-        command_sequencer.sequence.lower_bits = false;
-        command_sequencer.sequence.first_pass = false;
+        initialise_buffer_and_sequencer();
     }
 
     handle_byte_sending();
@@ -940,7 +948,8 @@ static void internal_command_init(void)
 
         // Set display off
         case 5:
-            internal_command_set_display_on_off();
+            internal_configuration.display.enabled = false;
+            internal_command_handle_display_controls();
             break;
 
         // Clear display
@@ -959,4 +968,162 @@ static void internal_command_init(void)
             internal_state = HD44780_LCD_STATE_READY;
             break;
     }
+}
+
+
+static void internal_command_home(void)
+{
+    // Set the right data into PCF8574 buffer
+    if (command_sequencer.sequence.first_pass)
+    {
+        data_byte = HD44780_LCD_CMD_RETURN_HOME;
+        initialise_buffer_and_sequencer();
+    }
+
+    handle_byte_sending();
+}
+
+static void internal_command_handle_display_controls(void)
+{
+    // Set the right data into PCF8574 buffer
+    if (command_sequencer.sequence.first_pass)
+    {
+        handle_display_controls();
+        initialise_buffer_and_sequencer();
+    }
+
+    handle_byte_sending();
+}
+
+static void internal_command_set_backlight(void)
+{
+    // This one is a little different because we do not need to send anything to
+    // HD44780 LCD screen : backlight is directly handled by a pin of PCF8574 I/O expander
+
+    // This is not a command for HD44780 screen, so put the enable pin to low
+    i2c_buffer &= ~PCF8574_PULSE_START_MSK;
+
+    set_backlight_flag_in_i2c_buffer();
+    i2c_error_t i2c_err = I2C_ERROR_OK;
+    i2c_state_t i2c_state = I2C_STATE_NOT_INITIALISED;
+
+    i2c_err = i2c_get_state(internal_configuration.indexes.i2c, &i2c_state);
+    if (I2C_ERROR_OK != i2c_err)
+    {
+        // Error handling here
+        // Let the driver know something bad happen (usually, we are in a wrong state)
+        return;
+    }
+
+    if (I2C_STATE_READY == i2c_state)
+    {
+        i2c_err = i2c_write(internal_configuration.indexes.i2c,
+                            internal_configuration.i2c_address,
+                            &i2c_buffer, 1U,
+                            HD44780_LCD_DEFAULT_I2C_RETRIES_COUNT);
+        if (I2C_ERROR_OK != i2c_err)
+        {
+            // Error handling here
+            // Let the driver know something bad happened such as a not responding slave
+        }
+
+        // Our transaction is over !
+        internal_state = HD44780_LCD_STATE_READY;
+    }
+}
+
+
+static void internal_command_move_cursor_to_coord(void)
+{
+    // We need to write the new DDRAM address to the internal address counter of
+    // LCD screen in the aim to move the cursor position
+
+    // Set the right data into PCF8574 buffer
+    if (command_sequencer.sequence.first_pass)
+    {
+        data_byte = HD44780_LCD_CMD_SET_DD_RAM_ADDR;
+        if (internal_configuration.display.two_lines_mode)
+        {
+            data_byte |= command_sequencer.parameters.cursor_position.line * (HD44780_LCD_MAX_CHARACTERS / 2);
+        }
+        data_byte |= (data_byte & HD44780_LCD_DDRAM_ADDRESS_MSK) + command_sequencer.parameters.cursor_position.column;
+
+        initialise_buffer_and_sequencer();
+    }
+
+    handle_byte_sending();
+}
+
+static void internal_command_move_relative(void)
+{
+    if (command_sequencer.sequence.first_pass)
+    {
+        data_byte = HD44780_LCD_CMD_CURSOR_SHIFT;
+        switch(command_sequencer.parameters.move)
+        {
+            case HD44780_LCD_CURSOR_MOVE_RIGHT:
+                // Generic hardware's behavior when cursor reaches the ends of a line : cursor is 'teleported' to the other end and data is written over the old one
+                // If we want to prevent the cursor to teleport (and prevent the cursor to go out of the screen), we will need to know exactly the current position
+                // of the cursor in the aim to discard further entries if cursor is at the end of a line, or prevent cursor to go back if at the beginning of the line
+                // Note : this will not be implemented in this driver, but this is the place to do it if you want!
+                data_byte |= HD44780_LCD_CURSOR_OR_SHIFT_CURSOR_ONLY
+                          |  HD44780_LCD_CURSOR_OR_SHIFT_RIGHT;
+                break;
+
+            case HD44780_LCD_CURSOR_MOVE_LEFT:
+                data_byte |= HD44780_LCD_CURSOR_OR_SHIFT_CURSOR_ONLY
+                          |  HD44780_LCD_CURSOR_OR_SHIFT_LEFT;
+                break;
+
+            case HD44780_LCD_CURSOR_MOVE_UP:
+            case HD44780_LCD_CURSOR_MOVE_DOWN:
+                // Not implemented right now :
+                // Requires to know exactly the current position of the cursor
+                // And to process the new position given the current screen configuration (one, two lines)
+                // For instance : actual address is 0x13 (first line, column N°19). Move UP instruction :
+                // New address should be (0x13 + MAX_CHARACTERS_PER_LINE(=40)) % MAX_CHARACTERS_TOTAL => new position = 0x3B
+                // NOTE : for both a 2 lines display and 1 line display :
+                //  1 line : cursor will remain at the same position : input can be discarded, state is set to "READY" and function returns
+                //  2 lines : UP and DOWN exhibit the same behavior, providing the cursor does 'teleport' when reaching the boundaries of the screen.
+                //  Otherwise, cursor shall be stuck to the screen boundaries
+                internal_state = HD44780_LCD_STATE_READY;
+                return;
+
+            default:
+                internal_state = HD44780_LCD_STATE_READY;
+                return;
+        }
+
+        initialise_buffer_and_sequencer();
+    }
+
+    handle_byte_sending();
+}
+
+static void internal_command_shift_display(void)
+{
+    if (command_sequencer.sequence.first_pass)
+    {
+        data_byte = HD44780_LCD_CMD_CURSOR_SHIFT;
+        switch(command_sequencer.parameters.shift)
+        {
+            case HD44780_LCD_DISPLAY_SHIFT_RIGHT:
+                data_byte |= HD44780_LCD_CURSOR_OR_SHIFT_SHIFT_ONLY
+                          |  HD44780_LCD_CURSOR_OR_SHIFT_RIGHT;
+                break;
+
+            case HD44780_LCD_DISPLAY_SHIFT_LEFT:
+                data_byte |= HD44780_LCD_CURSOR_OR_SHIFT_CURSOR_ONLY
+                          |  HD44780_LCD_CURSOR_OR_SHIFT_LEFT;
+                break;
+
+            default:
+                internal_state = HD44780_LCD_STATE_READY;
+                return;
+        }
+
+        initialise_buffer_and_sequencer();
+    }
+
+    handle_byte_sending();
 }
