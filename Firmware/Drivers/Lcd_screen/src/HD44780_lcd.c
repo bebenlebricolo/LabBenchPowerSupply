@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "HD44780_lcd.h"
+#include "HD44780_lcd_private.h"
 #include "timebase.h"
 #include "i2c.h"
 
@@ -99,123 +100,10 @@ typedef enum
     HD44780_LCD_CMD_SET_DD_RAM_ADDR    = 0x80,  /**< Sets the current address pointer of DDRAM (from 0 to 127)                                                      */
 } hd44780_lcd_command_t;
 
-/**
- * @brief Packs configuration data internally, all data is squeezed so that the overall size of this structure
- * Shall be only 2 bytes (instead of the 5 bytes of the normal configuration structure used in the API , at the cost of explicity)
-*/
-typedef struct
-{
-    uint8_t i2c_address;    /**< I/O expander address       */
-
-    struct {
-        uint8_t timebase : 4;    /**< Used timebase module id    */
-        uint8_t i2c : 4;         /**< I2C module index           */
-    } indexes;
-
-    // Bitfield storing persistent data about display state
-    // All fields might be encoded within one CPU word (8 bits)
-    struct
-    {
-        bool backlight : 1;                         /**< true : backlight on,       false : backlight off                                */
-        bool enabled : 1;                           /**< true : display on,         false : display off                                  */
-        bool cursor_visible : 1;                    /**< true : cursor visible,     false : cursor not displayed                         */
-        bool cursor_blinking : 1;                   /**< true : blinking cursor,    false : persistent cursor                            */
-        bool two_lines_mode : 1;                    /**< true : two lines mode,     false : one line mode (5x8 and 5x10 fonts supported) */
-        bool small_font : 1;                        /**< true : 5x8 font used,      false : 5x10 dots font, single line only             */
-        hd44780_lcd_entry_mode_t entry_mode : 2;    /**< Selects the kind of entry mode which is requested by the user upon typing                          */
-    } display;
-} internal_configuration_t;
-
-/* ##################################################################################################
-   ################################### Command sequencer description ################################
-   ################################################################################################## */
-
-/**
- * @brief Encodes available commands (shall respect the exposed API)
-*/
-typedef enum
-{
-    /* General purpose commands */
-    INTERNAL_CMD_IDLE = 0,              /**< Idling command, nothing to do                      */
-    INTERNAL_CMD_INIT,                  /**< Initialisation command                             */
-    INTERNAL_CMD_DEINIT,                /**< Deinitialisation command                           */
-    INTERNAL_CMD_CLEAR,                 /**< Clear display command                              */
-
-    /* Unitary setters  */
-    INTERNAL_CMD_SET_ENTRY_MODE,        /**< Set entry mode command                             */
-    INTERNAL_CMD_SET_DISPLAY_ON_OFF,    /**< Set display on or off command                      */
-    INTERNAL_CMD_SET_CURSOR_VISIBLE,    /**< Set cursor visibility command                      */
-    INTERNAL_CMD_SET_BLINKING_CURSOR,   /**< Set blinking cursor command                        */
-    INTERNAL_CMD_SET_BACKLIGHT,         /**< Set backlight command                              */
-
-    /* Move commands */
-    INTERNAL_CMD_HOME,                  /**< Go home command                                    */
-    INTERNAL_CMD_MOVE_CURSOR_ABS,       /**< Move cursor to coordinates command                 */
-    INTERNAL_CMD_MOVE_CURSOR_REL,       /**< Move cursor relatively command                     */
-    INTERNAL_CMD_SHIFT_DISPLAY,         /**< Shift display command                              */
-
-    /* Text related commands */
-    INTERNAL_CMD_PRINT,                 /**< Print text command                                 */
-} process_commands_t;
-
-/**
- * @brief Packs all available parameters for API functions, in an union type to squeeze as much space as possible
-*/
-typedef union
-{
-    /* Single byte-wide data */
-    bool enabled;                           /**< Generic boolean which depicts whether a functionality is enabled (or ON) or disabled (or OFF)  */
-    hd44780_lcd_entry_mode_t entry_mode;    /**< Gives the entry mode                                                                           */
-    hd44780_lcd_cursor_move_action_t move;  /**< Gives the cursor requested movement                                                            */
-    hd44780_lcd_display_shift_t shift;      /**< Gives the display shifting direction                                                           */
-
-    /* Single byte-wide structure */
-    struct
-    {
-        uint8_t line : 2;                   /**< Gives the line number of the cursor position (from 0 to 3, could adapt this for 20x04 displays)*/
-        uint8_t column : 6;                 /**< Gives the column number of the cursor position (from 0 to 63)                                  */
-    } cursor_position;
-
-    /* 3 bytes-wide structure */
-    struct
-    {
-        uint8_t index;                      /**< Sets the index of current message character                                                    */
-        uint8_t length;                     /**< Sets the overall length of the message to be printed                                           */
-        char* buffer;
-    } message;
-} process_commands_parameters_t;
-
-/**
- * @brief A command handler which is used to keep track of the current command state and where it should go at next process() call
-*/
-typedef struct
-{
-    void (*process_command)(void);              /**< Pointer to the private function to be called                                               */
-    process_commands_parameters_t parameters;   /**< Stores all necessary parameters to perform requested commands                              */
-    uint16_t start_time;
-    uint16_t duration;
-    struct
-    {
-        uint8_t count : 4;                      /**< Gives the current sequence number to allow each command to know where it should resume     */
-        bool pulse_sent : 1;                    /**< Persistent flag which tells if a pulse (HD44780 'E' pin was sent or not                    */
-        bool waiting : 1;                       /**< States whether the command sequence is waiting for LCD to settle or not                    */
-        bool first_pass : 1;                    /**< Tells if current sequence has already been entered once and is being reentered             */
-        bool lower_bits : 1;                    /**< When sending a byte of information, selects which 4 bits to send from 8 bits data          */
-    } sequence;
-    bool nested_sequence_mode;                  /**< Tells whether a command is nested within a high-level sequence or not (such as in initialisation sequence for instance) */
-} process_commands_sequencer_t;
-
-
 /* Only there to prevent pointing to NULL memory within process_commands_sequencer */
 static inline void process_command_idling(void)
 {
     return;
-}
-
-static void process_commands_sequencer_reset(process_commands_sequencer_t * sequencer)
-{
-    memset(sequencer, 0, sizeof(process_commands_sequencer_t));
-    sequencer->process_command = process_command_idling;
 }
 
 
@@ -243,7 +131,6 @@ static process_commands_sequencer_t command_sequencer =
 static void reset_command_sequencer(void)
 {
     command_sequencer.start_time = 0;
-    command_sequencer.duration = 0;
     memset(&command_sequencer.parameters, 0, sizeof(process_commands_parameters_t));
     command_sequencer.process_command = process_command_idling;
     command_sequencer.sequence.count = 0;
@@ -264,33 +151,8 @@ static uint8_t data_byte = 0;
    ################################### Static functions declaration #################################
    ################################################################################################## */
 
-static void internal_command_init(void);
-
-static void init_bootup_ping_handler();
-static void init_4_bits_selection_handler();
-
-static void internal_command_deinit(void) {}
-
-static void internal_command_clear(void);
-static void internal_command_home(void);
-
-static void internal_command_handle_display_controls(void);
-static void internal_command_handle_function_set(void);
-static void internal_command_set_backlight(void);
-static void internal_command_set_entry_mode(void);
-
-static void internal_command_move_cursor_to_coord(void);
-static void internal_command_move_relative(void);
-static void internal_command_shift_display(void);
-
-static void internal_command_print(void) {}
-
-static inline void initialise_buffer_and_sequencer(void);
-static inline void set_backlight_flag_in_i2c_buffer(void);
-static inline hd44780_lcd_error_t is_ready_to_accept_instruction(void);
-
-
-
+static void bootup_sequence_handler(uint8_t time_to_wait, bool end_with_wait);
+static bool write_buffer(void);
 
 /* ##################################################################################################
    ###################################### API functions #############################################
@@ -557,7 +419,7 @@ hd44780_lcd_error_t hd44780_lcd_shift_display(const hd44780_lcd_display_shift_t 
     return HD44780_LCD_ERROR_OK;
 }
 
-hd44780_lcd_error_t hd44780_lcd_print(const uint8_t length, char const * const buffer)
+hd44780_lcd_error_t hd44780_lcd_print(const uint8_t length, char * const buffer)
 {
     hd44780_lcd_error_t err = is_ready_to_accept_instruction();
     if (HD44780_LCD_ERROR_OK != err)
@@ -592,14 +454,23 @@ hd44780_lcd_error_t hd44780_lcd_process(void)
 }
 
 /* ##################################################################################################
-   ################################### Static functions definition ##################################
+   ################################### Internal (private) functions definition ##################################
    ################################################################################################## */
 
-static inline void initialise_buffer_and_sequencer(void)
+void initialise_buffer_and_sequencer(const transmission_mode_t mode)
 {
     i2c_buffer &= 0x0F;
     set_backlight_flag_in_i2c_buffer();
-    i2c_buffer &= ~ (PCF8574_READ_WRITE_MSK | PCF8574_REGISTER_SELECT_MSK);
+    i2c_buffer &= ~(PCF8574_READ_WRITE_MSK);
+
+    if (TRANSMISSION_MODE_INSTRUCTION == mode)
+    {
+        i2c_buffer &= ~(PCF8574_REGISTER_SELECT_MSK);
+    }
+    else
+    {
+        i2c_buffer |= PCF8574_REGISTER_SELECT_MSK;
+    }
 
     // Send higher bits first (D7 to D4)
     command_sequencer.sequence.lower_bits = false;
@@ -607,7 +478,7 @@ static inline void initialise_buffer_and_sequencer(void)
 }
 
 
-static inline hd44780_lcd_error_t is_ready_to_accept_instruction(void)
+hd44780_lcd_error_t is_ready_to_accept_instruction(void)
 {
     // Asserts the device is ready to accept instructions
     if( (HD44780_LCD_STATE_READY != internal_state)
@@ -654,15 +525,16 @@ static void bootup_sequence_handler(uint8_t time_to_wait, bool end_with_wait)
     // Check if we are waiting waiting for device to bootup ...
     if (true == command_sequencer.sequence.waiting)
     {
+        uint16_t duration = 0;
         if (I2C_STATE_READY == i2c_state)
         {
             bool time_has_passed = false;
             tim_err = timebase_get_duration_now(internal_configuration.indexes.timebase,
                                                 &command_sequencer.start_time,
-                                                &command_sequencer.duration);
+                                                &duration);
             if(true == command_sequencer.sequence.pulse_sent)
             {
-                if(command_sequencer.duration >= HD44780_LCD_ENABLE_PULSE_DURATION_WAIT)
+                if (duration >= HD44780_LCD_ENABLE_PULSE_DURATION_WAIT)
                 {
                     time_has_passed = true;
                     i2c_buffer &= ~PCF8574_PULSE_START_MSK;
@@ -672,7 +544,7 @@ static void bootup_sequence_handler(uint8_t time_to_wait, bool end_with_wait)
             }
             else
             {
-                if(command_sequencer.duration >= time_to_wait)
+                if (duration >= time_to_wait)
                 {
                     time_has_passed = true;
                     i2c_buffer |= PCF8574_PULSE_START_MSK;
@@ -715,7 +587,7 @@ static void bootup_sequence_handler(uint8_t time_to_wait, bool end_with_wait)
 
 }
 
-static inline void set_backlight_flag_in_i2c_buffer(void)
+void set_backlight_flag_in_i2c_buffer(void)
 {
     i2c_buffer &= ~PCF8574_BACKLIGHT_MSK;
     i2c_buffer |= internal_configuration.display.backlight << PCF8574_BACKLIGHT_BIT;
@@ -724,6 +596,7 @@ static inline void set_backlight_flag_in_i2c_buffer(void)
 static bool write_buffer(void)
 {
     bool write_completed = false;
+    uint16_t duration = 0;
     i2c_state_t i2c_state = I2C_STATE_NOT_INITIALISED;
     i2c_error_t i2c_err = I2C_ERROR_OK;
     timebase_error_t tim_err = TIMEBASE_ERROR_OK;
@@ -738,14 +611,14 @@ static bool write_buffer(void)
     {
         tim_err = timebase_get_duration_now(internal_configuration.indexes.timebase,
                                             &command_sequencer.start_time,
-                                            &command_sequencer.duration);
+                                            &duration);
         if (TIMEBASE_ERROR_OK != tim_err)
         {
             // Error handling here
         }
 
         // Time to reset the "enable" pulse
-        if (command_sequencer.duration >= HD44780_LCD_ENABLE_PULSE_DURATION_WAIT)
+        if (duration >= HD44780_LCD_ENABLE_PULSE_DURATION_WAIT)
         {
             i2c_buffer &= ~PCF8574_PULSE_START_MSK;
             i2c_err = i2c_write(internal_configuration.indexes.i2c, internal_configuration.i2c_address,&i2c_buffer, 1U, 3U);
@@ -802,14 +675,14 @@ static bool write_buffer(void)
    ######################## Data-related internal functions implementation ##########################
    ################################################################################################## */
 
-static inline void handle_function_set(void)
+void handle_function_set(void)
 {
     data_byte = (uint8_t) HD44780_LCD_CMD_FUNCTION_SET;
     data_byte |= (true == internal_configuration.display.two_lines_mode) ? HD44780_LCD_LINES_2_LINES : HD44780_LCD_LINES_1_LINE;
     data_byte |= (true == internal_configuration.display.small_font) ? HD44780_LCD_FONT_5x8 : HD44780_LCD_FONT_5x10;
 }
 
-static inline void handle_display_controls(void)
+void handle_display_controls(void)
 {
     data_byte = (uint8_t) HD44780_LCD_CMD_DISPLAY_CONTROL;
     data_byte |= internal_configuration.display.enabled ? HD44780_LCD_DISPLAY_CTRL_DISPLAY_MSK : 0x00 ;
@@ -817,17 +690,17 @@ static inline void handle_display_controls(void)
     data_byte |= internal_configuration.display.cursor_blinking ? HD44780_LCD_DISPLAY_CTRL_BLINKING_MSK : 0x00 ;
 }
 
-static inline void handle_entry_mode(void)
+void handle_entry_mode(void)
 {
     data_byte = (uint8_t) HD44780_LCD_CMD_ENTRY_MODE_SET;
     data_byte |= internal_configuration.display.entry_mode;
 }
 
 /* ##################################################################################################
-   #################################### Internal handlers ###########################################
+   #################################### Internal (private) handlers ###########################################
    ################################################################################################## */
 
-static void init_4_bits_selection_handler(void)
+void init_4_bits_selection_handler(void)
 {
     if (command_sequencer.sequence.first_pass)
     {
@@ -850,8 +723,9 @@ static void init_4_bits_selection_handler(void)
     }
 }
 
-static inline void handle_byte_sending(void)
+bool handle_byte_sending(void)
 {
+    bool byte_sent = false;
     if( true == command_sequencer.sequence.lower_bits)
     {
         i2c_buffer |= (data_byte & 0x0F) << 4U;
@@ -874,50 +748,52 @@ static inline void handle_byte_sending(void)
         {
             // Higher bits will be sent at next call
             command_sequencer.sequence.lower_bits = true;
+            byte_sent = true;
         }
         command_sequencer.sequence.pulse_sent = false;
         command_sequencer.sequence.waiting = false;
     }
+    return byte_sent;
 }
 
-static void internal_command_handle_function_set(void)
+void internal_command_handle_function_set(void)
 {
     // Set the right data into PCF8574 buffer
     if (command_sequencer.sequence.first_pass)
     {
         handle_function_set();
-        initialise_buffer_and_sequencer();
+        initialise_buffer_and_sequencer(TRANSMISSION_MODE_INSTRUCTION);
     }
 
-    handle_byte_sending();
+    (void) handle_byte_sending();
 }
 
-static void internal_command_clear(void)
+void internal_command_clear(void)
 {
     // Set the right data into PCF8574 buffer
     if (command_sequencer.sequence.first_pass)
     {
         data_byte = HD44780_LCD_CMD_CLEAR_DISPLAY;
-        initialise_buffer_and_sequencer();
+        initialise_buffer_and_sequencer(TRANSMISSION_MODE_INSTRUCTION);
     }
 
-    handle_byte_sending();
+    (void) handle_byte_sending();
 }
 
-static void internal_command_set_entry_mode(void)
+void internal_command_set_entry_mode(void)
 {
     // Set the right data into PCF8574 buffer
     if (command_sequencer.sequence.first_pass)
     {
         handle_entry_mode();
-        initialise_buffer_and_sequencer();
+        initialise_buffer_and_sequencer(TRANSMISSION_MODE_INSTRUCTION);
     }
 
-    handle_byte_sending();
+    (void) handle_byte_sending();
 }
 
 
-static void internal_command_init(void)
+void internal_command_init(void)
 {
     switch(command_sequencer.sequence.count)
     {
@@ -971,31 +847,31 @@ static void internal_command_init(void)
 }
 
 
-static void internal_command_home(void)
+void internal_command_home(void)
 {
     // Set the right data into PCF8574 buffer
     if (command_sequencer.sequence.first_pass)
     {
         data_byte = HD44780_LCD_CMD_RETURN_HOME;
-        initialise_buffer_and_sequencer();
+        initialise_buffer_and_sequencer(TRANSMISSION_MODE_INSTRUCTION);
     }
 
-    handle_byte_sending();
+    (void) handle_byte_sending();
 }
 
-static void internal_command_handle_display_controls(void)
+void internal_command_handle_display_controls(void)
 {
     // Set the right data into PCF8574 buffer
     if (command_sequencer.sequence.first_pass)
     {
         handle_display_controls();
-        initialise_buffer_and_sequencer();
+        initialise_buffer_and_sequencer(TRANSMISSION_MODE_INSTRUCTION);
     }
 
-    handle_byte_sending();
+    (void) handle_byte_sending();
 }
 
-static void internal_command_set_backlight(void)
+void internal_command_set_backlight(void)
 {
     // This one is a little different because we do not need to send anything to
     // HD44780 LCD screen : backlight is directly handled by a pin of PCF8574 I/O expander
@@ -1033,7 +909,7 @@ static void internal_command_set_backlight(void)
 }
 
 
-static void internal_command_move_cursor_to_coord(void)
+void internal_command_move_cursor_to_coord(void)
 {
     // We need to write the new DDRAM address to the internal address counter of
     // LCD screen in the aim to move the cursor position
@@ -1048,13 +924,13 @@ static void internal_command_move_cursor_to_coord(void)
         }
         data_byte |= (data_byte & HD44780_LCD_DDRAM_ADDRESS_MSK) + command_sequencer.parameters.cursor_position.column;
 
-        initialise_buffer_and_sequencer();
+        initialise_buffer_and_sequencer(TRANSMISSION_MODE_INSTRUCTION);
     }
 
-    handle_byte_sending();
+    (void) handle_byte_sending();
 }
 
-static void internal_command_move_relative(void)
+void internal_command_move_relative(void)
 {
     if (command_sequencer.sequence.first_pass)
     {
@@ -1094,13 +970,13 @@ static void internal_command_move_relative(void)
                 return;
         }
 
-        initialise_buffer_and_sequencer();
+        initialise_buffer_and_sequencer(TRANSMISSION_MODE_INSTRUCTION);
     }
 
-    handle_byte_sending();
+    (void) handle_byte_sending();
 }
 
-static void internal_command_shift_display(void)
+void internal_command_shift_display(void)
 {
     if (command_sequencer.sequence.first_pass)
     {
@@ -1122,8 +998,30 @@ static void internal_command_shift_display(void)
                 return;
         }
 
-        initialise_buffer_and_sequencer();
+        initialise_buffer_and_sequencer(TRANSMISSION_MODE_INSTRUCTION);
     }
 
-    handle_byte_sending();
+    (void) handle_byte_sending();
+}
+
+
+void internal_command_print(void)
+{
+    // If previous command was related to read/write into CGRAM or setting the CGRAM address,
+    // We'll need to reset the DDRAM address first to switch the device in DDRAM mode for next data write
+    // Note : above functionality is not implemented yet, assuming device is writing to DDRAM ...
+    if (command_sequencer.sequence.first_pass)
+    {
+        data_byte = *((uint8_t *)(command_sequencer.parameters.message.buffer + command_sequencer.parameters.message.index));
+        initialise_buffer_and_sequencer(TRANSMISSION_MODE_DATA);
+        bool byte_sent = handle_byte_sending();
+        if (byte_sent)
+        {
+            command_sequencer.parameters.message.index++;
+            if (command_sequencer.parameters.message.index >= command_sequencer.parameters.message.length)
+            {
+                internal_state = HD44780_LCD_STATE_READY;
+            }
+        }
+    }
 }

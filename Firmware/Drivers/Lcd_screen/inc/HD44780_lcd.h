@@ -344,7 +344,7 @@ hd44780_lcd_error_t hd44780_lcd_shift_display(const hd44780_lcd_display_shift_t 
  *      HD44780_LCD_DEVICE_BUSY             :   Device is already processing instructions
  *      HD44780_LCD_DEVICE_NOT_INITIALISED  :   Device is not initialised yet, perform an initialisation cycle before using this function
 */
-hd44780_lcd_error_t hd44780_lcd_print(const uint8_t length, char const * const buffer);
+hd44780_lcd_error_t hd44780_lcd_print(const uint8_t length, char * const buffer);
 
 
 
