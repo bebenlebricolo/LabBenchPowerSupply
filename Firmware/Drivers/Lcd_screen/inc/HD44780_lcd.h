@@ -160,6 +160,11 @@ typedef enum
    ################################################################################################## */
 
 /**
+ * @brief returns the last encountered error
+*/
+hd44780_lcd_error_t hd44780_lcd_get_last_error(void);
+
+/**
  * @brief Initialises LCD screen using the given configuration data
  * @param[in] config    :   device configuration (readonly)
  * @return hd44780_lcd_error_t

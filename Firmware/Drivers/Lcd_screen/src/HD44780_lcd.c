@@ -111,9 +111,16 @@ static inline void process_command_idling(void)
    ################################### Internal data management #####################################
    ################################################################################################## */
 
+// i2c buffer represents the after being mapped to PCF8574 pins
+static uint8_t i2c_buffer = 0;
+
+// Data byte represents the actual data we want to send to the LCD screen
+static uint8_t data_byte = 0;
+
 // Internal state machine persistent memory
 static hd44780_lcd_state_t          internal_state = HD44780_LCD_STATE_NOT_INITIALISED;
 static internal_configuration_t     internal_configuration = {0};
+static hd44780_lcd_error_t last_error = HD44780_LCD_ERROR_UNKNOWN;
 static process_commands_sequencer_t command_sequencer =
 {
     .process_command = process_command_idling,
@@ -128,6 +135,12 @@ static process_commands_sequencer_t command_sequencer =
     }
 };
 
+
+
+/* ##################################################################################################
+   ################################### Static functions declaration #################################
+   ################################################################################################## */
+
 static void reset_command_sequencer(void)
 {
     command_sequencer.start_time = 0;
@@ -140,19 +153,6 @@ static void reset_command_sequencer(void)
     command_sequencer.sequence.waiting = false;
     command_sequencer.nested_sequence_mode = false;
 }
-
-// i2c buffer represents the after being mapped to PCF8574 pins
-static uint8_t i2c_buffer = 0;
-
-// Data byte represents the actual data we want to send to the LCD screen
-static uint8_t data_byte = 0;
-
-/* ##################################################################################################
-   ################################### Static functions declaration #################################
-   ################################################################################################## */
-
-static void bootup_sequence_handler(uint8_t time_to_wait, bool end_with_wait);
-static bool write_buffer(void);
 
 /* ##################################################################################################
    ###################################### API functions #############################################
@@ -184,6 +184,10 @@ hd44780_lcd_state_t hd44780_lcd_get_state(void)
     return internal_state;
 }
 
+hd44780_lcd_error_t hd44780_lcd_get_last_error(void)
+{
+    return last_error;
+}
 
 hd44780_lcd_error_t hd44780_lcd_init(hd44780_lcd_config_t const * const config)
 {
@@ -498,7 +502,7 @@ hd44780_lcd_error_t is_ready_to_accept_instruction(void)
 
 
 
-static void bootup_sequence_handler(uint8_t time_to_wait, bool end_with_wait)
+void bootup_sequence_handler(uint8_t time_to_wait, bool end_with_wait)
 {
     timebase_error_t tim_err = TIMEBASE_ERROR_OK;
     i2c_error_t i2c_err = I2C_ERROR_OK;
@@ -593,7 +597,7 @@ void set_backlight_flag_in_i2c_buffer(void)
     i2c_buffer |= internal_configuration.display.backlight << PCF8574_BACKLIGHT_BIT;
 }
 
-static bool write_buffer(void)
+bool write_buffer(void)
 {
     bool write_completed = false;
     uint16_t duration = 0;

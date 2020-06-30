@@ -131,28 +131,76 @@ void internal_command_clear(void);
  * @brief Sets the cursor to its original position
 */
 void internal_command_home(void);
+
+/**
+ * @brief Handles display controls such as display enabled/disabled, cursor visibility and cursor blink
+ */
 void internal_command_handle_display_controls(void);
+
+/**
+ * @brief Handles displaying mode such as single line / 2 lines mode and font selection
+*/
 void internal_command_handle_function_set(void);
+
+/**
+ * @brief Handles LCD screen backlight using the PCF8574 GPIO directly
+*/
 void internal_command_set_backlight(void);
+
+/**
+ * @brief Handles how character are input in LCD screen and how display reacts to it (cursor moves to right, left, display shifts right, left)
+*/
 void internal_command_set_entry_mode(void);
+
+/**
+ * @brief Moves cursor to an absolute position on the screen
+*/
 void internal_command_move_cursor_to_coord(void);
+
+/**
+ * @brief moves the cursor relatively to its current position (right or left, up and down are not implemented yet)
+*/
 void internal_command_move_relative(void);
+
+/**
+ * @brief shifts the entire display right or left
+*/
 void internal_command_shift_display(void);
+
+/**
+ * @brief Handles character printing on device
+*/
 void internal_command_print(void);
 
-
+/**
+ * @brief Prepares and initialises internal buffers and sequencer before being able to send data
+*/
 void initialise_buffer_and_sequencer(const transmission_mode_t mode);
+
+/**
+ * @brief Internal manipulator used to set the backlight flag within internal I2C buffer
+*/
 void set_backlight_flag_in_i2c_buffer(void);
+
+/**
+ * @brief Tells whether the device is ready to accept instructions or not
+*/
 hd44780_lcd_error_t is_ready_to_accept_instruction(void);
 
 /* Data handlers */
 void handle_function_set(void);
 void handle_display_controls(void);
 void handle_entry_mode(void);
-
 bool handle_byte_sending(void);
 
+
+void bootup_sequence_handler(uint8_t time_to_wait, bool end_with_wait);
+bool write_buffer(void);
+
+
 #ifdef UNIT_TESTING
+uint8_t get_i2c_buffer(void);
+uint8_t get_data_byte(void);
 #endif
 
 #ifdef __cplusplus

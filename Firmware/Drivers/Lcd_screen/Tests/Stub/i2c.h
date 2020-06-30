@@ -47,8 +47,19 @@ i2c_error_t i2c_get_state(const uint8_t id, i2c_state_t * const state);
 i2c_error_t i2c_write(const uint8_t id, const uint8_t target_address , uint8_t * const buffer, const uint8_t length, const uint8_t retries);
 
 /* Unit testing specificities */
-void i2c_stub_force_error_on_next_calls(void);
+void i2c_stub_force_error_on_next_calls(const i2c_error_t p_next_error);
 void i2c_stub_clear(void);
+
+
+/* Allows tests to access data being sent to I2C */
+typedef struct
+{
+    uint8_t* buffer;
+    uint8_t length;
+} i2c_stub_buffer_t;
+
+extern i2c_stub_buffer_t i2c_stub_buffer;
+void reset_i2c_stub_buffer(void);
 
 #ifdef __cplusplus
 }
