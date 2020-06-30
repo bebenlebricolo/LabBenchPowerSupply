@@ -193,12 +193,12 @@ void handle_display_controls(void);
 void handle_entry_mode(void);
 bool handle_byte_sending(void);
 
-
 void bootup_sequence_handler(uint8_t time_to_wait, bool end_with_wait);
 bool write_buffer(void);
-
+void process_command_idling(void);
 
 #ifdef UNIT_TESTING
+void get_process_command_sequencer(process_commands_sequencer_t ** const command_sequencer);
 uint8_t get_i2c_buffer(void);
 uint8_t get_data_byte(void);
 #endif

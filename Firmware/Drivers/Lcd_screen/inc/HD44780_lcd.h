@@ -160,6 +160,12 @@ typedef enum
    ################################################################################################## */
 
 /**
+ * @brief Resets the driver to its original state
+ * @return HD44780_LCD_ERROR_OK
+*/
+hd44780_lcd_error_t hd44780_lcd_driver_reset(void);
+
+/**
  * @brief returns the last encountered error
 */
 hd44780_lcd_error_t hd44780_lcd_get_last_error(void);

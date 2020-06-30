@@ -101,11 +101,10 @@ typedef enum
 } hd44780_lcd_command_t;
 
 /* Only there to prevent pointing to NULL memory within process_commands_sequencer */
-static inline void process_command_idling(void)
+void process_command_idling(void)
 {
     return;
 }
-
 
 /* ##################################################################################################
    ################################### Internal data management #####################################
@@ -158,6 +157,11 @@ static void reset_command_sequencer(void)
    ###################################### API functions #############################################
    ################################################################################################## */
 
+void get_process_command_sequencer(process_commands_sequencer_t ** const p_command_sequencer)
+{
+    *p_command_sequencer = &command_sequencer;
+}
+
 hd44780_lcd_error_t hd44780_lcd_get_default_config(hd44780_lcd_config_t * const config)
 {
     if (NULL == config)
@@ -183,6 +187,28 @@ hd44780_lcd_state_t hd44780_lcd_get_state(void)
 {
     return internal_state;
 }
+
+uint8_t get_data_byte(void)
+{
+    return data_byte;
+}
+
+uint8_t get_i2c_buffer(void)
+{
+    return i2c_buffer;
+}
+
+hd44780_lcd_error_t hd44780_lcd_driver_reset(void)
+{
+    i2c_buffer = 0;
+    data_byte = 0;
+    last_error = HD44780_LCD_ERROR_OK;
+    reset_command_sequencer();
+    memset(&internal_configuration, 0, sizeof(internal_configuration_t));
+    internal_state = HD44780_LCD_STATE_NOT_INITIALISED;
+    return HD44780_LCD_ERROR_OK;
+}
+
 
 hd44780_lcd_error_t hd44780_lcd_get_last_error(void)
 {
@@ -434,6 +460,7 @@ hd44780_lcd_error_t hd44780_lcd_print(const uint8_t length, char * const buffer)
     command_sequencer.parameters.message.length = length;
     command_sequencer.parameters.message.index = 0;
     command_sequencer.parameters.message.buffer = buffer;
+
     // Update commands sequencer to handle the initialisation command at next process() call
     internal_state = HD44780_LCD_STATE_PROCESSING;
     reset_command_sequencer();
