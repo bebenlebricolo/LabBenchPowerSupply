@@ -96,6 +96,8 @@ typedef enum
     HD44780_LCD_CMD_DISPLAY_CONTROL    = 0x08,  /**< Controls general settings about the display (general display, cursor, blink )                                  */
     HD44780_LCD_CMD_CURSOR_SHIFT       = 0x10,  /**< Controls the cursor position and display shift. Used to move cursor or dislay unitarily                        */
     HD44780_LCD_CMD_FUNCTION_SET       = 0x20,  /**< Allows to select the bus data length, line count and font used to display characters                           */
+    HD44780_LCD_CMD_INIT_4BITS_MODE    = 0x30,  /**< Special command which handles initialisation by instruction sequence
+                                                     (actually it is a function set command + Data length set to 4 bits)                                            */
     HD44780_LCD_CMD_SET_CG_RAM_ADDR    = 0x40,  /**< Sets the current character generation circuit address (from 0 to 63 )                                          */
     HD44780_LCD_CMD_SET_DD_RAM_ADDR    = 0x80,  /**< Sets the current address pointer of DDRAM (from 0 to 127)                                                      */
 } hd44780_lcd_command_t;
@@ -131,7 +133,8 @@ static process_commands_sequencer_t command_sequencer =
         .waiting = false,
         .first_pass = true,
         .lower_bits = false
-    }
+    },
+    .nested_sequence_mode = false
 };
 
 
@@ -140,27 +143,43 @@ static process_commands_sequencer_t command_sequencer =
    ################################### Static functions declaration #################################
    ################################################################################################## */
 
-static void reset_command_sequencer(void)
+static void reset_command_sequencer(bool reset_all)
 {
     command_sequencer.start_time = 0;
     memset(&command_sequencer.parameters, 0, sizeof(process_commands_parameters_t));
-    command_sequencer.process_command = process_command_idling;
-    command_sequencer.sequence.count = 0;
+
+    if (reset_all || !command_sequencer.nested_sequence_mode)
+    {
+        command_sequencer.process_command = process_command_idling;
+        command_sequencer.sequence.count = 0;
+    }
+
     command_sequencer.sequence.first_pass = true;
     command_sequencer.sequence.lower_bits = false;
     command_sequencer.sequence.pulse_sent = false;
     command_sequencer.sequence.waiting = false;
-    command_sequencer.nested_sequence_mode = false;
 }
 
 /* ##################################################################################################
    ###################################### API functions #############################################
    ################################################################################################## */
 
+#ifdef UNIT_TESTING
 void get_process_command_sequencer(process_commands_sequencer_t ** const p_command_sequencer)
 {
     *p_command_sequencer = &command_sequencer;
 }
+#endif
+
+#ifdef UNIT_TESTING
+void get_internal_configuration(internal_configuration_t ** const p_internal_configuration)
+{
+    if (NULL != p_internal_configuration)
+    {
+        *p_internal_configuration = &internal_configuration;
+    }
+}
+#endif
 
 hd44780_lcd_error_t hd44780_lcd_get_default_config(hd44780_lcd_config_t * const config)
 {
@@ -188,22 +207,26 @@ hd44780_lcd_state_t hd44780_lcd_get_state(void)
     return internal_state;
 }
 
+#ifdef UNIT_TESTING
 uint8_t get_data_byte(void)
 {
     return data_byte;
 }
+#endif
 
+#ifdef UNIT_TESTING
 uint8_t get_i2c_buffer(void)
 {
     return i2c_buffer;
 }
+#endif
 
 hd44780_lcd_error_t hd44780_lcd_driver_reset(void)
 {
     i2c_buffer = 0;
     data_byte = 0;
     last_error = HD44780_LCD_ERROR_OK;
-    reset_command_sequencer();
+    reset_command_sequencer(false);
     memset(&internal_configuration, 0, sizeof(internal_configuration_t));
     internal_state = HD44780_LCD_STATE_NOT_INITIALISED;
     return HD44780_LCD_ERROR_OK;
@@ -243,9 +266,10 @@ hd44780_lcd_error_t hd44780_lcd_init(hd44780_lcd_config_t const * const config)
     // Update commands sequencer to handle the initialisation command at next process() call
     internal_state = HD44780_LCD_STATE_INITIALISING;
 
-    reset_command_sequencer();
+    reset_command_sequencer(true);
     command_sequencer.process_command = internal_command_init;
     command_sequencer.nested_sequence_mode = true;
+    command_sequencer.sequence.waiting = true;
 
     return HD44780_LCD_ERROR_OK;
 }
@@ -260,7 +284,7 @@ hd44780_lcd_error_t hd44780_lcd_clear(void)
 
     // Update commands sequencer to handle the initialisation command at next process() call
     internal_state = HD44780_LCD_STATE_PROCESSING;
-    reset_command_sequencer();
+    reset_command_sequencer(true);
     command_sequencer.process_command = internal_command_clear;
 
     return HD44780_LCD_ERROR_OK;
@@ -276,7 +300,7 @@ hd44780_lcd_error_t hd44780_lcd_home(void)
 
     // Update commands sequencer to handle the initialisation command at next process() call
     internal_state = HD44780_LCD_STATE_PROCESSING;
-    reset_command_sequencer();
+    reset_command_sequencer(true);
     command_sequencer.process_command = internal_command_home;
 
     return HD44780_LCD_ERROR_OK;
@@ -296,7 +320,7 @@ hd44780_lcd_error_t hd44780_lcd_set_display_on_off(const bool enabled)
 
     // Update commands sequencer to handle the initialisation command at next process() call
     internal_state = HD44780_LCD_STATE_PROCESSING;
-    reset_command_sequencer();
+    reset_command_sequencer(false);
     command_sequencer.process_command = internal_command_handle_display_controls;
 
     return HD44780_LCD_ERROR_OK;
@@ -314,7 +338,7 @@ hd44780_lcd_error_t hd44780_lcd_set_cursor_visible(const bool visible)
 
     // Update commands sequencer to handle the initialisation command at next process() call
     internal_state = HD44780_LCD_STATE_PROCESSING;
-    reset_command_sequencer();
+    reset_command_sequencer(true);
     command_sequencer.process_command = internal_command_handle_display_controls;
 
     return HD44780_LCD_ERROR_OK;
@@ -332,11 +356,39 @@ hd44780_lcd_error_t hd44780_lcd_set_blinking_cursor(const bool blinking)
 
     // Update commands sequencer to handle the initialisation command at next process() call
     internal_state = HD44780_LCD_STATE_PROCESSING;
-    reset_command_sequencer();
+    reset_command_sequencer(true);
     command_sequencer.process_command = internal_command_handle_display_controls;
 
     return HD44780_LCD_ERROR_OK;
 }
+
+hd44780_lcd_error_t hd44780_lcd_confgure_display(hd44780_lcd_font_t p_font, hd44780_lcd_lines_mode_t p_line_mode)
+{
+    hd44780_lcd_error_t err = is_ready_to_accept_instruction();
+    if (HD44780_LCD_ERROR_OK != err)
+    {
+        return err;
+    }
+
+    // This device does not accept 5x10 font and 2 lines mode at the same time
+    if((HD44780_LCD_FONT_5x10 == p_font)
+    && (HD44780_LCD_LINES_2_LINES == p_line_mode))
+    {
+        return HD44780_LCD_ERROR_UNSUPPORTED_VALUE;
+    }
+
+    internal_configuration.display.small_font = HD44780_LCD_FONT_5x8 == p_font;
+    internal_configuration.display.two_lines_mode = HD44780_LCD_LINES_2_LINES == p_line_mode;
+
+    // Update commands sequencer to handle the initialisation command at next process() call
+    internal_state = HD44780_LCD_STATE_PROCESSING;
+    reset_command_sequencer(true);
+    command_sequencer.process_command = internal_command_handle_function_set;
+
+    return HD44780_LCD_ERROR_OK;
+}
+
+
 
 /* ############################ end of Display controls related functions #######################################*/
 
@@ -353,7 +405,7 @@ hd44780_lcd_error_t hd44780_lcd_set_backlight(const bool enabled)
 
     // Update commands sequencer to handle the initialisation command at next process() call
     internal_state = HD44780_LCD_STATE_PROCESSING;
-    reset_command_sequencer();
+    reset_command_sequencer(true);
     command_sequencer.process_command = internal_command_set_backlight;
 
     return HD44780_LCD_ERROR_OK;
@@ -371,7 +423,7 @@ hd44780_lcd_error_t hd44780_lcd_set_entry_mode(const hd44780_lcd_entry_mode_t en
 
     // Update commands sequencer to handle the initialisation command at next process() call
     internal_state = HD44780_LCD_STATE_PROCESSING;
-    reset_command_sequencer();
+    reset_command_sequencer(true);
     command_sequencer.process_command = internal_command_set_entry_mode;
 
     return HD44780_LCD_ERROR_OK;
@@ -408,7 +460,7 @@ hd44780_lcd_error_t hd44780_lcd_move_cursor_to_coord(const uint8_t line, const u
 
     // Update commands sequencer to handle the initialisation command at next process() call
     internal_state = HD44780_LCD_STATE_PROCESSING;
-    reset_command_sequencer();
+    reset_command_sequencer(true);
     command_sequencer.process_command = internal_command_move_cursor_to_coord;
 
     return HD44780_LCD_ERROR_OK;
@@ -425,7 +477,7 @@ hd44780_lcd_error_t hd44780_lcd_move_relative(const hd44780_lcd_cursor_move_acti
     command_sequencer.parameters.move = move;
     // Update commands sequencer to handle the initialisation command at next process() call
     internal_state = HD44780_LCD_STATE_PROCESSING;
-    reset_command_sequencer();
+    reset_command_sequencer(true);
     command_sequencer.process_command = internal_command_move_cursor_to_coord;
 
     return HD44780_LCD_ERROR_OK;
@@ -443,7 +495,7 @@ hd44780_lcd_error_t hd44780_lcd_shift_display(const hd44780_lcd_display_shift_t 
     command_sequencer.parameters.shift = shift;
     // Update commands sequencer to handle the initialisation command at next process() call
     internal_state = HD44780_LCD_STATE_PROCESSING;
-    reset_command_sequencer();
+    reset_command_sequencer(true);
     command_sequencer.process_command = internal_command_shift_display;
 
     return HD44780_LCD_ERROR_OK;
@@ -463,7 +515,7 @@ hd44780_lcd_error_t hd44780_lcd_print(const uint8_t length, char * const buffer)
 
     // Update commands sequencer to handle the initialisation command at next process() call
     internal_state = HD44780_LCD_STATE_PROCESSING;
-    reset_command_sequencer();
+    reset_command_sequencer(true);
     command_sequencer.process_command = internal_command_print;
 
     return HD44780_LCD_ERROR_OK;
@@ -505,7 +557,6 @@ void initialise_buffer_and_sequencer(const transmission_mode_t mode)
 
     // Send higher bits first (D7 to D4)
     command_sequencer.sequence.lower_bits = false;
-    command_sequencer.sequence.first_pass = false;
 }
 
 
@@ -542,6 +593,8 @@ void bootup_sequence_handler(uint8_t time_to_wait, bool end_with_wait)
         {
             // Error handling placeholder
         }
+        data_byte = HD44780_LCD_CMD_INIT_4BITS_MODE;
+        i2c_buffer |= (data_byte & 0xF0);
         command_sequencer.sequence.first_pass = false;
     }
 
@@ -609,9 +662,8 @@ void bootup_sequence_handler(uint8_t time_to_wait, bool end_with_wait)
         else
         {
             // Transaction finished, we can make the transition to next sequence number !
+            reset_command_sequencer(false);
             command_sequencer.sequence.count++;
-            command_sequencer.sequence.first_pass = true;
-            command_sequencer.sequence.pulse_sent = false;
             command_sequencer.sequence.waiting = end_with_wait;
         }
     }
@@ -736,9 +788,9 @@ void init_4_bits_selection_handler(void)
     if (command_sequencer.sequence.first_pass)
     {
         i2c_buffer &= 0x0F;
-        set_backlight_flag_in_i2c_buffer();
-        i2c_buffer &= ~ (PCF8574_READ_WRITE_MSK | PCF8574_REGISTER_SELECT_MSK);
-        i2c_buffer |= ( 1 << PCF8574_D5_BIT);   // Code for 4 bits instruction
+        initialise_buffer_and_sequencer(TRANSMISSION_MODE_INSTRUCTION);
+        data_byte = HD44780_LCD_CMD_FUNCTION_SET;
+        i2c_buffer |= (data_byte & 0xF0);
         command_sequencer.sequence.first_pass = false;
     }
 
@@ -746,11 +798,8 @@ void init_4_bits_selection_handler(void)
     bool write_completed = write_buffer();
     if (write_completed)
     {
+        reset_command_sequencer(false);
         command_sequencer.sequence.count++;
-        command_sequencer.sequence.pulse_sent = false;
-        command_sequencer.sequence.first_pass = true;
-        command_sequencer.sequence.waiting = false;
-        command_sequencer.sequence.lower_bits = false;
     }
 }
 
@@ -796,7 +845,23 @@ void internal_command_handle_function_set(void)
         initialise_buffer_and_sequencer(TRANSMISSION_MODE_INSTRUCTION);
     }
 
-    (void) handle_byte_sending();
+    bool byte_sent = handle_byte_sending();
+
+    // Did we send the full payload ?
+    if ((true == byte_sent)
+     && (command_sequencer.sequence.count != 0))
+    {
+        if (command_sequencer.nested_sequence_mode == false)
+        {
+            internal_state = HD44780_LCD_STATE_READY;
+        }
+        else
+        {
+            command_sequencer.sequence.count++;
+        }
+        reset_command_sequencer(false);
+    }
+
 }
 
 void internal_command_clear(void)
@@ -808,7 +873,22 @@ void internal_command_clear(void)
         initialise_buffer_and_sequencer(TRANSMISSION_MODE_INSTRUCTION);
     }
 
-    (void) handle_byte_sending();
+    bool byte_sent = handle_byte_sending();
+
+    // Did we send the full payload ?
+    if ((true == byte_sent)
+     && (command_sequencer.sequence.count != 0))
+    {
+        if (command_sequencer.nested_sequence_mode == false)
+        {
+            internal_state = HD44780_LCD_STATE_READY;
+        }
+        else
+        {
+            command_sequencer.sequence.count++;
+        }
+        reset_command_sequencer(false);
+    }
 }
 
 void internal_command_set_entry_mode(void)
@@ -820,12 +900,32 @@ void internal_command_set_entry_mode(void)
         initialise_buffer_and_sequencer(TRANSMISSION_MODE_INSTRUCTION);
     }
 
-    (void) handle_byte_sending();
+    bool byte_sent = handle_byte_sending();
+
+    // Did we send the full payload ?
+    if ((true == byte_sent)
+     && (command_sequencer.sequence.count != 0))
+    {
+        if (command_sequencer.nested_sequence_mode == false)
+        {
+            internal_state = HD44780_LCD_STATE_READY;
+        }
+        else
+        {
+            command_sequencer.sequence.count++;
+        }
+        reset_command_sequencer(false);
+    }
 }
 
 
 void internal_command_init(void)
 {
+    if ((true == command_sequencer.sequence.first_pass)
+    &&  (command_sequencer.sequence.count == 0))
+    {
+        initialise_buffer_and_sequencer(TRANSMISSION_MODE_INSTRUCTION);
+    }
     switch(command_sequencer.sequence.count)
     {
         // First, wait for more than 40 ms to account for screen bootup time
@@ -871,7 +971,7 @@ void internal_command_init(void)
 
         // Stop execution
         default:
-            reset_command_sequencer();
+            reset_command_sequencer(true);
             internal_state = HD44780_LCD_STATE_READY;
             break;
     }
@@ -887,7 +987,22 @@ void internal_command_home(void)
         initialise_buffer_and_sequencer(TRANSMISSION_MODE_INSTRUCTION);
     }
 
-    (void) handle_byte_sending();
+    bool byte_sent = handle_byte_sending();
+
+    // Did we send the full payload ?
+    if ((true == byte_sent)
+     && (command_sequencer.sequence.count != 0))
+    {
+        if (command_sequencer.nested_sequence_mode == false)
+        {
+            internal_state = HD44780_LCD_STATE_READY;
+        }
+        else
+        {
+            command_sequencer.sequence.count++;
+        }
+        reset_command_sequencer(false);
+    }
 }
 
 void internal_command_handle_display_controls(void)
@@ -899,7 +1014,22 @@ void internal_command_handle_display_controls(void)
         initialise_buffer_and_sequencer(TRANSMISSION_MODE_INSTRUCTION);
     }
 
-    (void) handle_byte_sending();
+    bool byte_sent = handle_byte_sending();
+
+    // Did we send the full payload ?
+    if ((true == byte_sent)
+     && (command_sequencer.sequence.count != 0))
+    {
+        if (command_sequencer.nested_sequence_mode == false)
+        {
+            internal_state = HD44780_LCD_STATE_READY;
+        }
+        else
+        {
+            command_sequencer.sequence.count++;
+        }
+        reset_command_sequencer(false);
+    }
 }
 
 void internal_command_set_backlight(void)
@@ -936,6 +1066,7 @@ void internal_command_set_backlight(void)
 
         // Our transaction is over !
         internal_state = HD44780_LCD_STATE_READY;
+        reset_command_sequencer(false);
     }
 }
 
@@ -958,7 +1089,22 @@ void internal_command_move_cursor_to_coord(void)
         initialise_buffer_and_sequencer(TRANSMISSION_MODE_INSTRUCTION);
     }
 
-    (void) handle_byte_sending();
+    bool byte_sent = handle_byte_sending();
+
+    // Did we send the full payload ?
+    if ((true == byte_sent)
+     && (command_sequencer.sequence.count != 0))
+    {
+        if (command_sequencer.nested_sequence_mode == false)
+        {
+            internal_state = HD44780_LCD_STATE_READY;
+        }
+        else
+        {
+            command_sequencer.sequence.count++;
+        }
+        reset_command_sequencer(false);
+    }
 }
 
 void internal_command_move_relative(void)
@@ -1004,7 +1150,22 @@ void internal_command_move_relative(void)
         initialise_buffer_and_sequencer(TRANSMISSION_MODE_INSTRUCTION);
     }
 
-    (void) handle_byte_sending();
+    bool byte_sent = handle_byte_sending();
+
+    // Did we send the full payload ?
+    if ((true == byte_sent)
+     && (command_sequencer.sequence.count != 0))
+    {
+        if (command_sequencer.nested_sequence_mode == false)
+        {
+            internal_state = HD44780_LCD_STATE_READY;
+        }
+        else
+        {
+            command_sequencer.sequence.count++;
+        }
+        reset_command_sequencer(false);
+    }
 }
 
 void internal_command_shift_display(void)
@@ -1032,7 +1193,22 @@ void internal_command_shift_display(void)
         initialise_buffer_and_sequencer(TRANSMISSION_MODE_INSTRUCTION);
     }
 
-    (void) handle_byte_sending();
+    bool byte_sent = handle_byte_sending();
+
+    // Did we send the full payload ?
+    if ((true == byte_sent)
+     && (command_sequencer.sequence.count != 0))
+    {
+        if (command_sequencer.nested_sequence_mode == false)
+        {
+            internal_state = HD44780_LCD_STATE_READY;
+        }
+        else
+        {
+            command_sequencer.sequence.count++;
+        }
+        reset_command_sequencer(false);
+    }
 }
 
 

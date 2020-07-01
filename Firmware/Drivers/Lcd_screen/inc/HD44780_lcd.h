@@ -305,6 +305,21 @@ hd44780_lcd_error_t hd44780_lcd_set_backlight(const bool enabled);
 hd44780_lcd_error_t hd44780_lcd_set_entry_mode(const hd44780_lcd_entry_mode_t entry_mode);
 
 /**
+ * @brief Configures the display modes of LCD screen
+ * @details This functions allows to configure the number of lines and the font kind the user
+ *          wants to use with this device
+ *
+ * @param[in] p_font :  selected font : 5x8 (one line or 2 lines) or 5x10 (1 line only)
+ * @return
+ *      HD44780_LCD_ERROR_OK                :   Operation succeeded
+ *      HD44780_LCD_ERROR_UNSUPPORTED_VALUE :   Input parameter does not resolve do any supported value
+ *      HD44780_LCD_DEVICE_NOT_LISTENING    :   Could not get any response from slave (I2C NACK everywhere)
+ *      HD44780_LCD_DEVICE_BUSY             :   Device is already processing instructions
+ *      HD44780_LCD_DEVICE_NOT_INITIALISED  :   Device is not initialised yet, perform an initialisation cycle before using this function
+*/
+hd44780_lcd_error_t hd44780_lcd_confgure_display(hd44780_lcd_font_t p_font, hd44780_lcd_lines_mode_t p_line_mode);
+
+/**
  * @brief Moves the cursor to a given location (absolute, origin point located at screen top left corner (0,0))
  * @note Input line and column parameters are checked against maximum screen capacity.
  *       If values are set wrong, you'll get an HD44780_LCD_ERROR_UNSUPPORTED_VALUE error.
