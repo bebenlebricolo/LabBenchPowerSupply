@@ -152,6 +152,7 @@ static void reset_command_sequencer(bool reset_all)
     {
         command_sequencer.process_command = process_command_idling;
         command_sequencer.sequence.count = 0;
+        command_sequencer.nested_sequence_mode = false;
     }
 
     command_sequencer.sequence.first_pass = true;
@@ -789,9 +790,9 @@ void init_4_bits_selection_handler(void)
     {
         i2c_buffer &= 0x0F;
         initialise_buffer_and_sequencer(TRANSMISSION_MODE_INSTRUCTION);
+        command_sequencer.sequence.first_pass = false;
         data_byte = HD44780_LCD_CMD_FUNCTION_SET;
         i2c_buffer |= (data_byte & 0xF0);
-        command_sequencer.sequence.first_pass = false;
     }
 
     // Handle data write in 4 bits mode only (one exception where we do not need to send the full 8 bits)
@@ -843,6 +844,7 @@ void internal_command_handle_function_set(void)
     {
         handle_function_set();
         initialise_buffer_and_sequencer(TRANSMISSION_MODE_INSTRUCTION);
+        command_sequencer.sequence.first_pass = false;
     }
 
     bool byte_sent = handle_byte_sending();
@@ -871,6 +873,7 @@ void internal_command_clear(void)
     {
         data_byte = HD44780_LCD_CMD_CLEAR_DISPLAY;
         initialise_buffer_and_sequencer(TRANSMISSION_MODE_INSTRUCTION);
+        command_sequencer.sequence.first_pass = false;
     }
 
     bool byte_sent = handle_byte_sending();
@@ -898,6 +901,7 @@ void internal_command_set_entry_mode(void)
     {
         handle_entry_mode();
         initialise_buffer_and_sequencer(TRANSMISSION_MODE_INSTRUCTION);
+        command_sequencer.sequence.first_pass = false;
     }
 
     bool byte_sent = handle_byte_sending();
@@ -925,6 +929,7 @@ void internal_command_init(void)
     &&  (command_sequencer.sequence.count == 0))
     {
         initialise_buffer_and_sequencer(TRANSMISSION_MODE_INSTRUCTION);
+        command_sequencer.sequence.first_pass = false;
     }
     switch(command_sequencer.sequence.count)
     {
@@ -985,6 +990,7 @@ void internal_command_home(void)
     {
         data_byte = HD44780_LCD_CMD_RETURN_HOME;
         initialise_buffer_and_sequencer(TRANSMISSION_MODE_INSTRUCTION);
+        command_sequencer.sequence.first_pass = false;
     }
 
     bool byte_sent = handle_byte_sending();
@@ -1012,6 +1018,7 @@ void internal_command_handle_display_controls(void)
     {
         handle_display_controls();
         initialise_buffer_and_sequencer(TRANSMISSION_MODE_INSTRUCTION);
+        command_sequencer.sequence.first_pass = false;
     }
 
     bool byte_sent = handle_byte_sending();
@@ -1087,6 +1094,7 @@ void internal_command_move_cursor_to_coord(void)
         data_byte |= (data_byte & HD44780_LCD_DDRAM_ADDRESS_MSK) + command_sequencer.parameters.cursor_position.column;
 
         initialise_buffer_and_sequencer(TRANSMISSION_MODE_INSTRUCTION);
+        command_sequencer.sequence.first_pass = false;
     }
 
     bool byte_sent = handle_byte_sending();
@@ -1148,6 +1156,7 @@ void internal_command_move_relative(void)
         }
 
         initialise_buffer_and_sequencer(TRANSMISSION_MODE_INSTRUCTION);
+        command_sequencer.sequence.first_pass = false;
     }
 
     bool byte_sent = handle_byte_sending();
@@ -1191,6 +1200,7 @@ void internal_command_shift_display(void)
         }
 
         initialise_buffer_and_sequencer(TRANSMISSION_MODE_INSTRUCTION);
+        command_sequencer.sequence.first_pass = false;
     }
 
     bool byte_sent = handle_byte_sending();
