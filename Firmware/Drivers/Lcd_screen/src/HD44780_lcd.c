@@ -148,10 +148,10 @@ static
 void reset_command_sequencer(bool reset_all)
 {
     command_sequencer.start_time = 0;
-    memset(&command_sequencer.parameters, 0, sizeof(process_commands_parameters_t));
 
     if (reset_all || !command_sequencer.nested_sequence_mode)
     {
+        memset(&command_sequencer.parameters, 0, sizeof(process_commands_parameters_t));
         command_sequencer.process_command = process_command_idling;
         command_sequencer.sequence.count = 0;
         command_sequencer.nested_sequence_mode = false;
@@ -466,12 +466,12 @@ hd44780_lcd_error_t hd44780_lcd_move_cursor_to_coord(const uint8_t line, const u
         }
     }
 
-    command_sequencer.parameters.cursor_position.line = line;
-    command_sequencer.parameters.cursor_position.column = column;
-
     // Update commands sequencer to handle the initialisation command at next process() call
     internal_state = HD44780_LCD_STATE_PROCESSING;
     reset_command_sequencer(true);
+
+    command_sequencer.parameters.cursor_position.line = line;
+    command_sequencer.parameters.cursor_position.column = column;
     command_sequencer.process_command = internal_command_move_cursor_to_coord;
 
     return HD44780_LCD_ERROR_OK;
@@ -829,7 +829,6 @@ bool handle_byte_sending(void)
     {
         if (true == command_sequencer.sequence.lower_bits)
         {
-            command_sequencer.sequence.count++;
             command_sequencer.sequence.lower_bits = false;
             command_sequencer.sequence.first_pass = true;
             byte_sent = true;
@@ -858,8 +857,7 @@ void internal_command_handle_function_set(void)
     bool byte_sent = handle_byte_sending();
 
     // Did we send the full payload ?
-    if ((true == byte_sent)
-     && (command_sequencer.sequence.count != 0))
+    if (true == byte_sent)
     {
         if (command_sequencer.nested_sequence_mode == false)
         {
@@ -887,8 +885,7 @@ void internal_command_clear(void)
     bool byte_sent = handle_byte_sending();
 
     // Did we send the full payload ?
-    if ((true == byte_sent)
-     && (command_sequencer.sequence.count != 0))
+    if (true == byte_sent)
     {
         if (command_sequencer.nested_sequence_mode == false)
         {
@@ -915,8 +912,7 @@ void internal_command_set_entry_mode(void)
     bool byte_sent = handle_byte_sending();
 
     // Did we send the full payload ?
-    if ((true == byte_sent)
-     && (command_sequencer.sequence.count != 0))
+    if (true == byte_sent)
     {
         if (command_sequencer.nested_sequence_mode == false)
         {
@@ -998,8 +994,7 @@ void internal_command_home(void)
     bool byte_sent = handle_byte_sending();
 
     // Did we send the full payload ?
-    if ((true == byte_sent)
-     && (command_sequencer.sequence.count != 0))
+    if (true == byte_sent)
     {
         if (command_sequencer.nested_sequence_mode == false)
         {
@@ -1026,8 +1021,7 @@ void internal_command_handle_display_controls(void)
     bool byte_sent = handle_byte_sending();
 
     // Did we send the full payload ?
-    if ((true == byte_sent)
-     && (command_sequencer.sequence.count != 0))
+    if (true == byte_sent)
     {
         if (command_sequencer.nested_sequence_mode == false)
         {
@@ -1089,11 +1083,13 @@ void internal_command_move_cursor_to_coord(void)
     if (command_sequencer.sequence.first_pass)
     {
         data_byte = HD44780_LCD_CMD_SET_DD_RAM_ADDR;
+        uint8_t ddram_value = 0;
         if (internal_configuration.display.two_lines_mode)
         {
-            data_byte |= command_sequencer.parameters.cursor_position.line * (HD44780_LCD_MAX_CHARACTERS / 2);
+            ddram_value = command_sequencer.parameters.cursor_position.line * (HD44780_LCD_MAX_CHARACTERS / 2);
         }
-        data_byte |= (data_byte & HD44780_LCD_DDRAM_ADDRESS_MSK) + command_sequencer.parameters.cursor_position.column;
+        ddram_value += command_sequencer.parameters.cursor_position.column;
+        data_byte |= (data_byte & HD44780_LCD_DDRAM_ADDRESS_MSK) + ddram_value;
 
         prepare_i2c_buffer(TRANSMISSION_MODE_INSTRUCTION);
         command_sequencer.sequence.first_pass = false;
@@ -1102,8 +1098,7 @@ void internal_command_move_cursor_to_coord(void)
     bool byte_sent = handle_byte_sending();
 
     // Did we send the full payload ?
-    if ((true == byte_sent)
-     && (command_sequencer.sequence.count != 0))
+    if (true == byte_sent)
     {
         if (command_sequencer.nested_sequence_mode == false)
         {
@@ -1164,8 +1159,7 @@ void internal_command_move_relative(void)
     bool byte_sent = handle_byte_sending();
 
     // Did we send the full payload ?
-    if ((true == byte_sent)
-     && (command_sequencer.sequence.count != 0))
+    if (true == byte_sent)
     {
         if (command_sequencer.nested_sequence_mode == false)
         {
@@ -1208,8 +1202,7 @@ void internal_command_shift_display(void)
     bool byte_sent = handle_byte_sending();
 
     // Did we send the full payload ?
-    if ((true == byte_sent)
-     && (command_sequencer.sequence.count != 0))
+    if (true == byte_sent)
     {
         if (command_sequencer.nested_sequence_mode == false)
         {

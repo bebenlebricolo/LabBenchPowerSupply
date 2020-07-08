@@ -162,6 +162,9 @@ TEST_F(LcdScreenTestFixture, test_byte_handling)
     }
 
     ASSERT_EQ(sent_i2c_buffers.size(), 4U);
+
+    // Sequence count incrementation shall be handled by the caller
+    ASSERT_EQ(command_sequencer->sequence.count, 0U);
     for (uint8_t i = 0; i < 4U ; i++)
     {
         EXPECT_EQ(sent_i2c_buffers[i], expected_sent_data[i]);
@@ -200,6 +203,7 @@ TEST_F(LcdScreenTestFixture, test_initialisation_command)
     ASSERT_EQ(command_sequencer->process_command, process_command_idling);
     ASSERT_TRUE(command_sequencer_is_reset());
 
+    // Counter check sent data matches the data we want to actually send
     ASSERT_EQ(sent_i2c_buffers.size(), expected_sent_i2c_buffers.size());
     for (uint8_t i = 0 ; i < sent_i2c_buffers.size() ; i++)
     {
@@ -209,6 +213,13 @@ TEST_F(LcdScreenTestFixture, test_initialisation_command)
 
 TEST_F(LcdScreenTestFixture, test_clear_command)
 {
+    const uint8_t expected_sent_data[4U] =
+    {
+        0x0c,
+        0x08,
+        0x1c,
+        0x18
+    };
     auto error = hd44780_lcd_init(&config);
     ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
 
@@ -225,10 +236,25 @@ TEST_F(LcdScreenTestFixture, test_clear_command)
     process_command();
     ASSERT_EQ(command_sequencer->process_command, process_command_idling);
     ASSERT_TRUE(command_sequencer_is_reset());
+
+    // Counter check sent data matches the data we want to actually send
+    ASSERT_EQ(sent_i2c_buffers.size(), 4U);
+    for (uint8_t i = 0 ; i < 4U ; i++)
+    {
+        EXPECT_EQ(sent_i2c_buffers[i], expected_sent_data[i]);
+    }
 }
 
 TEST_F(LcdScreenTestFixture, test_home_command)
 {
+    const uint8_t expected_sent_data[4U] =
+    {
+        0x0c,
+        0x08,
+        0x2c,
+        0x28
+    };
+
     auto error = hd44780_lcd_init(&config);
     ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
 
@@ -245,12 +271,31 @@ TEST_F(LcdScreenTestFixture, test_home_command)
     process_command();
     ASSERT_EQ(command_sequencer->process_command, process_command_idling);
     ASSERT_TRUE(command_sequencer_is_reset());
+
+    // Counter check sent data matches the data we want to actually send
+    ASSERT_EQ(sent_i2c_buffers.size(), 4U);
+    for (uint8_t i = 0 ; i < 4U ; i++)
+    {
+        EXPECT_EQ(sent_i2c_buffers[i], expected_sent_data[i]);
+    }
 }
 
 TEST_F(LcdScreenTestFixture, test_display_on_off)
 {
+    const uint8_t expected_sent_data[4U] =
+    {
+        0x0c,
+        0x08,
+        0xcc,
+        0xc8
+    };
     auto error = hd44780_lcd_init(&config);
     ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
+
+    internal_configuration->display.backlight = true;
+    internal_configuration->display.cursor_blinking = false;
+    internal_configuration->display.cursor_visible = false;
+    internal_configuration->display.enabled = true;
 
     stub_timings();
     // Initialise driver and screen
@@ -267,12 +312,31 @@ TEST_F(LcdScreenTestFixture, test_display_on_off)
     process_command();
     ASSERT_EQ(command_sequencer->process_command, process_command_idling);
     ASSERT_TRUE(command_sequencer_is_reset());
+
+    // Counter check sent data matches the data we want to actually send
+    ASSERT_EQ(sent_i2c_buffers.size(), 4U);
+    for (uint8_t i = 0 ; i < 4U ; i++)
+    {
+        EXPECT_EQ(sent_i2c_buffers[i], expected_sent_data[i]);
+    }
 }
 
 TEST_F(LcdScreenTestFixture, test_cursor_visible)
 {
+    const uint8_t expected_sent_data[4U] =
+    {
+        0x0c,
+        0x08,
+        0xac,
+        0xa8
+    };
     auto error = hd44780_lcd_init(&config);
     ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
+
+    internal_configuration->display.backlight = true;
+    internal_configuration->display.cursor_blinking = false;
+    internal_configuration->display.cursor_visible = false;
+    internal_configuration->display.enabled = true;
 
     stub_timings();
     // Initialise driver and screen
@@ -289,12 +353,31 @@ TEST_F(LcdScreenTestFixture, test_cursor_visible)
     process_command();
     ASSERT_EQ(command_sequencer->process_command, process_command_idling);
     ASSERT_TRUE(command_sequencer_is_reset());
+
+    // Counter check sent data matches the data we want to actually send
+    ASSERT_EQ(sent_i2c_buffers.size(), 4U);
+    for (uint8_t i = 0 ; i < 4U ; i++)
+    {
+        EXPECT_EQ(sent_i2c_buffers[i], expected_sent_data[i]);
+    }
 }
 
 TEST_F(LcdScreenTestFixture, test_blinking_cursor)
 {
+    const uint8_t expected_sent_data[4U] =
+    {
+        0x0c,
+        0x08,
+        0x9c,
+        0x98
+    };
     auto error = hd44780_lcd_init(&config);
     ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
+
+    internal_configuration->display.backlight = true;
+    internal_configuration->display.cursor_blinking = false;
+    internal_configuration->display.cursor_visible = false;
+    internal_configuration->display.enabled = true;
 
     stub_timings();
     // Initialise driver and screen
@@ -311,6 +394,13 @@ TEST_F(LcdScreenTestFixture, test_blinking_cursor)
     process_command();
     ASSERT_EQ(command_sequencer->process_command, process_command_idling);
     ASSERT_TRUE(command_sequencer_is_reset());
+
+    // Counter check sent data matches the data we want to actually send
+    ASSERT_EQ(sent_i2c_buffers.size(), 4U);
+    for (uint8_t i = 0 ; i < 4U ; i++)
+    {
+        EXPECT_EQ(sent_i2c_buffers[i], expected_sent_data[i]);
+    }
 }
 
 TEST_F(LcdScreenTestFixture, test_backlight)
@@ -323,20 +413,36 @@ TEST_F(LcdScreenTestFixture, test_backlight)
     process_command();
     ASSERT_TRUE(command_sequencer_is_reset());
 
-    const bool backlight_enabled = true;
+    const bool backlight_enabled = false;
     error = hd44780_lcd_set_backlight(backlight_enabled);
     ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
     ASSERT_EQ(internal_configuration->display.backlight, backlight_enabled);
     ASSERT_EQ(command_sequencer->process_command, internal_command_set_backlight);
     ASSERT_TRUE(command_sequencer_is_reset());
 
+    // We initialise those variables here because the set_backlight function needs to preserve
+    // the old (previous) state of I2C_buffer
+    const uint8_t previous_buffer = get_i2c_buffer();
+    const uint8_t expected_sent_data = (previous_buffer & 0xF7);
+
     process_command();
     ASSERT_EQ(command_sequencer->process_command, process_command_idling);
     ASSERT_TRUE(command_sequencer_is_reset());
+
+    // Counter check sent data matches the data we want to actually send
+    ASSERT_EQ(sent_i2c_buffers.size(), 1U);
+    ASSERT_EQ(sent_i2c_buffers[0], expected_sent_data);
 }
 
 TEST_F(LcdScreenTestFixture, test_entry_mode)
 {
+    const uint8_t expected_sent_data[4U] =
+    {
+        0x0c,
+        0x08,
+        0x4c,
+        0x48
+    };
     auto error = hd44780_lcd_init(&config);
     ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
 
@@ -355,10 +461,25 @@ TEST_F(LcdScreenTestFixture, test_entry_mode)
     process_command();
     ASSERT_EQ(command_sequencer->process_command, process_command_idling);
     ASSERT_TRUE(command_sequencer_is_reset());
+
+    // Counter check sent data matches the data we want to actually send
+    ASSERT_EQ(sent_i2c_buffers.size(), 4U);
+    for (uint8_t i = 0 ; i < 4U ; i++)
+    {
+        EXPECT_EQ(sent_i2c_buffers[i], expected_sent_data[i]);
+    }
 }
 
 TEST_F(LcdScreenTestFixture, test_move_cursor_to_coord)
 {
+    const uint8_t expected_sent_data[4U] =
+    {
+        0xbc,   // 55(10) -> 0x37 (16) ; cmd code : 0x8 + 0x3 -> 0xb
+        0xb8,
+        0x7c,
+        0x78
+    };
+
     auto error = hd44780_lcd_init(&config);
     ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
 
@@ -377,6 +498,13 @@ TEST_F(LcdScreenTestFixture, test_move_cursor_to_coord)
     process_command();
     ASSERT_EQ(command_sequencer->process_command, process_command_idling);
     ASSERT_TRUE(command_sequencer_is_reset());
+
+    // Counter check sent data matches the data we want to actually send
+    ASSERT_EQ(sent_i2c_buffers.size(), 4U);
+    for (uint8_t i = 0 ; i < 4U ; i++)
+    {
+        EXPECT_EQ(sent_i2c_buffers[i], expected_sent_data[i]);
+    }
 }
 
 
