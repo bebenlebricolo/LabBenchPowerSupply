@@ -175,7 +175,7 @@ void internal_command_print(void);
 /**
  * @brief Prepares and initialises internal buffers and sequencer before being able to send data
 */
-void initialise_buffer_and_sequencer(const transmission_mode_t mode);
+void prepare_i2c_buffer(const transmission_mode_t mode);
 
 /**
  * @brief Internal manipulator used to set the backlight flag within internal I2C buffer
@@ -193,6 +193,7 @@ void handle_display_controls(void);
 void handle_entry_mode(void);
 bool handle_byte_sending(void);
 
+
 void bootup_sequence_handler(uint8_t time_to_wait, bool end_with_wait);
 bool write_buffer(void);
 void process_command_idling(void);
@@ -201,7 +202,10 @@ void process_command_idling(void);
     void get_process_command_sequencer(process_commands_sequencer_t ** const p_command_sequencer);
     uint8_t get_i2c_buffer(void);
     uint8_t get_data_byte(void);
+    void set_data_byte(const uint8_t value);
+    void set_i2c_buffer(const uint8_t value);
     void get_internal_configuration(internal_configuration_t ** const p_internal_configuration);
+    void reset_command_sequencer(bool reset_all);
 #endif
 
 #ifdef __cplusplus

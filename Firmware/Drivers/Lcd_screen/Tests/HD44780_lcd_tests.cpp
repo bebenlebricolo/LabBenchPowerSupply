@@ -32,15 +32,31 @@ public:
 
     void process_command()
     {
+        sent_data_bytes.clear();
+        sent_i2c_buffers.clear();
+
         stub_timings();
         auto error = HD44780_LCD_ERROR_OK;
         auto state = HD44780_LCD_STATE_READY;
         do
         {
             error = hd44780_lcd_process();
+            sent_data_bytes.push_back(get_data_byte());
+
+            uint8_t current_i2c_buffer = 0;
+            bool is_new_buffer = false;
+            (void) i2c_stub_get_buffer_content(0, &current_i2c_buffer, &is_new_buffer);
+            if (is_new_buffer)
+            {
+                sent_i2c_buffers.push_back(current_i2c_buffer);
+            }
+
             EXPECT_EQ(HD44780_LCD_ERROR_OK, error);
             state = hd44780_lcd_get_state();
         } while (HD44780_LCD_STATE_READY != state);
+
+        filtered_data_bytes_vect = remove_adjacent_duplicates(sent_data_bytes);
+        filtered_i2c_buffers_vect = remove_adjacent_duplicates(sent_i2c_buffers);
     }
 
     void stub_timings()
@@ -62,6 +78,28 @@ public:
         out &= command_sequencer->sequence.waiting == false;
         return out;
     }
+
+    template <typename T>
+    std::vector<T> remove_adjacent_duplicates(const std::vector<T>& vector)
+    {
+        std::vector<T> out;
+        T prev = vector[0];
+        out.push_back(prev);
+        for (uint8_t i = 1 ; i < vector.size() ; i++)
+        {
+            if(vector[i] != prev)
+            {
+                out.push_back(vector[i]);
+                prev = vector[i];
+            }
+        }
+        return out;
+    }
+
+    std::vector<uint8_t> sent_data_bytes;
+    std::vector<uint8_t> sent_i2c_buffers;
+    std::vector<uint8_t> filtered_data_bytes_vect;
+    std::vector<uint8_t> filtered_i2c_buffers_vect;
 
 };
 
@@ -87,26 +125,86 @@ TEST(hd44780_lcd_screen_api_tests, test_default_config)
     ASSERT_EQ(hd44780_lcd_get_state(), HD44780_LCD_STATE_NOT_INITIALISED);
 }
 
+TEST_F(LcdScreenTestFixture, test_byte_handling)
+{
+    const uint8_t target_data_byte = 0x28;
+    const uint8_t expected_sent_data[4U] =
+    {
+        (uint8_t) ((target_data_byte & 0xF0) | 0xc),
+        (uint8_t) ((target_data_byte & 0xF0) | 0x8),
+        (uint8_t) (((target_data_byte & 0x0F) << 4) | 0xc),
+        (uint8_t) (((target_data_byte & 0x0F) << 4)| 0x8)
+    };
+
+    internal_configuration->display.backlight = true;
+    command_sequencer->sequence.count = 0;
+    command_sequencer->sequence.first_pass = true;
+    command_sequencer->sequence.lower_bits = false;
+    command_sequencer->sequence.pulse_sent = false;
+    command_sequencer->sequence.waiting = false;
+
+    stub_timings();
+    set_data_byte(target_data_byte);
+    sent_i2c_buffers.clear();
+    bool byte_sent = false;
+    prepare_i2c_buffer(TRANSMISSION_MODE_INSTRUCTION);
+
+    while (!byte_sent)
+    {
+        byte_sent = handle_byte_sending();
+        uint8_t value = 0;
+        bool is_new = false;
+        i2c_stub_get_buffer_content(0, &value, &is_new);
+        if (is_new)
+        {
+            sent_i2c_buffers.push_back(value);
+        }
+    }
+
+    ASSERT_EQ(sent_i2c_buffers.size(), 4U);
+    for (uint8_t i = 0; i < 4U ; i++)
+    {
+        EXPECT_EQ(sent_i2c_buffers[i], expected_sent_data[i]);
+    }
+}
+
 TEST_F(LcdScreenTestFixture, test_initialisation_command)
 {
     stub_timings();
     auto error = hd44780_lcd_init(&config);
-    ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
-    std::vector<uint8_t> sent_data_bytes;
-    std::vector<uint8_t> sent_i2c_buffers;
-
-    auto state = hd44780_lcd_get_state();
-    do
+    const std::vector<uint8_t> expected_sent_i2c_buffers =
     {
-        error = hd44780_lcd_process();
-        sent_data_bytes.push_back(get_data_byte());
-        sent_i2c_buffers.push_back(get_i2c_buffer());
-        ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
-        state = hd44780_lcd_get_state();
-    } while (HD44780_LCD_STATE_READY != state);
+        0x3C, 0x38, // Initialisation sequence, 4 bits sent only
+        0x3C, 0x38, // Initialisation sequence, 4 bits sent only
+        0x3C, 0x38, // Initialisation sequence, 4 bits sent only
+
+        0x2C, 0x28, // Setting 4 bits mode, 4 bits sent only
+
+        0x2C, 0x28, // Setting font and data length
+        0x8C, 0x88, // 2 lines mode, small font
+
+        0x0c, 0x08, // Handles display controls
+        0xbc, 0xb8, // display off, cursor visible, cursor blinking
+
+        0x0c, 0x08, // Handles display clear
+        0x1c, 0x18,
+
+        0x0c, 0x08, // Handles entry mode set
+        0x6c, 0x68  // cursor move to right, no display shift
+    };
+
+    ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
+
+    process_command();
 
     ASSERT_EQ(command_sequencer->process_command, process_command_idling);
     ASSERT_TRUE(command_sequencer_is_reset());
+
+    ASSERT_EQ(sent_i2c_buffers.size(), expected_sent_i2c_buffers.size());
+    for (uint8_t i = 0 ; i < sent_i2c_buffers.size() ; i++)
+    {
+        EXPECT_EQ(sent_i2c_buffers[i], expected_sent_i2c_buffers[i]);
+    }
 }
 
 TEST_F(LcdScreenTestFixture, test_clear_command)

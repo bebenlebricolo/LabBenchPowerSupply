@@ -7,6 +7,7 @@ extern "C"
 #endif
 
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef enum
 {
@@ -49,6 +50,8 @@ i2c_error_t i2c_write(const uint8_t id, const uint8_t target_address , uint8_t *
 /* Unit testing specificities */
 void i2c_stub_force_error_on_next_calls(const i2c_error_t p_next_error);
 void i2c_stub_clear(void);
+
+bool i2c_stub_get_buffer_content(const uint8_t index, uint8_t * const value, bool * const is_new_value);
 
 
 /* Allows tests to access data being sent to I2C */
