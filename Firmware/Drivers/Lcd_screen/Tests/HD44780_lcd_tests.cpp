@@ -2,14 +2,67 @@
 #include "HD44780_lcd.h"
 #include "HD44780_lcd_private.h"
 
-#include <cstring>
+#include <queue>
 #include <vector>
+#include <cstring>
 
 // Stubs
 #include "i2c.h"
 #include "timebase.h"
 
-class LcdScreenTestFixture : public ::testing::Test
+template<typename T>
+struct CircularBuffer
+{
+    CircularBuffer(){}
+    CircularBuffer(const std::vector<T>& p_vect) : values(p_vect) {}
+
+    T* next()
+    {
+        T * out = nullptr;
+        if (index <= values.size() && values.size() != 0)
+        {
+            out = &(values[index]);
+            ++index;
+            index %= values.size();
+        }
+        return out;
+    }
+
+    T* previous()
+    {
+        T * out = nullptr;
+        if (0 != values.size())
+        {
+            if (index == 0)
+            {
+                index = values.size() - 1;
+            }
+            out = &(values[index]);
+        }
+        return out;
+    }
+
+    void operator= (const std::vector<T>& other)
+    {
+        values = other;
+    }
+
+    void clear()
+    {
+        values.clear();
+    }
+
+    T* operator[](const size_t p_index)
+    {
+        return &(values[p_index]);
+    }
+
+protected:
+    std::vector<T> values;
+    size_t index = 0;
+};
+
+class LcdScreenTestFixtureBase : public ::testing::Test
 {
 public:
     hd44780_lcd_config_t config;
@@ -30,7 +83,33 @@ public:
         internal_configuration = nullptr;
     }
 
-    void process_command()
+    virtual void process_command() = 0;
+
+    void stub_timings()
+    {
+        timebase_stub_clear();
+        uint16_t stubbed_durations[6U] = {40, 1, 5, 1, 2, 1};
+        uint16_t stubbed_ticks[12U] = {0,4,12,35,50,76,82,112,123,145,165,175};
+        timebase_stub_set_durations(stubbed_durations, 6U);
+        timebase_stub_set_times(stubbed_ticks, 12U);
+    }
+
+    bool command_sequencer_is_reset()
+    {
+        bool out = true;
+        out &= command_sequencer->sequence.count == 0;
+        out &= command_sequencer->sequence.first_pass == true;
+        out &= command_sequencer->sequence.lower_bits == false;
+        out &= command_sequencer->sequence.pulse_sent == false;
+        out &= command_sequencer->sequence.waiting == false;
+        return out;
+    }
+};
+
+class LcdScreenTestFixtureOk : public LcdScreenTestFixtureBase
+{
+public:
+    void process_command() override
     {
         sent_data_bytes.clear();
         sent_i2c_buffers.clear();
@@ -59,26 +138,6 @@ public:
         filtered_i2c_buffers_vect = remove_adjacent_duplicates(sent_i2c_buffers);
     }
 
-    void stub_timings()
-    {
-        timebase_stub_clear();
-        uint16_t stubbed_durations[6U] = {40, 1, 5, 1, 2, 1};
-        uint16_t stubbed_ticks[12U] = {0,4,12,35,50,76,82,112,123,145,165,175};
-        timebase_stub_set_durations(stubbed_durations, 6U);
-        timebase_stub_set_times(stubbed_ticks, 12U);
-    }
-
-    bool command_sequencer_is_reset()
-    {
-        bool out = true;
-        out &= command_sequencer->sequence.count == 0;
-        out &= command_sequencer->sequence.first_pass == true;
-        out &= command_sequencer->sequence.lower_bits == false;
-        out &= command_sequencer->sequence.pulse_sent == false;
-        out &= command_sequencer->sequence.waiting == false;
-        return out;
-    }
-
     template <typename T>
     std::vector<T> remove_adjacent_duplicates(const std::vector<T>& vector)
     {
@@ -100,7 +159,43 @@ public:
     std::vector<uint8_t> sent_i2c_buffers;
     std::vector<uint8_t> filtered_data_bytes_vect;
     std::vector<uint8_t> filtered_i2c_buffers_vect;
+};
 
+class LcdScreenTestFixtureWithI2cErrors : public LcdScreenTestFixtureBase
+{
+public:
+    LcdScreenTestFixtureWithI2cErrors()
+    {}
+
+    void process_command() override
+    {
+        stub_timings();
+        auto error = HD44780_LCD_ERROR_OK;
+        auto state = HD44780_LCD_STATE_READY;
+        do
+        {
+            i2c_error_t * next_error = i2c_error_collection.next();
+            if (nullptr != next_error)
+            {
+                i2c_stub_force_error_on_next_calls(*next_error);
+            }
+            else
+            {
+                i2c_stub_force_error_on_next_calls(I2C_ERROR_OK);
+            }
+
+            error = hd44780_lcd_process();
+
+            if (i2c_stub_data_was_sent()
+            && (nullptr != next_error && *next_error != I2C_ERROR_OK))
+            {
+                EXPECT_NE(HD44780_LCD_ERROR_OK, error);
+            }
+            state = hd44780_lcd_get_state();
+        } while (HD44780_LCD_STATE_READY != state);
+    }
+
+    CircularBuffer<i2c_error_t> i2c_error_collection;
 };
 
 TEST(hd44780_lcd_screen_api_tests, test_default_config)
@@ -125,7 +220,7 @@ TEST(hd44780_lcd_screen_api_tests, test_default_config)
     ASSERT_EQ(hd44780_lcd_get_state(), HD44780_LCD_STATE_NOT_INITIALISED);
 }
 
-TEST_F(LcdScreenTestFixture, test_byte_handling)
+TEST_F(LcdScreenTestFixtureOk, test_byte_handling)
 {
     const uint8_t target_data_byte = 0x28;
     const uint8_t expected_sent_data[4U] =
@@ -171,7 +266,7 @@ TEST_F(LcdScreenTestFixture, test_byte_handling)
     }
 }
 
-TEST_F(LcdScreenTestFixture, test_initialisation_command)
+TEST_F(LcdScreenTestFixtureOk, test_initialisation_command)
 {
     stub_timings();
     auto error = hd44780_lcd_init(&config);
@@ -211,7 +306,7 @@ TEST_F(LcdScreenTestFixture, test_initialisation_command)
     }
 }
 
-TEST_F(LcdScreenTestFixture, test_clear_command)
+TEST_F(LcdScreenTestFixtureOk, test_clear_command)
 {
     const uint8_t expected_sent_data[4U] =
     {
@@ -245,7 +340,7 @@ TEST_F(LcdScreenTestFixture, test_clear_command)
     }
 }
 
-TEST_F(LcdScreenTestFixture, test_home_command)
+TEST_F(LcdScreenTestFixtureOk, test_home_command)
 {
     const uint8_t expected_sent_data[4U] =
     {
@@ -280,7 +375,7 @@ TEST_F(LcdScreenTestFixture, test_home_command)
     }
 }
 
-TEST_F(LcdScreenTestFixture, test_display_on_off)
+TEST_F(LcdScreenTestFixtureOk, test_display_on_off)
 {
     const uint8_t expected_sent_data[4U] =
     {
@@ -321,7 +416,7 @@ TEST_F(LcdScreenTestFixture, test_display_on_off)
     }
 }
 
-TEST_F(LcdScreenTestFixture, test_cursor_visible)
+TEST_F(LcdScreenTestFixtureOk, test_cursor_visible)
 {
     const uint8_t expected_sent_data[4U] =
     {
@@ -362,7 +457,7 @@ TEST_F(LcdScreenTestFixture, test_cursor_visible)
     }
 }
 
-TEST_F(LcdScreenTestFixture, test_blinking_cursor)
+TEST_F(LcdScreenTestFixtureOk, test_blinking_cursor)
 {
     const uint8_t expected_sent_data[4U] =
     {
@@ -403,7 +498,7 @@ TEST_F(LcdScreenTestFixture, test_blinking_cursor)
     }
 }
 
-TEST_F(LcdScreenTestFixture, test_backlight)
+TEST_F(LcdScreenTestFixtureOk, test_backlight)
 {
     auto error = hd44780_lcd_init(&config);
     ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
@@ -434,7 +529,7 @@ TEST_F(LcdScreenTestFixture, test_backlight)
     ASSERT_EQ(sent_i2c_buffers[0], expected_sent_data);
 }
 
-TEST_F(LcdScreenTestFixture, test_entry_mode)
+TEST_F(LcdScreenTestFixtureOk, test_entry_mode)
 {
     const uint8_t expected_sent_data[4U] =
     {
@@ -470,7 +565,7 @@ TEST_F(LcdScreenTestFixture, test_entry_mode)
     }
 }
 
-TEST_F(LcdScreenTestFixture, test_move_cursor_to_coord)
+TEST_F(LcdScreenTestFixtureOk, test_move_cursor_to_coord)
 {
     const uint8_t expected_sent_data[4U] =
     {
@@ -507,7 +602,7 @@ TEST_F(LcdScreenTestFixture, test_move_cursor_to_coord)
     }
 }
 
-TEST_F(LcdScreenTestFixture, test_move_cursor_relative)
+TEST_F(LcdScreenTestFixtureOk, test_move_cursor_relative)
 {
     auto error = hd44780_lcd_init(&config);
     ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
@@ -596,7 +691,7 @@ TEST_F(LcdScreenTestFixture, test_move_cursor_relative)
     }
 }
 
-TEST_F(LcdScreenTestFixture, test_print_text)
+TEST_F(LcdScreenTestFixtureOk, test_print_text)
 {
     auto error = hd44780_lcd_init(&config);
     ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
@@ -633,6 +728,91 @@ TEST_F(LcdScreenTestFixture, test_print_text)
     }
 }
 
+TEST_F(LcdScreenTestFixtureWithI2cErrors, test_command_home_max_error_hit)
+{
+    auto error = hd44780_lcd_init(&config);
+    ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
+
+    stub_timings();
+    // Initialise driver and screen
+    process_command();
+    ASSERT_TRUE(command_sequencer_is_reset());
+
+    i2c_error_collection = {
+        I2C_ERROR_ALREADY_PROCESSING,
+        I2C_ERROR_ALREADY_PROCESSING,
+        I2C_ERROR_ALREADY_PROCESSING,
+    };
+
+    error = hd44780_lcd_home();
+    ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
+    ASSERT_EQ(command_sequencer->process_command, internal_command_home);
+    ASSERT_TRUE(command_sequencer_is_reset());
+
+    process_command();
+    error = hd44780_lcd_get_last_error();
+    ASSERT_EQ(error, HD44780_LCD_ERROR_MAX_ERROR_COUNT_HIT);
+
+    ASSERT_EQ(command_sequencer->process_command, process_command_idling);
+    ASSERT_TRUE(command_sequencer_is_reset());
+
+}
+
+TEST_F(LcdScreenTestFixtureWithI2cErrors, test_command_home_ok)
+{
+    auto error = hd44780_lcd_init(&config);
+    ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
+
+    stub_timings();
+    // Initialise driver and screen
+    process_command();
+    ASSERT_TRUE(command_sequencer_is_reset());
+
+    i2c_error_collection = {
+        I2C_ERROR_OK,
+        I2C_ERROR_ALREADY_PROCESSING,
+    };
+
+    error = hd44780_lcd_home();
+    ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
+    ASSERT_EQ(command_sequencer->process_command, internal_command_home);
+    ASSERT_TRUE(command_sequencer_is_reset());
+
+    process_command();
+    error = hd44780_lcd_get_last_error();
+    ASSERT_EQ(error, HD44780_LCD_ERROR_OK);
+
+    ASSERT_EQ(command_sequencer->process_command, process_command_idling);
+    ASSERT_TRUE(command_sequencer_is_reset());
+}
+
+TEST_F(LcdScreenTestFixtureWithI2cErrors, test_command_clear_max_errors_hit)
+{
+    auto error = hd44780_lcd_init(&config);
+    ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
+
+    stub_timings();
+    // Initialise driver and screen
+    process_command();
+    ASSERT_TRUE(command_sequencer_is_reset());
+
+    i2c_error_collection = {
+        I2C_ERROR_DEVICE_NOT_FOUND,
+        I2C_ERROR_ALREADY_PROCESSING,
+    };
+
+    error = hd44780_lcd_clear();
+    ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
+    ASSERT_EQ(command_sequencer->process_command, internal_command_clear);
+    ASSERT_TRUE(command_sequencer_is_reset());
+
+    process_command();
+    error = hd44780_lcd_get_last_error();
+    ASSERT_EQ(error, HD44780_LCD_ERROR_MAX_ERROR_COUNT_HIT);
+
+    ASSERT_EQ(command_sequencer->process_command, process_command_idling);
+    ASSERT_TRUE(command_sequencer_is_reset());
+}
 
 int main(int argc, char **argv)
 {

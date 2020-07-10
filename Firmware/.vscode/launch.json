@@ -10,7 +10,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/Tests/build/bin/Lcd_screen/HD44780_lcd_driver_tests",
-            "args": ["--gtest_filter=LcdScreenTestFixture.test_print_text"],
+            "args": ["--gtest_filter=LcdScreenTestFixtureWithI2cErrors.test_command_home"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

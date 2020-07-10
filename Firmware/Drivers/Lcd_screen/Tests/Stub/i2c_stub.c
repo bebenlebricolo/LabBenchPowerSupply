@@ -26,13 +26,7 @@ void i2c_stub_force_error_on_next_calls(const i2c_error_t p_next_error)
 i2c_error_t i2c_get_state(const uint8_t id, i2c_state_t * const state)
 {
     (void) id;
-    if(force_error_on_next_calls)
-    {
-        return I2C_ERROR_INVALID_ADDRESS;
-    }
-
     *state = I2C_STATE_READY;
-
     return I2C_ERROR_OK;
 }
 
@@ -48,7 +42,7 @@ i2c_error_t i2c_write(const uint8_t id, const uint8_t target_address , uint8_t *
 
     if(force_error_on_next_calls)
     {
-        return I2C_ERROR_INVALID_ADDRESS;
+        return next_error;
     }
     return I2C_ERROR_OK;
 }
@@ -68,6 +62,14 @@ bool i2c_stub_get_buffer_content(const uint8_t index, uint8_t * const value, boo
 
     return true;
 }
+
+bool i2c_stub_data_was_sent(void)
+{
+    bool out = is_new;
+    is_new = false;
+    return out;
+}
+
 
 
 void reset_i2c_stub_buffer(void)

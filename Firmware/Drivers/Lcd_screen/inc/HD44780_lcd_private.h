@@ -6,6 +6,7 @@ extern "C"
 {
 #endif
 
+#include "i2c.h"
 #include "HD44780_lcd.h"
 
 /* ##################################################################################################
@@ -290,6 +291,7 @@ void handle_display_controls(void);
 void handle_entry_mode(void);
 bool handle_byte_sending(void);
 void handle_end_of_internal_command(bool byte_sent);
+hd44780_lcd_error_t convert_i2c_write_error(const i2c_error_t error);
 
 
 void bootup_sequence_handler(uint8_t time_to_wait, bool end_with_wait);

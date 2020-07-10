@@ -26,21 +26,31 @@ extern "C"
 typedef enum
 {
     /* Generic interface errors */
-    HD44780_LCD_ERROR_OK,                /**< Everything went fine                                               */
-    HD44780_LCD_ERROR_NULL_POINTER,      /**< A Null pointer was given (unitialised memory)                      */
-    HD44780_LCD_ERROR_SIZE_ERROR,        /**< Message length exceeds controller's capacity, or message size is 0 */
-    HD44780_LCD_ERROR_UNSUPPORTED_VALUE, /**< A general error telling a given enumerate value is not supported   */
+    HD44780_LCD_ERROR_OK,                       /**< Everything went fine                                               */
+    HD44780_LCD_ERROR_NULL_POINTER,             /**< A Null pointer was given (unitialised memory)                      */
+    HD44780_LCD_ERROR_SIZE_ERROR,               /**< Message length exceeds controller's capacity, or message size is 0 */
+    HD44780_LCD_ERROR_UNSUPPORTED_VALUE,        /**< A general error telling a given enumerate value is not supported   */
 
     /* I2C related errors */
-    HD44780_LCD_ERROR_INVALID_ADDRESS,         /**< Unsupported I2C address (exceeds 127)                              */
-    HD44780_LCD_ERROR_DEVICE_NOT_LISTENING,    /**< I/O expander did not respond to its address                        */
+    HD44780_LCD_ERROR_INVALID_ADDRESS,          /**< Unsupported I2C address (exceeds 127)                              */
+    HD44780_LCD_ERROR_DEVICE_NOT_LISTENING,     /**< I/O expander did not respond to its address                        */
 
     /* Sequence-related errors (wrong states) */
-    HD44780_LCD_ERROR_DEVICE_BUSY,             /**< Device is already processing and will not accept new instructions  */
-    HD44780_LCD_ERROR_DEVICE_NOT_INITIALISED,  /**< Device is not initialised and cannot receive instructions          */
-    HD44780_LCD_ERROR_DEVICE_WRONG_STATE,      /**< Current device state does not allow the requested operation        */
+    HD44780_LCD_ERROR_DEVICE_BUSY,              /**< Device is already processing and will not accept new instructions  */
+    HD44780_LCD_ERROR_DEVICE_NOT_INITIALISED,   /**< Device is not initialised and cannot receive instructions          */
+    HD44780_LCD_ERROR_DEVICE_WRONG_STATE,       /**< Current device state does not allow the requested operation        */
 
-    HD44780_LCD_ERROR_UNKNOWN,           /**< Failure for an unsupported reason                                  */
+    HD44780_LCD_ERROR_I2C_PERIPHERAL_ISSUE,     /**< Alerts about a fault I2C transmission                              */
+    HD44780_LCD_ERROR_I2C_MALFORMED_REQUEST,    /**< Request was malformed, this is an internal issue                   */
+    HD44780_LCD_ERROR_I2C_BUSY,                 /**< I2C device alerts it is already processing something.
+                                                     Maybe another process is using it at the moment, or our device is
+                                                     addressed as a peripheral by another external device               */
+
+    HD44780_LCD_ERROR_TIMEBASE_BROKEN,          /**< Alerts about the timebase returning errors                         */
+
+    HD44780_LCD_ERROR_MAX_ERROR_COUNT_HIT,      /**< In case maximum error count is reached.
+                                                     This avoids to send data over and over again on a dead device      */
+    HD44780_LCD_ERROR_UNKNOWN,                  /**< Failure for an unsupported reason                                  */
 } hd44780_lcd_error_t;
 
 /**

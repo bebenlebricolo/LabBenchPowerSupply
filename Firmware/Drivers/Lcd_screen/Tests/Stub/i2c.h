@@ -52,7 +52,7 @@ void i2c_stub_force_error_on_next_calls(const i2c_error_t p_next_error);
 void i2c_stub_clear(void);
 
 bool i2c_stub_get_buffer_content(const uint8_t index, uint8_t * const value, bool * const is_new_value);
-
+bool i2c_stub_data_was_sent(void);
 
 /* Allows tests to access data being sent to I2C */
 typedef struct
