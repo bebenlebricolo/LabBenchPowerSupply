@@ -417,7 +417,7 @@ hd44780_lcd_error_t hd44780_lcd_shift_display(const hd44780_lcd_display_shift_t 
     return HD44780_LCD_ERROR_OK;
 }
 
-hd44780_lcd_error_t hd44780_lcd_print(const uint8_t length, char * const buffer)
+hd44780_lcd_error_t hd44780_lcd_print(const uint8_t length, char const * const buffer)
 {
     hd44780_lcd_error_t err = is_ready_to_accept_instruction();
     if (HD44780_LCD_ERROR_OK != err)
@@ -425,13 +425,14 @@ hd44780_lcd_error_t hd44780_lcd_print(const uint8_t length, char * const buffer)
         return err;
     }
 
+    reset_command_sequencer(true);
+
     command_sequencer.parameters.message.length = length;
     command_sequencer.parameters.message.index = 0;
     command_sequencer.parameters.message.buffer = buffer;
 
     // Update commands sequencer to handle the initialisation command at next process() call
     internal_state = HD44780_LCD_STATE_PROCESSING;
-    reset_command_sequencer(true);
     command_sequencer.process_command = internal_command_print;
 
     return HD44780_LCD_ERROR_OK;
@@ -1046,14 +1047,18 @@ void internal_command_print(void)
     {
         data_byte = *((uint8_t *)(command_sequencer.parameters.message.buffer + command_sequencer.parameters.message.index));
         prepare_i2c_buffer(TRANSMISSION_MODE_DATA);
-        bool byte_sent = handle_byte_sending();
-        if (byte_sent)
+        command_sequencer.sequence.first_pass = false;
+    }
+
+    bool byte_sent = handle_byte_sending();
+    if (byte_sent)
+    {
+        command_sequencer.parameters.message.index++;
+        command_sequencer.sequence.first_pass= true;
+        if (command_sequencer.parameters.message.index >= command_sequencer.parameters.message.length)
         {
-            command_sequencer.parameters.message.index++;
-            if (command_sequencer.parameters.message.index >= command_sequencer.parameters.message.length)
-            {
-                internal_state = HD44780_LCD_STATE_READY;
-            }
+            internal_state = HD44780_LCD_STATE_READY;
+            reset_command_sequencer(false);
         }
     }
 }

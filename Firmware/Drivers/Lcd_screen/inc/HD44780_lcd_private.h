@@ -154,7 +154,7 @@ typedef union
     {
         uint8_t index;                      /**< Sets the index of current message character                                                    */
         uint8_t length;                     /**< Sets the overall length of the message to be printed                                           */
-        char* buffer;
+        const char * buffer;
     } message;
 } process_commands_parameters_t;
 

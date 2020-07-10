@@ -85,7 +85,7 @@ public:
         std::vector<T> out;
         T prev = vector[0];
         out.push_back(prev);
-        for (uint8_t i = 1 ; i < vector.size() ; i++)
+        for (uint64_t i = 1 ; i < vector.size() ; i++)
         {
             if(vector[i] != prev)
             {
@@ -593,6 +593,43 @@ TEST_F(LcdScreenTestFixture, test_move_cursor_relative)
                 break;
         }
 
+    }
+}
+
+TEST_F(LcdScreenTestFixture, test_print_text)
+{
+    auto error = hd44780_lcd_init(&config);
+    ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
+
+    stub_timings();
+    // Initialise driver and screen
+    process_command();
+    ASSERT_TRUE(command_sequencer_is_reset());
+
+
+    // Note : be careful to onlu use words without double letters such as "screen" because the
+    // Fixture's remove_adjacent_values from vector will transform "screen" into "scren",
+    // then we cannot test against payload size anymore !
+    const char * text = "This is the test payload to be printed on LCD device";
+    uint8_t text_length = strlen(text);
+    error = hd44780_lcd_print(text_length , text);
+    ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
+    ASSERT_EQ(command_sequencer->process_command, internal_command_print);
+    ASSERT_TRUE(command_sequencer_is_reset());
+
+    ASSERT_EQ(command_sequencer->parameters.message.buffer, text);
+    ASSERT_EQ(command_sequencer->parameters.message.length, text_length);
+    ASSERT_EQ(command_sequencer->parameters.message.index, 0U);
+
+    process_command();
+    ASSERT_EQ(command_sequencer->process_command, process_command_idling);
+    ASSERT_TRUE(command_sequencer_is_reset());
+
+    // Counter check sent data matches the data we want to actually send
+    ASSERT_EQ(filtered_data_bytes_vect.size(),  text_length);
+    for (uint8_t i = 0 ; i < text_length ; i++)
+    {
+        EXPECT_EQ(filtered_data_bytes_vect[i], (uint8_t) text[i]);
     }
 }
 
