@@ -507,6 +507,95 @@ TEST_F(LcdScreenTestFixture, test_move_cursor_to_coord)
     }
 }
 
+TEST_F(LcdScreenTestFixture, test_move_cursor_relative)
+{
+    auto error = hd44780_lcd_init(&config);
+    ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
+
+    stub_timings();
+    // Initialise driver and screen
+    process_command();
+    ASSERT_TRUE(command_sequencer_is_reset());
+
+    // Data set to be tested
+    hd44780_lcd_cursor_move_action_t move_actions[4U] =
+    {
+        HD44780_LCD_CURSOR_MOVE_RIGHT,
+        HD44780_LCD_CURSOR_MOVE_LEFT,
+        HD44780_LCD_CURSOR_MOVE_UP,
+        HD44780_LCD_CURSOR_MOVE_DOWN,
+    };
+
+    for (auto move_action : move_actions)
+    {
+        uint8_t expected_sent_data[4U] =
+        {
+            (uint8_t) (HD44780_LCD_CMD_CURSOR_SHIFT | 0x0c),   // 55(10) -> 0x37 (16) ; cmd code : 0x8 + 0x3 -> 0xb
+            (uint8_t) (HD44780_LCD_CMD_CURSOR_SHIFT | 0x08),
+            (uint8_t) (move_action |0x0c),
+            (uint8_t) (move_action |0x08)
+        };
+
+        sent_i2c_buffers.clear();
+        hd44780_lcd_state_t state = HD44780_LCD_STATE_READY;
+        switch(move_action)
+        {
+            case HD44780_LCD_CURSOR_MOVE_RIGHT:
+            case HD44780_LCD_CURSOR_MOVE_LEFT:
+                if (move_action == HD44780_LCD_CURSOR_MOVE_RIGHT)
+                {
+                    expected_sent_data[2] = (HD44780_LCD_CURSOR_OR_SHIFT_RIGHT << 4U) | 0x0c;
+                    expected_sent_data[3] = (HD44780_LCD_CURSOR_OR_SHIFT_RIGHT << 4U) | 0x08;
+                }
+                else
+                {
+                    expected_sent_data[2] = (HD44780_LCD_CURSOR_OR_SHIFT_LEFT << 4U) | 0x0c;
+                    expected_sent_data[3] = (HD44780_LCD_CURSOR_OR_SHIFT_LEFT << 4U) | 0x08;
+                }
+                error = hd44780_lcd_move_relative(move_action);
+                ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
+                ASSERT_EQ(command_sequencer->process_command, internal_command_move_relative);
+                ASSERT_TRUE(command_sequencer_is_reset());
+
+                state = hd44780_lcd_get_state();
+                ASSERT_EQ(state, HD44780_LCD_STATE_PROCESSING);
+
+                process_command();
+                ASSERT_EQ(command_sequencer->process_command, process_command_idling);
+                ASSERT_TRUE(command_sequencer_is_reset());
+
+                // Counter check sent data matches the data we want to actually send
+                ASSERT_EQ(sent_i2c_buffers.size(), 4U);
+                for (uint8_t i = 0 ; i < 4U ; i++)
+                {
+                    EXPECT_EQ(sent_i2c_buffers[i], expected_sent_data[i]);
+                }
+                break;
+
+            case HD44780_LCD_CURSOR_MOVE_UP:
+            case HD44780_LCD_CURSOR_MOVE_DOWN:
+            default:
+                error = hd44780_lcd_move_relative(move_action);
+                ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
+                ASSERT_EQ(command_sequencer->process_command, internal_command_move_relative);
+                ASSERT_TRUE(command_sequencer_is_reset());
+
+                // Nothing should be sent
+                state = hd44780_lcd_get_state();
+                ASSERT_EQ(state, HD44780_LCD_STATE_PROCESSING);
+
+                process_command();
+                ASSERT_EQ(command_sequencer->process_command, process_command_idling);
+                ASSERT_TRUE(command_sequencer_is_reset());
+
+                // Counter check sent data matches the data we want to actually send
+                ASSERT_EQ(sent_i2c_buffers.size(), 0U);
+                break;
+        }
+
+    }
+}
+
 
 int main(int argc, char **argv)
 {

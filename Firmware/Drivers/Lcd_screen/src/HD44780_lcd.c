@@ -6,101 +6,6 @@
 #include "timebase.h"
 #include "i2c.h"
 
-/* ##################################################################################################
-   #################################### PCF8574 I/O expander ########################################
-   ################################################################################################## */
-
-#define PCF8574_I2C_ADDRESS_BASE    (0x20)
-#define PCF8574_I2C_ADDRESS_PINMASK (0x07)
-#define PCF8574_I2C_ADDRESS_DEFAULT (0x27)
-
-// PCF8574 port mapping :
-// | 7  | 6  | 5  | 4  | 3  | 2  | 1  | 0  |
-// | D7 | D6 | D5 | D4 | BL | E  | RW | RS |
-
-// Bitmasking
-#define PCF8574_REGISTER_SELECT_MSK (0x01)
-#define PCF8574_READ_WRITE_MSK      (0x02)
-#define PCF8574_PULSE_START_MSK     (0x04)
-#define PCF8574_BACKLIGHT_MSK       (0x08)
-#define PCF8574_LCD_DATA_LINES_MSK  (0xF0)
-
-// Bitmapping :
-#define PCF8574_REGISTER_SELECT_BIT (0U)
-#define PCF8574_READ_WRITE_BIT      (1U)
-#define PCF8574_PULSE_START_BIT     (2U)
-#define PCF8574_BACKLIGHT_BIT       (3U)
-// 4 data bits are layed out, controlling pins D4 to D7 of HD44780 controller
-#define PCF8574_D4_BIT              (4U)    // D4
-#define PCF8574_D5_BIT              (5U)    // D5
-#define PCF8574_D6_BIT              (6U)    // D6
-#define PCF8574_D7_BIT              (7U)    // D7
-
-/* ##################################################################################################
-   ################################### HD44780 commands payload #####################################
-   ################################################################################################## */
-
-#define HD44780_LCD_DEFAULT_I2C_RETRIES_COUNT (3U)
-
-#ifdef HD44780_LCD_USE_MICROSECONDS_TIMER
-    #define HD44780_LCD_ENABLE_PULSE_DURATION_WAIT (37U)    /**< 37 microseconds, absolute minimum to wait for an instruction to complete */
-#else
-    #define HD44780_LCD_ENABLE_PULSE_DURATION_WAIT (1U)     /**< 1 millisecond wait, minimum resolution                                   */
-#endif
-#define HD44780_LCD_BOOTUP_TIME_MS              (40U)   /**< We have to wait more than 40 ms in the case (worst case) where LCD screen is powered with 2.7 Volts            */
-#define HD44780_LCD_FUNCTION_SET_FIRST_WAIT_MS  (5U)    /**< Should be more than 4.1ms, 5ms is fine                                                                         */
-#define HD44780_LCD_FUNCTION_SET_SECOND_WAIT_MS (1U)    /**< Normally, 100 µs are sufficient, but this is only for initialisation so 1 ms resolution will do it just fine   */
-
-/* Function set command payload mapping */
-#define HD44780_LCD_FUNTION_SET_FONT_BIT        (2)
-#define HD44780_LCD_FUNTION_SET_LINES_NUMB_BIT  (3)
-#define HD44780_LCD_FUNTION_SET_DATA_LEN_BIT    (4)
-
-#define HD44780_LCD_FUNTION_SET_FONT_MSK        (0x04)
-#define HD44780_LCD_FUNTION_SET_LINES_NUMB_MSK  (0x08)
-#define HD44780_LCD_FUNTION_SET_DATA_LEN_MSK    (0x10)
-
-/* Display control command payload mapping */
-#define HD44780_LCD_DISPLAY_CTRL_BLINKING_BIT   (0)
-#define HD44780_LCD_DISPLAY_CTRL_CURSOR_BIT     (1)
-#define HD44780_LCD_DISPLAY_CTRL_DISPLAY_BIT    (2)
-
-#define HD44780_LCD_DISPLAY_CTRL_BLINKING_MSK   (0x01)
-#define HD44780_LCD_DISPLAY_CTRL_CURSOR_MSK     (0x02)
-#define HD44780_LCD_DISPLAY_CTRL_DISPLAY_MSK    (0x04)
-
-#define HD44780_LCD_CURSOR_OR_SHIFT_CURSOR_ONLY (0x00)
-#define HD44780_LCD_CURSOR_OR_SHIFT_SHIFT_ONLY  (0x08)
-#define HD44780_LCD_CURSOR_OR_SHIFT_LEFT        (0x00)
-#define HD44780_LCD_CURSOR_OR_SHIFT_RIGHT       (0x04)
-
-/* Set CGRAM Address command payload mapping */
-#define HD44780_LCD_CGRAM_ADDRESS_START_BIT     (0)
-#define HD44780_LCD_CGRAM_ADDRESS_MSK           (0x3F)
-
-/* Set DDRAM Address command payload mapping */
-#define HD44780_LCD_DDRAM_ADDRESS_START_BIT     (0)
-#define HD44780_LCD_DDRAM_ADDRESS_MSK           (0x7F)
-
-#define HD44780_LCD_DDRAM_START_ADDRESS         (0x00)
-#define HD44780_LCD_MAX_CHARACTERS              (80U)
-
-/**
- * @brief Describes the HD44780 valid instruction set, to be used in write mode
-*/
-typedef enum
-{
-    HD44780_LCD_CMD_CLEAR_DISPLAY      = 0x01,  /**< Clears the display */
-    HD44780_LCD_CMD_RETURN_HOME        = 0x02,  /**< Returns the cursor to the 1rst line, 1rst column position( display is shifted accordingly)                     */
-    HD44780_LCD_CMD_ENTRY_MODE_SET     = 0x04,  /**< Controls how LCD screen behaves (cursor and display shift) when a new character is written into DDRAM/CGRAM    */
-    HD44780_LCD_CMD_DISPLAY_CONTROL    = 0x08,  /**< Controls general settings about the display (general display, cursor, blink )                                  */
-    HD44780_LCD_CMD_CURSOR_SHIFT       = 0x10,  /**< Controls the cursor position and display shift. Used to move cursor or dislay unitarily                        */
-    HD44780_LCD_CMD_FUNCTION_SET       = 0x20,  /**< Allows to select the bus data length, line count and font used to display characters                           */
-    HD44780_LCD_CMD_INIT_4BITS_MODE    = 0x30,  /**< Special command which handles initialisation by instruction sequence
-                                                     (actually it is a function set command + Data length set to 4 bits)                                            */
-    HD44780_LCD_CMD_SET_CG_RAM_ADDR    = 0x40,  /**< Sets the current character generation circuit address (from 0 to 63 )                                          */
-    HD44780_LCD_CMD_SET_DD_RAM_ADDR    = 0x80,  /**< Sets the current address pointer of DDRAM (from 0 to 127)                                                      */
-} hd44780_lcd_command_t;
 
 /* Only there to prevent pointing to NULL memory within process_commands_sequencer */
 void process_command_idling(void)
@@ -485,11 +390,11 @@ hd44780_lcd_error_t hd44780_lcd_move_relative(const hd44780_lcd_cursor_move_acti
         return err;
     }
 
-    command_sequencer.parameters.move = move;
     // Update commands sequencer to handle the initialisation command at next process() call
-    internal_state = HD44780_LCD_STATE_PROCESSING;
     reset_command_sequencer(true);
-    command_sequencer.process_command = internal_command_move_cursor_to_coord;
+    internal_state = HD44780_LCD_STATE_PROCESSING;
+    command_sequencer.parameters.move = move;
+    command_sequencer.process_command = internal_command_move_relative;
 
     return HD44780_LCD_ERROR_OK;
 }
@@ -844,18 +749,8 @@ bool handle_byte_sending(void)
     return byte_sent;
 }
 
-void internal_command_handle_function_set(void)
+void handle_end_of_internal_command(bool byte_sent)
 {
-    // Set the right data into PCF8574 buffer
-    if (command_sequencer.sequence.first_pass)
-    {
-        handle_function_set();
-        prepare_i2c_buffer(TRANSMISSION_MODE_INSTRUCTION);
-        command_sequencer.sequence.first_pass = false;
-    }
-
-    bool byte_sent = handle_byte_sending();
-
     // Did we send the full payload ?
     if (true == byte_sent)
     {
@@ -869,7 +764,21 @@ void internal_command_handle_function_set(void)
         }
         reset_command_sequencer(false);
     }
+}
 
+
+void internal_command_handle_function_set(void)
+{
+    // Set the right data into PCF8574 buffer
+    if (command_sequencer.sequence.first_pass)
+    {
+        handle_function_set();
+        prepare_i2c_buffer(TRANSMISSION_MODE_INSTRUCTION);
+        command_sequencer.sequence.first_pass = false;
+    }
+
+    bool byte_sent = handle_byte_sending();
+    handle_end_of_internal_command(byte_sent);
 }
 
 void internal_command_clear(void)
@@ -883,20 +792,7 @@ void internal_command_clear(void)
     }
 
     bool byte_sent = handle_byte_sending();
-
-    // Did we send the full payload ?
-    if (true == byte_sent)
-    {
-        if (command_sequencer.nested_sequence_mode == false)
-        {
-            internal_state = HD44780_LCD_STATE_READY;
-        }
-        else
-        {
-            command_sequencer.sequence.count++;
-        }
-        reset_command_sequencer(false);
-    }
+    handle_end_of_internal_command(byte_sent);
 }
 
 void internal_command_set_entry_mode(void)
@@ -910,20 +806,7 @@ void internal_command_set_entry_mode(void)
     }
 
     bool byte_sent = handle_byte_sending();
-
-    // Did we send the full payload ?
-    if (true == byte_sent)
-    {
-        if (command_sequencer.nested_sequence_mode == false)
-        {
-            internal_state = HD44780_LCD_STATE_READY;
-        }
-        else
-        {
-            command_sequencer.sequence.count++;
-        }
-        reset_command_sequencer(false);
-    }
+    handle_end_of_internal_command(byte_sent);
 }
 
 
@@ -992,20 +875,7 @@ void internal_command_home(void)
     }
 
     bool byte_sent = handle_byte_sending();
-
-    // Did we send the full payload ?
-    if (true == byte_sent)
-    {
-        if (command_sequencer.nested_sequence_mode == false)
-        {
-            internal_state = HD44780_LCD_STATE_READY;
-        }
-        else
-        {
-            command_sequencer.sequence.count++;
-        }
-        reset_command_sequencer(false);
-    }
+    handle_end_of_internal_command(byte_sent);
 }
 
 void internal_command_handle_display_controls(void)
@@ -1019,20 +889,7 @@ void internal_command_handle_display_controls(void)
     }
 
     bool byte_sent = handle_byte_sending();
-
-    // Did we send the full payload ?
-    if (true == byte_sent)
-    {
-        if (command_sequencer.nested_sequence_mode == false)
-        {
-            internal_state = HD44780_LCD_STATE_READY;
-        }
-        else
-        {
-            command_sequencer.sequence.count++;
-        }
-        reset_command_sequencer(false);
-    }
+    handle_end_of_internal_command(byte_sent);
 }
 
 void internal_command_set_backlight(void)
@@ -1096,20 +953,7 @@ void internal_command_move_cursor_to_coord(void)
     }
 
     bool byte_sent = handle_byte_sending();
-
-    // Did we send the full payload ?
-    if (true == byte_sent)
-    {
-        if (command_sequencer.nested_sequence_mode == false)
-        {
-            internal_state = HD44780_LCD_STATE_READY;
-        }
-        else
-        {
-            command_sequencer.sequence.count++;
-        }
-        reset_command_sequencer(false);
-    }
+    handle_end_of_internal_command(byte_sent);
 }
 
 void internal_command_move_relative(void)
@@ -1145,10 +989,12 @@ void internal_command_move_relative(void)
                 //  2 lines : UP and DOWN exhibit the same behavior, providing the cursor does 'teleport' when reaching the boundaries of the screen.
                 //  Otherwise, cursor shall be stuck to the screen boundaries
                 internal_state = HD44780_LCD_STATE_READY;
+                reset_command_sequencer(false);
                 return;
 
             default:
                 internal_state = HD44780_LCD_STATE_READY;
+                reset_command_sequencer(false);
                 return;
         }
 
@@ -1157,20 +1003,7 @@ void internal_command_move_relative(void)
     }
 
     bool byte_sent = handle_byte_sending();
-
-    // Did we send the full payload ?
-    if (true == byte_sent)
-    {
-        if (command_sequencer.nested_sequence_mode == false)
-        {
-            internal_state = HD44780_LCD_STATE_READY;
-        }
-        else
-        {
-            command_sequencer.sequence.count++;
-        }
-        reset_command_sequencer(false);
-    }
+    handle_end_of_internal_command(byte_sent);
 }
 
 void internal_command_shift_display(void)
@@ -1200,20 +1033,7 @@ void internal_command_shift_display(void)
     }
 
     bool byte_sent = handle_byte_sending();
-
-    // Did we send the full payload ?
-    if (true == byte_sent)
-    {
-        if (command_sequencer.nested_sequence_mode == false)
-        {
-            internal_state = HD44780_LCD_STATE_READY;
-        }
-        else
-        {
-            command_sequencer.sequence.count++;
-        }
-        reset_command_sequencer(false);
-    }
+    handle_end_of_internal_command(byte_sent);
 }
 
 
