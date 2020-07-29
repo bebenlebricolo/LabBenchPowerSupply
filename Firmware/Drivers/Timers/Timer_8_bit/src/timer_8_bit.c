@@ -13,7 +13,7 @@
 static struct
 {
     timer_8_bit_handle_t handle;
-    timer_x_bit_prescaler_selection_t prescaler;
+    timer_8_bit_prescaler_selection_t prescaler;
     bool is_initialised;
 } internal_config[TIMER_8_BIT_COUNT] = {0};
 
@@ -90,7 +90,7 @@ timer_error_t timer_8_bit_get_default_config(timer_8_bit_config_t * config)
     config->timing_config.counter = 0U;
     config->timing_config.ocra_val = 0U;
     config->timing_config.ocrb_val = 0U;
-    config->timing_config.prescaler = TIMERxBIT_CLK_NO_CLOCK;
+    config->timing_config.prescaler = TIMER8BIT_CLK_NO_CLOCK;
     config->timing_config.waveform_mode = TIMER8BIT_WG_NORMAL;
     config->timing_config.comp_match_a = TIMER8BIT_CMOD_NORMAL;
     config->timing_config.comp_match_b = TIMER8BIT_CMOD_NORMAL;
@@ -109,7 +109,7 @@ timer_error_t timer_8_bit_get_default_config(timer_8_bit_config_t * config)
     return ret;
 }
 
-timer_error_t timer_8_bit_set_force_compare_config(uint8_t id, timer_x_bit_force_compare_config_t * const force_comp_config)
+timer_error_t timer_8_bit_set_force_compare_config(uint8_t id, timer_8_bit_force_compare_config_t * const force_comp_config)
 {
     timer_error_t ret = check_id(id);
 
@@ -151,7 +151,7 @@ timer_error_t timer_8_bit_set_force_compare_config(uint8_t id, timer_x_bit_force
     return ret;
 }
 
-timer_error_t timer_8_bit_get_force_compare_config(uint8_t id, timer_x_bit_force_compare_config_t * force_comp_config)
+timer_error_t timer_8_bit_get_force_compare_config(uint8_t id, timer_8_bit_force_compare_config_t * force_comp_config)
 {
     timer_error_t ret = check_id(id);
     if (TIMER_ERROR_OK != ret)
@@ -350,7 +350,7 @@ timer_error_t timer_8_bit_get_interrupt_flags(uint8_t id, timer_8_bit_interrupt_
 
 
 
-timer_error_t timer_8_bit_set_prescaler(uint8_t id, const timer_x_bit_prescaler_selection_t prescaler)
+timer_error_t timer_8_bit_set_prescaler(uint8_t id, const timer_8_bit_prescaler_selection_t prescaler)
 {
     timer_error_t ret = check_id(id);
     if (TIMER_ERROR_OK != ret)
@@ -368,7 +368,7 @@ timer_error_t timer_8_bit_set_prescaler(uint8_t id, const timer_x_bit_prescaler_
     return ret;
 }
 
-timer_error_t timer_8_bit_get_prescaler(uint8_t id, timer_x_bit_prescaler_selection_t * prescaler)
+timer_error_t timer_8_bit_get_prescaler(uint8_t id, timer_8_bit_prescaler_selection_t * prescaler)
 {
     timer_error_t ret = check_id(id);
     if (TIMER_ERROR_OK != ret)
@@ -819,6 +819,6 @@ timer_error_t timer_8_bit_stop(uint8_t id)
     }
 
     /* Reset prescaler to NO_CLOCK*/
-    *(internal_config[id].handle.TCCRB) = (*(internal_config[id].handle.TCCRB) & ~CS_MSK) | TIMERxBIT_CLK_NO_CLOCK;
+    *(internal_config[id].handle.TCCRB) = (*(internal_config[id].handle.TCCRB) & ~CS_MSK) | TIMER8BIT_CLK_NO_CLOCK;
     return ret;
 }

@@ -153,14 +153,14 @@ TEST(timer_16_bit_driver_tests, guard_null_pointer)
     ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
 
     /* Test force compare flags get/set api */
-    timer_x_bit_force_compare_config_t * nullptr_force_compare = NULL;
+    timer_16_bit_force_compare_config_t * nullptr_force_compare = NULL;
     ret = timer_16_bit_set_force_compare_config(DT_ID, nullptr_force_compare);
     ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
     ret = timer_16_bit_get_force_compare_config(DT_ID, nullptr_force_compare);
     ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
 
     /* Test prescaler get/set api */
-    timer_x_bit_prescaler_selection_t * nullptr_prescaler = NULL;
+    timer_16_bit_prescaler_selection_t * nullptr_prescaler = NULL;
     ret = timer_16_bit_get_prescaler(DT_ID, nullptr_prescaler);
     ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
 
@@ -267,8 +267,8 @@ TEST_F(Timer16BitFixture, test_handle_is_set_correctly)
     ASSERT_EQ(timer_16_bit_registers_stub.TCCRA & COMA_MSK, 0x3 << COMA0_BIT);
 
     // Testing TCCRB register
-    config.timing_config.prescaler = TIMERxBIT_CLK_PRESCALER_256; // 11
-    ASSERT_EQ(timer_16_bit_registers_stub.TCCRB & CS_MSK, (uint8_t)TIMERxBIT_CLK_NO_CLOCK);
+    config.timing_config.prescaler = TIMER16BIT_CLK_PRESCALER_256; // 11
+    ASSERT_EQ(timer_16_bit_registers_stub.TCCRB & CS_MSK, (uint8_t)TIMER16BIT_CLK_NO_CLOCK);
     ret = timer_16_bit_set_prescaler(DT_ID, config.timing_config.prescaler);
     ASSERT_EQ(TIMER_ERROR_OK, ret);
     ASSERT_EQ(timer_16_bit_registers_stub.TCCRB & CS_MSK, (uint8_t) config.timing_config.prescaler);
@@ -340,14 +340,14 @@ TEST_F(Timer16BitFixture, test_timing_configuration_unitary_functions)
     uint16_t received_ocra_val = config.timing_config.ocra_val;
     uint16_t received_ocrb_val = config.timing_config.ocrb_val;
     uint16_t received_counter_val = config.timing_config.counter;
-    timer_x_bit_prescaler_selection_t received_prescaler = config.timing_config.prescaler;
+    timer_16_bit_prescaler_selection_t received_prescaler = config.timing_config.prescaler;
     timer_16_bit_waveform_generation_t received_waveform = config.timing_config.waveform_mode;
 
     config.timing_config.comp_match_a = TIMER16BIT_CMOD_TOGGLE_OCnX;
     config.timing_config.comp_match_b = TIMER16BIT_CMOD_SET_OCnX;
     config.timing_config.ocra_val = 13520U;
     config.timing_config.ocrb_val = 1560U;
-    config.timing_config.prescaler = TIMERxBIT_CLK_PRESCALER_64;
+    config.timing_config.prescaler = TIMER16BIT_CLK_PRESCALER_64;
     config.timing_config.waveform_mode = TIMER16BIT_WG_PWM_PHASE_AND_FREQ_CORRECT_ICR_MAX;
 
     // Compare match A mode
@@ -433,8 +433,8 @@ TEST_F(Timer16BitFixture, test_timing_configuration_unitary_functions)
 TEST_F(Timer16BitFixture, test_force_compare_flags)
 {
     auto ret = TIMER_ERROR_OK;
-    timer_x_bit_force_compare_config_t received_config;
-    memcpy(&received_config, &config.force_compare, sizeof(timer_x_bit_force_compare_config_t));
+    timer_16_bit_force_compare_config_t received_config;
+    memcpy(&received_config, &config.force_compare, sizeof(timer_16_bit_force_compare_config_t));
 
     config.force_compare.force_comp_match_a = true;
     config.force_compare.force_comp_match_b = true;
@@ -446,7 +446,7 @@ TEST_F(Timer16BitFixture, test_force_compare_flags)
 
     ret = timer_16_bit_get_force_compare_config(DT_ID, &received_config);
     ASSERT_EQ(TIMER_ERROR_OK, ret);
-    ASSERT_EQ(0, memcmp(&config.force_compare, &received_config, sizeof(timer_x_bit_force_compare_config_t)));
+    ASSERT_EQ(0, memcmp(&config.force_compare, &received_config, sizeof(timer_16_bit_force_compare_config_t)));
 }
 
 TEST_F(Timer16BitFixture, test_interrupt_enable_flags)

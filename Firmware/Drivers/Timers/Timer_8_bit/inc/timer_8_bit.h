@@ -39,7 +39,7 @@ typedef struct
 {
     timer_8_bit_timing_config_t        timing_config;    /**< Handles basic timing configuration for 8 bit timers                                */
     timer_8_bit_interrupt_config_t     interrupt_config; /**< Handles interrupt configuraitons for 8 bit timers                                  */
-    timer_x_bit_force_compare_config_t force_compare;    /**< Handles force compare flags on output A and B, generic configuration among timers  */
+    timer_8_bit_force_compare_config_t force_compare;    /**< Handles force compare flags on output A and B, generic configuration among timers  */
     timer_8_bit_handle_t               handle;           /**< Stores pointer locations to peripheral registers                                   */
 } timer_8_bit_config_t;
 
@@ -84,7 +84,7 @@ timer_error_t timer_8_bit_set_handle(uint8_t id, timer_8_bit_handle_t * const ha
  *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
  *      TIMER_ERROR_NULL_POINTER   :   given force_comp_config parameter points to NULL
 */
-timer_error_t timer_8_bit_set_force_compare_config(uint8_t id, timer_x_bit_force_compare_config_t * const force_comp_config);
+timer_error_t timer_8_bit_set_force_compare_config(uint8_t id, timer_8_bit_force_compare_config_t * const force_comp_config);
 
 /**
  * @brief gets force compare configuration object from timer internal configuration
@@ -95,7 +95,7 @@ timer_error_t timer_8_bit_set_force_compare_config(uint8_t id, timer_x_bit_force
  *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
  *      TIMER_ERROR_NULL_POINTER   :   given it_config parameter points to NULL
 */
-timer_error_t timer_8_bit_get_force_compare_config(uint8_t id, timer_x_bit_force_compare_config_t * force_comp_config);
+timer_error_t timer_8_bit_get_force_compare_config(uint8_t id, timer_8_bit_force_compare_config_t * force_comp_config);
 
 
 
@@ -153,7 +153,7 @@ timer_error_t timer_8_bit_get_interrupt_flags(uint8_t id, timer_8_bit_interrupt_
  *      TIMER_ERROR_OK             :   operation succeeded
  *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
 */
-timer_error_t timer_8_bit_set_prescaler(uint8_t id, const timer_x_bit_prescaler_selection_t prescaler);
+timer_error_t timer_8_bit_set_prescaler(uint8_t id, const timer_8_bit_prescaler_selection_t prescaler);
 
 /**
  * @brief reads targeted timer prescaler from internal configuration
@@ -164,7 +164,7 @@ timer_error_t timer_8_bit_set_prescaler(uint8_t id, const timer_x_bit_prescaler_
  *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
  *      TIMER_ERROR_NULL_POINTER   :   given prescaler parameter points to NULL
 */
-timer_error_t timer_8_bit_get_prescaler(uint8_t id, timer_x_bit_prescaler_selection_t * prescaler);
+timer_error_t timer_8_bit_get_prescaler(uint8_t id, timer_8_bit_prescaler_selection_t * prescaler);
 
 
 
