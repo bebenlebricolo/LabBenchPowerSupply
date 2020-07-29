@@ -17,7 +17,8 @@ typedef enum
     TIMEBASE_ERROR_NULL_POINTER,            /**< One or more parameters are not initialised properly            */
     TIMEBASE_ERROR_INVALID_INDEX,           /**< Index is not set correctly, probably out of bounds             */
     TIMEBASE_ERROR_TIMER_UNINITIALISED,     /**< Underlying timer is not initialised                            */
-    TIMEBASE_ERROR_UNSUPPORTED_TIMER_TYPE   /**< Given timer type is not compatible with timebase_timer_t enum  */
+    TIMEBASE_ERROR_UNSUPPORTED_TIMER_TYPE,  /**< Given timer type is not compatible with timebase_timer_t enum  */
+    TIMEBASE_ERROR_UNSUPPORTED_TIMESCALE    /**< Given timescale is not relevant to timebase module             */
 } timebase_error_t;
 
 /**
@@ -51,8 +52,13 @@ typedef struct
         timebase_timer_t type : 2;  /**< Used to select a timer from its type                                       */
         uint8_t index : 6;          /**< Used to select a particular timer from the available ones                  */
     } timer;
-    timebase_timescale_t timescale; /**< Selects what is the resolution of the timer                                */
-    uint16_t cpu_freq_khz;          /**< Gives the CPU frequency to compute the right prescaler for the timebase    */
+    uint32_t cpu_freq;              /**< Gives the CPU frequency to compute the right prescaler for the timebase    */
+
+    struct
+    {
+        timebase_timescale_t timescale; /**< Selects what is the resolution of the timer                            */
+        uint32_t custom_target_freq;    /**< Custom target frequency                                                */
+    };
 } timebase_config_t;
 
 /**

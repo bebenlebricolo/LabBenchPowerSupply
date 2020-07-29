@@ -466,11 +466,44 @@ TEST(timer_8_bit_driver_tests, test_prescaler_table)
         {1024, TIMER8BIT_CLK_PRESCALER_1024}
     };
 
-    for (uint8_t i = 0 ; i < TIMER_8_BIT_MAX_PRESCALER ; i++)
+    for (uint8_t i = 0 ; i < TIMER_8_BIT_MAX_PRESCALER_COUNT ; i++)
     {
         EXPECT_EQ(expected_values[i].first, timer_8_bit_prescaler_table[i].value);
         EXPECT_EQ(expected_values[i].second, timer_8_bit_prescaler_table[i].key);
     }
+}
+
+TEST(timer_8_bit_driver_tests, test_parameters_computation_prescaler)
+{
+    uint32_t cpu_freq = 16'000'000;
+    uint32_t target_freq = 1'000;
+    uint8_t ocra = 0;
+    timer_8_bit_prescaler_selection_t prescaler = TIMER8BIT_CLK_PRESCALER_1;
+    timer_8_bit_compute_matching_parameters(&cpu_freq, &target_freq, &prescaler, &ocra);
+
+    ASSERT_EQ(prescaler, TIMER8BIT_CLK_PRESCALER_64);
+    ASSERT_EQ(ocra, 250U);
+
+    target_freq = 3'000;
+    timer_8_bit_compute_matching_parameters(&cpu_freq, &target_freq, &prescaler, &ocra);
+    ASSERT_EQ(prescaler, TIMER8BIT_CLK_PRESCALER_64);
+    ASSERT_EQ(ocra, 83U);
+
+    target_freq = 5'000;
+    timer_8_bit_compute_matching_parameters(&cpu_freq, &target_freq, &prescaler, &ocra);
+    ASSERT_EQ(prescaler, TIMER8BIT_CLK_PRESCALER_64);
+    ASSERT_EQ(ocra, 50U);
+
+    target_freq = 1'000'000;
+    timer_8_bit_compute_matching_parameters(&cpu_freq, &target_freq, &prescaler, &ocra);
+    ASSERT_EQ(prescaler, TIMER8BIT_CLK_PRESCALER_1);
+    ASSERT_EQ(ocra, 16U);
+
+    cpu_freq = 8'000'000;
+    target_freq = 440;
+    timer_8_bit_compute_matching_parameters(&cpu_freq, &target_freq, &prescaler, &ocra);
+    ASSERT_EQ(prescaler, TIMER8BIT_CLK_PRESCALER_256);
+    ASSERT_EQ(ocra, 71U);
 }
 
 

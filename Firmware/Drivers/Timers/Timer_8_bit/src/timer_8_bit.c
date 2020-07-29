@@ -17,7 +17,7 @@ static struct
     bool is_initialised;
 } internal_config[TIMER_8_BIT_COUNT] = {0};
 
-const timer_8_bit_prescaler_value_pair_t timer_8_bit_prescaler_table[TIMER_8_BIT_MAX_PRESCALER] =
+const timer_8_bit_prescaler_value_pair_t timer_8_bit_prescaler_table[TIMER_8_BIT_MAX_PRESCALER_COUNT] =
 {
     {.value = 1U, .key = TIMER8BIT_CLK_PRESCALER_1},
     {.value = 8U, .key = TIMER8BIT_CLK_PRESCALER_8},
@@ -25,6 +25,29 @@ const timer_8_bit_prescaler_value_pair_t timer_8_bit_prescaler_table[TIMER_8_BIT
     {.value = 256U, .key = TIMER8BIT_CLK_PRESCALER_256},
     {.value = 1024U, .key = TIMER8BIT_CLK_PRESCALER_1024},
 };
+
+void timer_8_bit_compute_matching_parameters(const uint32_t * const cpu_freq,
+                                             const uint32_t * const target_freq,
+                                             timer_8_bit_prescaler_selection_t * const prescaler,
+                                             uint8_t * const ocra)
+{
+    const uint32_t freq_ratio = *cpu_freq / *target_freq;
+    const uint16_t min_prescaler = freq_ratio / TIMER8BIT_MAX_COUNTER_VALUE;
+    *prescaler = TIMER8BIT_CLK_PRESCALER_1;
+    uint16_t target_prescaler = 1U;
+
+    for (uint8_t i = 0 ; i < TIMER_8_BIT_MAX_PRESCALER_COUNT ; i++)
+    {
+        if (timer_8_bit_prescaler_table[i].value >= min_prescaler)
+        {
+            *prescaler = timer_8_bit_prescaler_table[i].key;
+            target_prescaler = timer_8_bit_prescaler_table[i].value;
+            break;
+        }
+    }
+
+    *ocra = (uint8_t) (freq_ratio / target_prescaler);
+}
 
 static inline timer_error_t check_handle(timer_8_bit_handle_t * const handle)
 {
