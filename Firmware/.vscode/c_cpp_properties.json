@@ -18,7 +18,7 @@
 
                 "${workspaceFolder}/Drivers/I2c/inc",
                 "${workspaceFolder}/Drivers/I2c/Tests",
-                "${workspaceFolder}/Modules/TimeBase/inc",
+                "${workspaceFolder}/Modules/Timebase/inc",
 
                 "${workspaceFolder}/**",
                 "/usr/include",
@@ -65,6 +65,28 @@
                 "${workspaceFolder}/Drivers/Lcd_screen/inc",
                 "${workspaceFolder}/Drivers/Lcd_screen/Tests",
                 "${workspaceFolder}/Drivers/Lcd_screen/Tests/Stub",
+
+                "${workspaceFolder}/**",
+                "/usr/include",
+                "/usr/include/c++/**/*",
+                "/usr/include/gtest",
+                "/usr/avr/include",
+                "/usr/lib/gcc/avr/10.1.0/include/*"
+            ],
+            "defines": [
+                "__AVR_ATmega328__",
+                "UNIT_TESTING"
+            ],
+            "compilerPath": "/usr/bin/g++",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "gcc-x64"
+        },
+        {
+            "name": "LabBenchPowerSupply_TimebaseTests",
+            "includePath": [
+                "${workspaceFolder}/Modules/Timebase/inc",
+                "${workspaceFolder}/Modules/Timebase/Tests",
 
                 "${workspaceFolder}/**",
                 "/usr/include",

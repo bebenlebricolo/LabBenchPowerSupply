@@ -13,10 +13,11 @@ extern "C"
 */
 typedef enum
 {
-    TIMEBASE_ERROR_OK,                      /**< No particular error                                    */
-    TIMEBASE_ERROR_NULL_POINTER,            /**< One or more parameters are not initialised properly    */
-    TIMEBASE_ERROR_INVALID_INDEX,           /**< Index is not set correctly, probably out of bounds     */
-    TIMEBASE_ERROR_TIMER_UNINITIALISED      /**< Underlying timer is not initialised                    */
+    TIMEBASE_ERROR_OK,                      /**< No particular error                                            */
+    TIMEBASE_ERROR_NULL_POINTER,            /**< One or more parameters are not initialised properly            */
+    TIMEBASE_ERROR_INVALID_INDEX,           /**< Index is not set correctly, probably out of bounds             */
+    TIMEBASE_ERROR_TIMER_UNINITIALISED,     /**< Underlying timer is not initialised                            */
+    TIMEBASE_ERROR_UNSUPPORTED_TIMER_TYPE   /**< Given timer type is not compatible with timebase_timer_t enum  */
 } timebase_error_t;
 
 /**
@@ -53,6 +54,15 @@ typedef struct
     timebase_timescale_t timescale; /**< Selects what is the resolution of the timer                                */
     uint16_t cpu_freq_khz;          /**< Gives the CPU frequency to compute the right prescaler for the timebase    */
 } timebase_config_t;
+
+/**
+ * @brief This function is used to compute selected timer initialisation parameters. This is a Dry-Run only function : it will not initialise underlying timer.
+ * @param[in]   config      : Initial configuration of timebase
+ * @param[out]  prescaler   : Computed prescaler. Shall be cast to the timer's according prescaler enum.
+ *                            E.g : selected timer is a 8bit async timer, then prescaler shall be cast to (timer_8_bit_async_prescaler_selection_t)
+ * @param[out]  ocr_value   : Output Compare value used to trigger an interrupt and load the accumulator with it.
+*/
+timebase_error_t timebase_compute_timer_parameters(timebase_config_t const * const config, uint8_t * const prescaler, uint16_t * const ocr_value);
 
 /**
  * @brief Initialises the timebase module using an id and a configuration.
@@ -107,7 +117,6 @@ timebase_error_t timebase_get_duration(uint16_t const * const reference, uint16_
  *          TIMEBASE_ERROR_INVALID_INDEX    :   given module id is out of bounds
 */
 timebase_error_t timebase_get_duration_now(const uint8_t id, uint16_t const * const reference, uint16_t * const duration);
-
 
 
 #ifdef __cplusplus
