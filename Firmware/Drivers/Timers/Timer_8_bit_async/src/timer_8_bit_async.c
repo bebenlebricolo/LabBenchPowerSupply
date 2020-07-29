@@ -17,6 +17,17 @@ static struct
     bool is_initialised;
 } internal_config[TIMER_8_BIT_ASYNC_COUNT] = {0};
 
+const timer_8_bit_async_prescaler_value_pair_t timer_8_bit_async_prescaler_table[TIMER_8_BIT_ASYNC_MAX_PRESCALER] =
+{
+    {.value = 1, .key = TIMER8BIT_ASYNC_CLK_PRESCALER_1},
+    {.value = 8, .key = TIMER8BIT_ASYNC_CLK_PRESCALER_8},
+    {.value = 32, .key = TIMER8BIT_ASYNC_CLK_PRESCALER_32},
+    {.value = 64, .key = TIMER8BIT_ASYNC_CLK_PRESCALER_64},
+    {.value = 128, .key = TIMER8BIT_ASYNC_CLK_PRESCALER_128},
+    {.value = 256, .key = TIMER8BIT_ASYNC_CLK_PRESCALER_256},
+    {.value = 1024, .key = TIMER8BIT_ASYNC_CLK_PRESCALER_1024},
+};
+
 static inline timer_error_t check_handle(timer_8_bit_async_handle_t * const handle)
 {
     bool found_null = false;

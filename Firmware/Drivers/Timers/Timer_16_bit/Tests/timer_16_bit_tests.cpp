@@ -557,6 +557,24 @@ TEST_F(Timer16BitFixture, test_initialisation_deinitialisation)
 
 }
 
+TEST(timer_16_bit_driver_tests, test_prescaler_table)
+{
+    const std::vector<std::pair<uint16_t, timer_16_bit_prescaler_selection_t>> expected_values =
+    {
+        {1, TIMER16BIT_CLK_PRESCALER_1},
+        {8, TIMER16BIT_CLK_PRESCALER_8},
+        {64, TIMER16BIT_CLK_PRESCALER_64},
+        {256, TIMER16BIT_CLK_PRESCALER_256},
+        {1024, TIMER16BIT_CLK_PRESCALER_1024}
+    };
+
+    for (uint8_t i = 0 ; i < TIMER_16_BIT_MAX_PRESCALER ; i++)
+    {
+        EXPECT_EQ(expected_values[i].first, timer_16_bit_prescaler_table[i].value);
+        EXPECT_EQ(expected_values[i].second, timer_16_bit_prescaler_table[i].key);
+    }
+}
+
 int main(int argc, char **argv)
 {
     ::testing::InitGoogleTest(&argc, argv);

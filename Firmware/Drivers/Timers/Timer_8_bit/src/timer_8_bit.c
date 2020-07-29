@@ -17,6 +17,15 @@ static struct
     bool is_initialised;
 } internal_config[TIMER_8_BIT_COUNT] = {0};
 
+const timer_8_bit_prescaler_value_pair_t timer_8_bit_prescaler_table[TIMER_8_BIT_MAX_PRESCALER] =
+{
+    {.value = 1U, .key = TIMER8BIT_CLK_PRESCALER_1},
+    {.value = 8U, .key = TIMER8BIT_CLK_PRESCALER_8},
+    {.value = 64U, .key = TIMER8BIT_CLK_PRESCALER_64},
+    {.value = 256U, .key = TIMER8BIT_CLK_PRESCALER_256},
+    {.value = 1024U, .key = TIMER8BIT_CLK_PRESCALER_1024},
+};
+
 static inline timer_error_t check_handle(timer_8_bit_handle_t * const handle)
 {
     bool found_null = false;

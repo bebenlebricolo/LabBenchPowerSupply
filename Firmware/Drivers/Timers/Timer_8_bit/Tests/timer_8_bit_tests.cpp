@@ -453,8 +453,26 @@ TEST_F(Timer8BitFixture, test_initialisation_deinitialisation)
 
     ret = timer_8_bit_stop(DT_ID);
     ASSERT_EQ(ret, TIMER_ERROR_NOT_INITIALISED);
-
 }
+
+TEST(timer_8_bit_driver_tests, test_prescaler_table)
+{
+    const std::vector<std::pair<uint16_t, timer_8_bit_prescaler_selection_t>> expected_values =
+    {
+        {1, TIMER8BIT_CLK_PRESCALER_1},
+        {8, TIMER8BIT_CLK_PRESCALER_8},
+        {64, TIMER8BIT_CLK_PRESCALER_64},
+        {256, TIMER8BIT_CLK_PRESCALER_256},
+        {1024, TIMER8BIT_CLK_PRESCALER_1024}
+    };
+
+    for (uint8_t i = 0 ; i < TIMER_8_BIT_MAX_PRESCALER ; i++)
+    {
+        EXPECT_EQ(expected_values[i].first, timer_8_bit_prescaler_table[i].value);
+        EXPECT_EQ(expected_values[i].second, timer_8_bit_prescaler_table[i].key);
+    }
+}
+
 
 int main(int argc, char **argv)
 {

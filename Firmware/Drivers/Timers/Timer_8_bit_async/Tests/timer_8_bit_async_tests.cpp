@@ -535,6 +535,26 @@ TEST_F(Timer8BitAsyncFixture, test_initialisation_deinitialisation)
 
 }
 
+TEST(timer_8_bit_async_driver_tests, test_prescaler_table)
+{
+    const std::vector<std::pair<uint16_t, timer_8_bit_async_prescaler_selection_t>> expected_values =
+    {
+        {1, TIMER8BIT_ASYNC_CLK_PRESCALER_1},
+        {8, TIMER8BIT_ASYNC_CLK_PRESCALER_8},
+        {32, TIMER8BIT_ASYNC_CLK_PRESCALER_32},
+        {64, TIMER8BIT_ASYNC_CLK_PRESCALER_64},
+        {128, TIMER8BIT_ASYNC_CLK_PRESCALER_128},
+        {256, TIMER8BIT_ASYNC_CLK_PRESCALER_256},
+        {1024, TIMER8BIT_ASYNC_CLK_PRESCALER_1024}
+    };
+
+    for (uint8_t i = 0 ; i < TIMER_8_BIT_ASYNC_MAX_PRESCALER ; i++)
+    {
+        EXPECT_EQ(expected_values[i].first, timer_8_bit_async_prescaler_table[i].value);
+        EXPECT_EQ(expected_values[i].second, timer_8_bit_async_prescaler_table[i].key);
+    }
+}
+
 int main(int argc, char **argv)
 {
     ::testing::InitGoogleTest(&argc, argv);

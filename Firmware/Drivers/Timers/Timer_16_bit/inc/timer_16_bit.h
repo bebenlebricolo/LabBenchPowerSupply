@@ -422,6 +422,24 @@ timer_error_t timer_16_bit_start(uint8_t id);
 */
 timer_error_t timer_16_bit_stop(uint8_t id);
 
+#define TIMER_16_BIT_MAX_PRESCALER (5U)
+
+
+/**
+ * @brief encodes in an uint16_t the prescaler value (ranging from 1 to 1024 = 2^10) and the according enum value (ranging from 0 to 7)
+*/
+typedef struct
+{
+   uint16_t value : 11;
+   uint16_t key : 5;
+} timer_16_bit_prescaler_value_pair_t;
+
+/**
+ * @brief Timer 8 bit prescaler table, ascending order. Used to compute the closest prescaler
+ * which can be used to generate any given frequency
+*/
+extern const timer_16_bit_prescaler_value_pair_t timer_16_bit_prescaler_table[TIMER_16_BIT_MAX_PRESCALER];
+
 #ifdef __cplusplus
 }
 #endif

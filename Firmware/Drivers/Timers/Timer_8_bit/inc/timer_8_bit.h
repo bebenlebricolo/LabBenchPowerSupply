@@ -166,13 +166,6 @@ timer_error_t timer_8_bit_set_prescaler(uint8_t id, const timer_8_bit_prescaler_
 */
 timer_error_t timer_8_bit_get_prescaler(uint8_t id, timer_8_bit_prescaler_selection_t * prescaler);
 
-
-
-
-
-
-
-
 /* ################################ Compare output match configuration ############################### */
 /**
  * @brief sets the targeted timer compare output mode for A channel
@@ -362,6 +355,23 @@ timer_error_t timer_8_bit_start(uint8_t id);
  *      TIMER_ERROR_NULL_POINTER   :   given config parameter points to NULL
 */
 timer_error_t timer_8_bit_stop(uint8_t id);
+
+#define TIMER_8_BIT_MAX_PRESCALER (5U)
+
+/**
+ * @brief encodes in an uint16_t the prescaler value (ranging from 1 to 1024 = 2^10) and the according enum value (ranging from 0 to 7)
+*/
+typedef struct
+{
+   uint16_t value : 11;
+   uint16_t key : 5;
+} timer_8_bit_prescaler_value_pair_t;
+
+/**
+ * @brief Timer 8 bit prescaler table, ascending order. Used to compute the closest prescaler
+ * which can be used to generate any given frequency
+*/
+extern const timer_8_bit_prescaler_value_pair_t timer_8_bit_prescaler_table[TIMER_8_BIT_MAX_PRESCALER];
 
 #ifdef __cplusplus
 }
