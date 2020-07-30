@@ -50,10 +50,10 @@ typedef struct
 */
 typedef struct
 {
-   timer_8_bit_async_timing_config_t  timing_config;    /**< Handles basic timing configuration for 8 bit timers                                */
-   timer_8_bit_interrupt_config_t     interrupt_config; /**< Handles interrupt configuraitons for 8 bit timers                                  */
-   timer_x_bit_force_compare_config_t force_compare;    /**< Handles force compare flags on output A and B, generic configuration among timers  */
-   timer_8_bit_async_handle_t         handle;           /**< Stores pointer locations to peripheral registers                                   */
+   timer_8_bit_async_timing_config_t         timing_config;    /**< Handles basic timing configuration for 8 bit timers                                */
+   timer_8_bit_interrupt_config_t            interrupt_config; /**< Handles interrupt configuraitons for 8 bit timers                                  */
+   timer_8_bit_async_force_compare_config_t  force_compare;    /**< Handles force compare flags on output A and B, generic configuration among timers  */
+   timer_8_bit_async_handle_t                handle;           /**< Stores pointer locations to peripheral registers                                   */
 } timer_8_bit_async_config_t;
 
 
@@ -97,7 +97,7 @@ timer_error_t timer_8_bit_async_set_handle(uint8_t id, timer_8_bit_async_handle_
  *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
  *      TIMER_ERROR_NULL_POINTER   :   given force_comp_config parameter points to NULL
 */
-timer_error_t timer_8_bit_async_set_force_compare_config(uint8_t id, timer_x_bit_force_compare_config_t * const force_comp_config);
+timer_error_t timer_8_bit_async_set_force_compare_config(uint8_t id, timer_8_bit_async_force_compare_config_t * const force_comp_config);
 
 /**
  * @brief gets force compare configuration object from timer internal configuration
@@ -108,7 +108,7 @@ timer_error_t timer_8_bit_async_set_force_compare_config(uint8_t id, timer_x_bit
  *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
  *      TIMER_ERROR_NULL_POINTER   :   given it_config parameter points to NULL
 */
-timer_error_t timer_8_bit_async_get_force_compare_config(uint8_t id, timer_x_bit_force_compare_config_t * force_comp_config);
+timer_error_t timer_8_bit_async_get_force_compare_config(uint8_t id, timer_8_bit_async_force_compare_config_t * force_comp_config);
 
 
 

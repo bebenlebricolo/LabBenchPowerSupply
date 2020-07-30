@@ -55,4 +55,14 @@ typedef enum
     TIMER8BIT_ASYNC_CLK_SOURCE_INTERNAL, /**< Uses MCU main clock (CLKi/o) to feed the timer                                     */
 } timer_8_bit_async_clock_source_t;
 
+/**
+ * @brief describes a generic configuration for Force Output Compare A/B flags for
+ * 8 bit and 16 bit timers, regardless of their actual architecture
+*/
+typedef struct
+{
+    bool force_comp_match_a; /**< Enables (or not) FOCnA flag (forces output compare A)                   */
+    bool force_comp_match_b; /**< Enables (or not) FOCnB flag (forces output compare B)                   */
+} timer_8_bit_async_force_compare_config_t;
+
 #endif /* TIMER_8_BIT_ASYNC_REG_HEADER */

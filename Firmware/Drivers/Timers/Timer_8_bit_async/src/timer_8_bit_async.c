@@ -132,7 +132,7 @@ timer_error_t timer_8_bit_async_get_default_config(timer_8_bit_async_config_t * 
     return ret;
 }
 
-timer_error_t timer_8_bit_async_set_force_compare_config(uint8_t id, timer_x_bit_force_compare_config_t * const force_comp_config)
+timer_error_t timer_8_bit_async_set_force_compare_config(uint8_t id, timer_8_bit_async_force_compare_config_t * const force_comp_config)
 {
     timer_error_t ret = check_id(id);
 
@@ -182,7 +182,7 @@ timer_error_t timer_8_bit_async_set_force_compare_config(uint8_t id, timer_x_bit
     return ret;
 }
 
-timer_error_t timer_8_bit_async_get_force_compare_config(uint8_t id, timer_x_bit_force_compare_config_t * force_comp_config)
+timer_error_t timer_8_bit_async_get_force_compare_config(uint8_t id, timer_8_bit_async_force_compare_config_t * force_comp_config)
 {
     timer_error_t ret = check_id(id);
     if (TIMER_ERROR_OK != ret)
@@ -989,6 +989,6 @@ timer_error_t timer_8_bit_async_stop(uint8_t id)
     }
 
     /* Reset prescaler to NO_CLOCK*/
-    *(internal_config[id].handle.TCCRB) = (*(internal_config[id].handle.TCCRB) & ~CS_MSK) | TIMERxBIT_CLK_NO_CLOCK;
+    *(internal_config[id].handle.TCCRB) = (*(internal_config[id].handle.TCCRB) & ~CS_MSK) | TIMER8BIT_ASYNC_CLK_NO_CLOCK;
     return ret;
 }

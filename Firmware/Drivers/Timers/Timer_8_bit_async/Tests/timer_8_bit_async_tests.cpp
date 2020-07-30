@@ -214,7 +214,7 @@ TEST(timer_8_bit_async_driver_tests, guard_null_pointer)
     ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
 
     /* Test force compare flags get/set api */
-    timer_x_bit_force_compare_config_t * nullptr_force_compare = NULL;
+    timer_8_bit_async_force_compare_config_t * nullptr_force_compare = NULL;
     ret = timer_8_bit_async_set_force_compare_config(DT_ID, nullptr_force_compare);
     ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
     ret = timer_8_bit_async_get_force_compare_config(DT_ID, nullptr_force_compare);
@@ -269,7 +269,7 @@ TEST(timer_8_bit_async_driver_tests, guard_wrong_id)
     ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
 
     /* Test force compare flags get/set api */
-    timer_x_bit_force_compare_config_t * nullptr_force_compare = NULL;
+    timer_8_bit_async_force_compare_config_t * nullptr_force_compare = NULL;
     ret = timer_8_bit_async_set_force_compare_config(targeted_id, nullptr_force_compare);
     ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
     ret = timer_8_bit_async_get_force_compare_config(targeted_id, nullptr_force_compare);
@@ -368,7 +368,7 @@ TEST_F(Timer8BitAsyncFixture, test_timing_configuration_unitary_functions)
     memcpy(&received_ocra_val, &config.timing_config.ocra_val, sizeof(uint8_t));
     memcpy(&received_ocrb_val, &config.timing_config.ocrb_val, sizeof(uint8_t));
     memcpy(&received_counter_val, &config.timing_config.counter, sizeof(uint8_t));
-    memcpy(&received_prescaler, &config.timing_config.prescaler, sizeof(timer_x_bit_prescaler_selection_t));
+    memcpy(&received_prescaler, &config.timing_config.prescaler, sizeof(timer_8_bit_async_prescaler_selection_t));
     memcpy(&received_waveform, &config.timing_config.waveform_mode, sizeof(timer_8_bit_waveform_generation_t));
 
     config.timing_config.comp_match_a = TIMER8BIT_CMOD_TOGGLE_OCnX;
@@ -455,8 +455,8 @@ TEST_F(Timer8BitAsyncFixture, test_timing_configuration_unitary_functions)
 TEST_F(Timer8BitAsyncFixture, test_force_compare_flags)
 {
     auto ret = TIMER_ERROR_OK;
-    timer_x_bit_force_compare_config_t received_config;
-    memcpy(&received_config, &config.force_compare, sizeof(timer_x_bit_force_compare_config_t));
+    timer_8_bit_async_force_compare_config_t received_config;
+    memcpy(&received_config, &config.force_compare, sizeof(timer_8_bit_async_force_compare_config_t));
 
     config.force_compare.force_comp_match_a = true;
     config.force_compare.force_comp_match_b = true;
@@ -468,7 +468,7 @@ TEST_F(Timer8BitAsyncFixture, test_force_compare_flags)
 
     ret = timer_8_bit_async_get_force_compare_config(DT_ID, &received_config);
     ASSERT_EQ(TIMER_ERROR_OK, ret);
-    ASSERT_EQ(0, memcmp(&config.force_compare, &received_config, sizeof(timer_x_bit_force_compare_config_t)));
+    ASSERT_EQ(0, memcmp(&config.force_compare, &received_config, sizeof(timer_8_bit_async_force_compare_config_t)));
 }
 
 TEST_F(Timer8BitAsyncFixture, test_interrupt_enable_flags)
