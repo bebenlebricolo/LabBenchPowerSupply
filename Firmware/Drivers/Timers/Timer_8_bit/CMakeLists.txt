@@ -10,3 +10,5 @@ target_include_directories(timer_8_bit_driver PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../Timer_generic/inc
     ${AVR_INCLUDES}
 )
+
+target_link_libraries(timer_8_bit_driver timer_generic_driver)

@@ -52,9 +52,9 @@ typedef struct
         timer_generic_resolution_t resolution;
         struct
         {
-            timer_generic_prescaler_pair_t * array;
+            timer_generic_prescaler_pair_t const * array;
             uint8_t size;
-        } prescaler;
+        } prescaler_lookup_array;
     } input;
 
     struct

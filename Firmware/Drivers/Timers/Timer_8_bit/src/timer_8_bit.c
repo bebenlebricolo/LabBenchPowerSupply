@@ -1,5 +1,6 @@
 #include "config.h"
 #include "timer_8_bit.h"
+#include "timer_generic.h"
 
 #include <stddef.h>
 #include <string.h>
@@ -17,36 +18,47 @@ static struct
     bool is_initialised;
 } internal_config[TIMER_8_BIT_COUNT] = {0};
 
-const timer_8_bit_prescaler_value_pair_t timer_8_bit_prescaler_table[TIMER_8_BIT_MAX_PRESCALER_COUNT] =
+const timer_generic_prescaler_pair_t timer_8_bit_prescaler_table[TIMER_8_BIT_MAX_PRESCALER_COUNT] =
 {
-    {.value = 1U, .key = TIMER8BIT_CLK_PRESCALER_1},
-    {.value = 8U, .key = TIMER8BIT_CLK_PRESCALER_8},
-    {.value = 64U, .key = TIMER8BIT_CLK_PRESCALER_64},
-    {.value = 256U, .key = TIMER8BIT_CLK_PRESCALER_256},
-    {.value = 1024U, .key = TIMER8BIT_CLK_PRESCALER_1024},
+    {.value = 1U,       .type = (uint8_t) TIMER8BIT_CLK_PRESCALER_1     },
+    {.value = 8U,       .type = (uint8_t) TIMER8BIT_CLK_PRESCALER_8     },
+    {.value = 64U,      .type = (uint8_t) TIMER8BIT_CLK_PRESCALER_64    },
+    {.value = 256U,     .type = (uint8_t) TIMER8BIT_CLK_PRESCALER_256   },
+    {.value = 1024U,    .type = (uint8_t) TIMER8BIT_CLK_PRESCALER_1024  },
 };
+
+timer_8_bit_prescaler_selection_t convert_prescaler_value_to_type(uint16_t const * const input_prescaler)
+{
+    for (uint8_t i = 0 ; i < TIMER_8_BIT_MAX_PRESCALER_COUNT ; i++)
+    {
+        if (*input_prescaler == timer_8_bit_prescaler_table[i].value)
+        {
+            return timer_8_bit_prescaler_table[i].type;
+        }
+    }
+    return TIMER8BIT_CLK_NO_CLOCK;
+}
 
 void timer_8_bit_compute_matching_parameters(const uint32_t * const cpu_freq,
                                              const uint32_t * const target_freq,
                                              timer_8_bit_prescaler_selection_t * const prescaler,
-                                             uint8_t * const ocra)
+                                             uint8_t * const ocra,
+                                             uint32_t * const accumulator)
 {
-    const uint32_t freq_ratio = *cpu_freq / *target_freq;
-    const uint16_t min_prescaler = freq_ratio / TIMER8BIT_MAX_COUNTER_VALUE;
-    *prescaler = TIMER8BIT_CLK_PRESCALER_1;
-    uint16_t target_prescaler = 1U;
-
-    for (uint8_t i = 0 ; i < TIMER_8_BIT_MAX_PRESCALER_COUNT ; i++)
+    timer_generic_parameters_t parameters =
     {
-        if (timer_8_bit_prescaler_table[i].value >= min_prescaler)
+        .input =
         {
-            *prescaler = timer_8_bit_prescaler_table[i].key;
-            target_prescaler = timer_8_bit_prescaler_table[i].value;
-            break;
-        }
-    }
-
-    *ocra = (uint8_t) (freq_ratio / target_prescaler);
+            .cpu_frequency = *cpu_freq,
+            .target_frequency = *target_freq,
+            .prescaler_lookup_array.array = timer_8_bit_prescaler_table,
+            .prescaler_lookup_array.size = TIMER_8_BIT_MAX_PRESCALER_COUNT,
+        },
+    };
+    timer_generic_compute_parameters(&parameters);
+    *prescaler = convert_prescaler_value_to_type(&parameters.output.prescaler);
+    *ocra = (uint8_t) parameters.output.ocra;
+    *accumulator = parameters.output.accumulator;
 }
 
 static inline timer_error_t check_handle(timer_8_bit_handle_t * const handle)

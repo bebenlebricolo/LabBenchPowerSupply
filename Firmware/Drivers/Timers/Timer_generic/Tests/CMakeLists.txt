@@ -5,7 +5,7 @@ enable_testing()
 
 ######### Compile tested modules as individual libraries #########
 
-### timer_8_bit_driver library ###
+### timer_generic_driver library ###
 add_library(timer_generic_driver STATIC
     ../src/timer_generic.c
 )

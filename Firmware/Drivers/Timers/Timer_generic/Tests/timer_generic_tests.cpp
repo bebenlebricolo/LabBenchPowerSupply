@@ -22,8 +22,8 @@ TEST(timer_generic_driver_tests, test_compute_parameters)
     parameters.input.cpu_frequency = 16'000'000U;
     parameters.input.target_frequency = 1'000'000U;
     parameters.input.resolution = TIMER_GENERIC_RESOLUTION_8_BIT;
-    parameters.input.prescaler.array = array;
-    parameters.input.prescaler.size = array_size;
+    parameters.input.prescaler_lookup_array.array = array;
+    parameters.input.prescaler_lookup_array.size = array_size;
 
     timer_generic_compute_parameters(&parameters);
     ASSERT_EQ(parameters.output.prescaler, 1U);

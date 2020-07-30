@@ -455,55 +455,51 @@ TEST_F(Timer8BitFixture, test_initialisation_deinitialisation)
     ASSERT_EQ(ret, TIMER_ERROR_NOT_INITIALISED);
 }
 
-TEST(timer_8_bit_driver_tests, test_prescaler_table)
-{
-    const std::vector<std::pair<uint16_t, timer_8_bit_prescaler_selection_t>> expected_values =
-    {
-        {1, TIMER8BIT_CLK_PRESCALER_1},
-        {8, TIMER8BIT_CLK_PRESCALER_8},
-        {64, TIMER8BIT_CLK_PRESCALER_64},
-        {256, TIMER8BIT_CLK_PRESCALER_256},
-        {1024, TIMER8BIT_CLK_PRESCALER_1024}
-    };
-
-    for (uint8_t i = 0 ; i < TIMER_8_BIT_MAX_PRESCALER_COUNT ; i++)
-    {
-        EXPECT_EQ(expected_values[i].first, timer_8_bit_prescaler_table[i].value);
-        EXPECT_EQ(expected_values[i].second, timer_8_bit_prescaler_table[i].key);
-    }
-}
-
 TEST(timer_8_bit_driver_tests, test_parameters_computation_prescaler)
 {
     uint32_t cpu_freq = 16'000'000;
     uint32_t target_freq = 1'000;
     uint8_t ocra = 0;
+    uint32_t accumulator = 0;
+
     timer_8_bit_prescaler_selection_t prescaler = TIMER8BIT_CLK_PRESCALER_1;
-    timer_8_bit_compute_matching_parameters(&cpu_freq, &target_freq, &prescaler, &ocra);
+    timer_8_bit_compute_matching_parameters(&cpu_freq, &target_freq, &prescaler, &ocra, &accumulator);
 
     ASSERT_EQ(prescaler, TIMER8BIT_CLK_PRESCALER_64);
-    ASSERT_EQ(ocra, 250U);
+    ASSERT_EQ(ocra, 249U);
+    ASSERT_EQ(accumulator, 0U);
 
     target_freq = 3'000;
-    timer_8_bit_compute_matching_parameters(&cpu_freq, &target_freq, &prescaler, &ocra);
+    timer_8_bit_compute_matching_parameters(&cpu_freq, &target_freq, &prescaler, &ocra, &accumulator);
     ASSERT_EQ(prescaler, TIMER8BIT_CLK_PRESCALER_64);
-    ASSERT_EQ(ocra, 83U);
+    ASSERT_EQ(ocra, 82U);
+    ASSERT_EQ(accumulator, 0U);
 
     target_freq = 5'000;
-    timer_8_bit_compute_matching_parameters(&cpu_freq, &target_freq, &prescaler, &ocra);
+    timer_8_bit_compute_matching_parameters(&cpu_freq, &target_freq, &prescaler, &ocra, &accumulator);
     ASSERT_EQ(prescaler, TIMER8BIT_CLK_PRESCALER_64);
-    ASSERT_EQ(ocra, 50U);
+    ASSERT_EQ(ocra, 49U);
+    ASSERT_EQ(accumulator, 0U);
 
     target_freq = 1'000'000;
-    timer_8_bit_compute_matching_parameters(&cpu_freq, &target_freq, &prescaler, &ocra);
+    timer_8_bit_compute_matching_parameters(&cpu_freq, &target_freq, &prescaler, &ocra, &accumulator);
     ASSERT_EQ(prescaler, TIMER8BIT_CLK_PRESCALER_1);
-    ASSERT_EQ(ocra, 16U);
+    ASSERT_EQ(ocra, 15U);
+    ASSERT_EQ(accumulator, 0U);
 
     cpu_freq = 8'000'000;
     target_freq = 440;
-    timer_8_bit_compute_matching_parameters(&cpu_freq, &target_freq, &prescaler, &ocra);
+    timer_8_bit_compute_matching_parameters(&cpu_freq, &target_freq, &prescaler, &ocra, &accumulator);
     ASSERT_EQ(prescaler, TIMER8BIT_CLK_PRESCALER_256);
-    ASSERT_EQ(ocra, 71U);
+    ASSERT_EQ(ocra, 70U);
+    ASSERT_EQ(accumulator, 0U);
+
+    cpu_freq = 16'000'000;
+    target_freq = 1;
+    timer_8_bit_compute_matching_parameters(&cpu_freq, &target_freq, &prescaler, &ocra, &accumulator);
+    ASSERT_EQ(prescaler, TIMER8BIT_CLK_PRESCALER_1024);
+    ASSERT_EQ(ocra, 124U);
+    ASSERT_EQ(accumulator, 124U);
 }
 
 

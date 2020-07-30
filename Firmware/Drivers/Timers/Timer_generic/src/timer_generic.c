@@ -12,11 +12,11 @@ void timer_generic_compute_parameters(timer_generic_parameters_t * const paramet
     parameters->output.prescaler = 1U;
     uint16_t target_prescaler = 1U;
 
-    for (uint8_t i = 0 ; i < parameters->input.prescaler.size ; i++)
+    for (uint8_t i = 0 ; i < parameters->input.prescaler_lookup_array.size ; i++)
     {
-        parameters->output.prescaler = parameters->input.prescaler.array[i].value;
-        target_prescaler = parameters->input.prescaler.array[i].value;
-        if (parameters->input.prescaler.array[i].value >= min_prescaler)
+        parameters->output.prescaler = parameters->input.prescaler_lookup_array.array[i].value;
+        target_prescaler = parameters->input.prescaler_lookup_array.array[i].value;
+        if (parameters->input.prescaler_lookup_array.array[i].value >= min_prescaler)
         {
             break;
         }
