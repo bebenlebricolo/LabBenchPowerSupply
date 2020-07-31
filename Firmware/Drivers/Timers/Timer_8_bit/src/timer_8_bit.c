@@ -27,13 +27,13 @@ const timer_generic_prescaler_pair_t timer_8_bit_prescaler_table[TIMER_8_BIT_MAX
     {.value = 1024U,    .type = (uint8_t) TIMER8BIT_CLK_PRESCALER_1024  },
 };
 
-timer_8_bit_prescaler_selection_t convert_prescaler_value_to_type(uint16_t const * const input_prescaler)
+static timer_8_bit_prescaler_selection_t convert_prescaler_value_to_type(uint16_t const * const input_prescaler)
 {
     for (uint8_t i = 0 ; i < TIMER_8_BIT_MAX_PRESCALER_COUNT ; i++)
     {
         if (*input_prescaler == timer_8_bit_prescaler_table[i].value)
         {
-            return timer_8_bit_prescaler_table[i].type;
+            return (timer_8_bit_prescaler_selection_t) timer_8_bit_prescaler_table[i].type;
         }
     }
     return TIMER8BIT_CLK_NO_CLOCK;
@@ -51,6 +51,7 @@ void timer_8_bit_compute_matching_parameters(const uint32_t * const cpu_freq,
         {
             .cpu_frequency = *cpu_freq,
             .target_frequency = *target_freq,
+            .resolution = TIMER_GENERIC_RESOLUTION_8_BIT,
             .prescaler_lookup_array.array = timer_8_bit_prescaler_table,
             .prescaler_lookup_array.size = TIMER_8_BIT_MAX_PRESCALER_COUNT,
         },

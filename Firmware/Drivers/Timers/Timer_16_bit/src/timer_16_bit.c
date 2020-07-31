@@ -17,14 +17,49 @@ static struct
     bool is_initialised;
 } internal_config[TIMER_16_BIT_COUNT] = {0};
 
-const timer_16_bit_prescaler_value_pair_t timer_16_bit_prescaler_table[TIMER_16_BIT_MAX_PRESCALER] =
+const timer_generic_prescaler_pair_t timer_16_bit_prescaler_table[TIMER_16_BIT_MAX_PRESCALER_COUNT] =
 {
-    {.value = 1, .key = TIMER16BIT_CLK_PRESCALER_1},
-    {.value = 8, .key = TIMER16BIT_CLK_PRESCALER_8},
-    {.value = 64, .key = TIMER16BIT_CLK_PRESCALER_64},
-    {.value = 256, .key = TIMER16BIT_CLK_PRESCALER_256},
-    {.value = 1024, .key = TIMER16BIT_CLK_PRESCALER_1024},
+    {.value = 1,        .type = (uint8_t) TIMER16BIT_CLK_PRESCALER_1    },
+    {.value = 8,        .type = (uint8_t) TIMER16BIT_CLK_PRESCALER_8    },
+    {.value = 64,       .type = (uint8_t) TIMER16BIT_CLK_PRESCALER_64   },
+    {.value = 256,      .type = (uint8_t) TIMER16BIT_CLK_PRESCALER_256  },
+    {.value = 1024,     .type = (uint8_t) TIMER16BIT_CLK_PRESCALER_1024 },
 };
+
+static timer_16_bit_prescaler_selection_t convert_prescaler_value_to_type(uint16_t const * const input_prescaler)
+{
+    for (uint8_t i = 0 ; i < TIMER_16_BIT_MAX_PRESCALER_COUNT ; i++)
+    {
+        if (*input_prescaler == timer_16_bit_prescaler_table[i].value)
+        {
+            return (timer_16_bit_prescaler_selection_t) timer_16_bit_prescaler_table[i].type;
+        }
+    }
+    return TIMER16BIT_CLK_NO_CLOCK;
+}
+
+void timer_16_bit_compute_matching_parameters(const uint32_t * const cpu_freq,
+                                              const uint32_t * const target_freq,
+                                              timer_16_bit_prescaler_selection_t * const prescaler,
+                                              uint16_t * const ocra,
+                                              uint32_t * const accumulator)
+{
+    timer_generic_parameters_t parameters =
+    {
+        .input =
+        {
+            .cpu_frequency = *cpu_freq,
+            .target_frequency = *target_freq,
+            .resolution = TIMER_GENERIC_RESOLUTION_16_BIT,
+            .prescaler_lookup_array.array = timer_16_bit_prescaler_table,
+            .prescaler_lookup_array.size = TIMER_16_BIT_MAX_PRESCALER_COUNT,
+        },
+    };
+    timer_generic_compute_parameters(&parameters);
+    *prescaler = convert_prescaler_value_to_type(&parameters.output.prescaler);
+    *ocra = (uint16_t) parameters.output.ocra;
+    *accumulator = parameters.output.accumulator;
+}
 
 static inline timer_error_t check_handle(timer_16_bit_handle_t * const handle)
 {

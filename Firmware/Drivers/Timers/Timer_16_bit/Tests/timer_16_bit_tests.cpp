@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "config.h"
 #include "timer_16_bit.h"
+#include "timer_generic.h"
 #include "timer_16_bit_registers_stub.h"
 
 /* Default timer id */
@@ -557,22 +558,48 @@ TEST_F(Timer16BitFixture, test_initialisation_deinitialisation)
 
 }
 
-TEST(timer_16_bit_driver_tests, test_prescaler_table)
+TEST(timer_16_bit_driver_tests, test_parameters_computation_prescaler)
 {
-    const std::vector<std::pair<uint16_t, timer_16_bit_prescaler_selection_t>> expected_values =
-    {
-        {1, TIMER16BIT_CLK_PRESCALER_1},
-        {8, TIMER16BIT_CLK_PRESCALER_8},
-        {64, TIMER16BIT_CLK_PRESCALER_64},
-        {256, TIMER16BIT_CLK_PRESCALER_256},
-        {1024, TIMER16BIT_CLK_PRESCALER_1024}
-    };
+    uint32_t cpu_freq = 16'000'000;
+    uint32_t target_freq = 1'000;
+    uint16_t ocra = 0;
+    uint32_t accumulator = 0;
 
-    for (uint8_t i = 0 ; i < TIMER_16_BIT_MAX_PRESCALER ; i++)
-    {
-        EXPECT_EQ(expected_values[i].first, timer_16_bit_prescaler_table[i].value);
-        EXPECT_EQ(expected_values[i].second, timer_16_bit_prescaler_table[i].key);
-    }
+    timer_16_bit_prescaler_selection_t prescaler = TIMER16BIT_CLK_PRESCALER_1;
+    timer_16_bit_compute_matching_parameters(&cpu_freq, &target_freq, &prescaler, &ocra, &accumulator);
+    ASSERT_EQ(prescaler, TIMER16BIT_CLK_PRESCALER_1);
+    ASSERT_EQ(ocra, 15999U);
+    ASSERT_EQ(accumulator, 0U);
+
+    target_freq = 12'000'000;
+    timer_16_bit_compute_matching_parameters(&cpu_freq, &target_freq, &prescaler, &ocra, &accumulator);
+    // This timer could not achieve such a target frequency because even in its fastest configuration,
+    // with a prescaler of 1 and ocra of 0, the timer will tick at 16 MHz.
+    // As output frequency is dependent on ocra, an ocra of 1 divides input cpu frequency by 2, which gives 8 MHz.
+    // So 12 MHz is simply unachievable by this timer because clock speeds are just too close to one another.
+    ASSERT_EQ(prescaler, TIMER16BIT_CLK_PRESCALER_1);
+    ASSERT_EQ(ocra, 0U);
+    ASSERT_EQ(accumulator, 0U);
+
+    target_freq = 8'000'000;
+    timer_16_bit_compute_matching_parameters(&cpu_freq, &target_freq, &prescaler, &ocra, &accumulator);
+    ASSERT_EQ(prescaler, TIMER16BIT_CLK_PRESCALER_1);
+    ASSERT_EQ(ocra, 1U);
+    ASSERT_EQ(accumulator, 0U);
+
+    cpu_freq = 8'000'000;
+    target_freq = 3'000;
+    timer_16_bit_compute_matching_parameters(&cpu_freq, &target_freq, &prescaler, &ocra, &accumulator);
+    ASSERT_EQ(prescaler, TIMER16BIT_CLK_PRESCALER_1);
+    ASSERT_EQ(ocra, 2665U);
+    ASSERT_EQ(accumulator, 0U);
+
+    cpu_freq = 16'000'000;
+    target_freq = 1U;
+    timer_16_bit_compute_matching_parameters(&cpu_freq, &target_freq, &prescaler, &ocra, &accumulator);
+    ASSERT_EQ(prescaler, TIMER16BIT_CLK_PRESCALER_256);
+    ASSERT_EQ(ocra, 62499U);
+    ASSERT_EQ(accumulator, 0U);
 }
 
 int main(int argc, char **argv)

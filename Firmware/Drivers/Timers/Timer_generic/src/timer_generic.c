@@ -3,7 +3,7 @@
 void timer_generic_compute_parameters(timer_generic_parameters_t * const parameters)
 {
     const uint32_t freq_ratio = parameters->input.cpu_frequency / parameters->input.target_frequency;
-    const uint16_t limit_value = (parameters->input.resolution == TIMER_GENERIC_RESOLUTION_8_BIT) ? (TIMER_GENERIC_8_BIT_LIMIT_VALUE) : (TIMER_GENERIC_16_BIT_LIMIT_VALUE);
+    const uint16_t limit_value = (parameters->input.resolution == TIMER_GENERIC_RESOLUTION_8_BIT) ? (TIMER_GENERIC_8_BIT_LIMIT_VALUE - 1) : (TIMER_GENERIC_16_BIT_LIMIT_VALUE - 1);
 
     // It is possible that this operation produces aliasing because we do not check if
     // the remainder of this division is exactly 0 (no remainder, clean euclidean division)
