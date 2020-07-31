@@ -5,7 +5,7 @@
 #include <string.h>
 
 #ifndef TIMER_8_BIT_ASYNC_COUNT
-    #error "TIMER_8_BIT_ASYNC_COUNT is not defined. Please add #define TIMER_8_BIT_ASYNC_COUNT n in config.h to use this timer"
+    #error "TIMER_8_BIT_ASYNC_COUNT is not defined. Please add #define TIMER_8_BIT_ASYNC_COUNT in config.h to use this timer"
 #elif TIMER_8_BIT_ASYNC_COUNT == 0
     #warning "TIMER_8_BIT_ASYNC_COUNT is set to 0. If you don't project to use this timer, refer to not compile this file instead of setting this define to 0"
 #endif

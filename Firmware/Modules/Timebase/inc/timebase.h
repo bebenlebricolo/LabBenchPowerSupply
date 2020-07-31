@@ -16,9 +16,11 @@ typedef enum
     TIMEBASE_ERROR_OK,                      /**< No particular error                                            */
     TIMEBASE_ERROR_NULL_POINTER,            /**< One or more parameters are not initialised properly            */
     TIMEBASE_ERROR_INVALID_INDEX,           /**< Index is not set correctly, probably out of bounds             */
-    TIMEBASE_ERROR_TIMER_UNINITIALISED,     /**< Underlying timer is not initialised                            */
     TIMEBASE_ERROR_UNSUPPORTED_TIMER_TYPE,  /**< Given timer type is not compatible with timebase_timer_t enum  */
-    TIMEBASE_ERROR_UNSUPPORTED_TIMESCALE    /**< Given timescale is not relevant to timebase module             */
+    TIMEBASE_ERROR_UNSUPPORTED_TIMESCALE,   /**< Given timescale is not relevant to timebase module             */
+
+    TIMEBASE_ERROR_TIMER_UNINITIALISED,     /**< Underlying timer is not initialised                            */
+    TIMEBASE_ERROR_TIMER_ERROR,             /**< Encountered an error while using underlying timer driver       */
 } timebase_error_t;
 
 /**

@@ -2,6 +2,12 @@
 #include "timer_8_bit.h"
 #include "timer_generic.h"
 
+#ifdef UNIT_TESTING
+    #define ISR
+#else
+    #include <avr/interrupt.h>
+#endif
+
 #include <stddef.h>
 #include <string.h>
 
@@ -16,7 +22,15 @@ static struct
     timer_8_bit_handle_t handle;
     timer_8_bit_prescaler_selection_t prescaler;
     bool is_initialised;
+    void (*interrupt_callback)(void);
 } internal_config[TIMER_8_BIT_COUNT] = {0};
+
+// Default callback to avoid hard crashes.
+// Basically does nothing, looses one cycle.
+static inline void default_interrupt_callback(void)
+{
+    _asm("NOP");
+}
 
 const timer_generic_prescaler_pair_t timer_8_bit_prescaler_table[TIMER_8_BIT_MAX_PRESCALER_COUNT] =
 {
@@ -113,6 +127,24 @@ timer_error_t timer_8_bit_set_handle(uint8_t id, timer_8_bit_handle_t * const ha
     memcpy(&internal_config[id].handle, handle, sizeof(timer_8_bit_handle_t));
     return ret;
 }
+
+timer_error_t timer_8_bit_get_handle(uint8_t id, timer_8_bit_handle_t * const handle)
+{
+    timer_error_t ret = check_id(id);
+    if (TIMER_ERROR_OK != ret)
+    {
+        return ret;
+    }
+
+    if (NULL == handle)
+    {
+        return TIMER_ERROR_NULL_POINTER;
+    }
+
+    memcpy(handle, &internal_config[id].handle, sizeof(timer_8_bit_handle_t));
+    return ret;
+}
+
 
 timer_error_t timer_8_bit_get_default_config(timer_8_bit_config_t * config)
 {
@@ -772,6 +804,24 @@ timer_error_t timer_8_bit_init(uint8_t id, timer_8_bit_config_t * const config)
         return ret;
     }
 
+    // Prevents multiple initialisations (misuse of the driver)
+    if (true == internal_config[id].is_initialised)
+    {
+        ret = TIMER_ERROR_ALREADY_INITIALISED;
+    }
+
+    ret = timer_8_bit_reconfigure(id, config);
+    return ret;
+}
+
+timer_error_t timer_8_bit_reconfigure(uint8_t id, timer_8_bit_config_t * const config)
+{
+    timer_error_t ret = check_id(id);
+    if(TIMER_ERROR_OK != ret)
+    {
+        return ret;
+    }
+
     ret = check_handle(&config->handle);
     if (TIMER_ERROR_OK != ret)
     {
@@ -790,8 +840,8 @@ timer_error_t timer_8_bit_init(uint8_t id, timer_8_bit_config_t * const config)
         internal_config[id].is_initialised = true;
     }
     return ret;
-}
 
+}
 
 timer_error_t timer_8_bit_deinit(uint8_t id)
 {

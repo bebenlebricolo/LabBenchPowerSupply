@@ -73,6 +73,16 @@ timer_error_t timer_8_bit_get_default_config(timer_8_bit_config_t * config);
 */
 timer_error_t timer_8_bit_set_handle(uint8_t id, timer_8_bit_handle_t * const handle);
 
+/**
+ * @brief fetches the handle of timer_8_bit driver
+ * @param[in]   id     : targeted timer id (used to fetch internal configuration based on ids)
+ * @param[out]  handle : output handle extracted from internal driver memory
+ * @return
+ *      TIMER_ERROR_OK             :   operation succeeded
+ *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
+ *      TIMER_ERROR_NULL_POINTER   :   given force_comp_config parameter points to NULL
+*/
+timer_error_t timer_8_bit_get_handle(uint8_t id, timer_8_bit_handle_t * const handle);
 
 
 
@@ -320,11 +330,23 @@ bool timer_8_bit_is_initialised(uint8_t id);
  * @param[in]   id     : targeted timer id (used to fetch internal configuration based on ids)
  * @param[in]   config : container holding timer configuration to be written into its registers
  * @return
+ *      TIMER_ERROR_OK                    :   operation succeeded
+ *      TIMER_ERROR_NULL_HANDLE           :   targeted timer's handle is still NULL (unitialised). Operation failed
+ *      TIMER_ERROR_UNKNOWN_TIMER         :   given id is out of range
+ *      TIMER_ERROR_ALREADY_INITIALISED   :   This timer has already been initialised successfully once. Use timer_8_bit_reconfigure instead @see timer_8_bit_reconfigure.
+*/
+timer_error_t timer_8_bit_init(uint8_t id, timer_8_bit_config_t * const config);
+
+/**
+ * @brief Reconfigures the targeted timer with the given configuration. Previous configuration will be overwritten.
+ * @param[in]   id     : targeted timer id (used to fetch internal configuration based on ids)
+ * @param[in]   config : container holding timer configuration to be written into its registers
+ * @return
  *      TIMER_ERROR_OK             :   operation succeeded
  *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
  *      TIMER_ERROR_NULL_HANDLE    :   targeted timer's handle is still NULL (unitialised). Operation failed
 */
-timer_error_t timer_8_bit_init(uint8_t id, timer_8_bit_config_t * const config);
+timer_error_t timer_8_bit_reconfigure(uint8_t id, timer_8_bit_config_t * const config);
 
 /**
  * @brief stops selected timer and reset internal configuration back to default

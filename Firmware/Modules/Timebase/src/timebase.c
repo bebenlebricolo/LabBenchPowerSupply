@@ -31,6 +31,85 @@ static inline bool is_index_valid(const uint8_t id)
     return out;
 }
 
+static inline timebase_error_t setup_8_bit_timer(const uint8_t id, uint32_t const * const cpu_freq, uint32_t const * const target_freq)
+{
+    if(false == timer_8_bit_is_initialised(id))
+    {
+        return TIMEBASE_ERROR_TIMER_UNINITIALISED;
+    }
+
+    uint8_t ocra = 0;
+    uint32_t accumulator=  0;
+    timer_8_bit_prescaler_selection_t prescaler;
+    timer_8_bit_compute_matching_parameters(cpu_freq,
+                                            target_freq,
+                                            &prescaler,
+                                            &ocra,
+                                            &accumulator);
+
+    timer_error_t ret = timer_8_bit_stop(id);
+    timer_8_bit_handle_t handle = {0};
+    ret = timer_8_bit_get_handle(id, &handle);
+
+    if (TIMER_ERROR_OK != ret)
+    {
+        return TIMEBASE_ERROR_TIMER_ERROR;
+    }
+
+    timer_8_bit_config_t config = {0};
+    ret = timer_8_bit_get_default_config(&config);
+    if (TIMER_ERROR_OK != ret)
+    {
+        return TIMEBASE_ERROR_TIMER_ERROR;
+    }
+
+    // Use old handle
+    config.handle = handle;
+    config.timing_config.comp_match_a = TIMER8BIT_CMOD_CLEAR_OCnX;
+    config.timing_config.comp_match_b = TIMER8BIT_CMOD_NORMAL;
+    config.timing_config.ocra_val = ocra;
+    config.timing_config.prescaler = prescaler;
+    config.interrupt_config.it_comp_match_a = true;
+
+
+    return TIMEBASE_ERROR_OK;
+}
+
+static inline timebase_error_t setup_8_bit_async_timer(const uint8_t id, uint32_t const * const cpu_freq, uint32_t const * const target_freq)
+{
+    if(false == timer_8_bit_async_is_initialised(id))
+    {
+        return TIMEBASE_ERROR_TIMER_UNINITIALISED;
+    }
+    uint8_t ocra = 0;
+    uint32_t accumulator=  0;
+    timer_8_bit_async_prescaler_selection_t prescaler;
+    timer_8_bit_async_compute_matching_parameters(cpu_freq,
+                                                  target_freq,
+                                                  &prescaler,
+                                                  &ocra,
+                                                  &accumulator);
+    return TIMEBASE_ERROR_OK;
+}
+
+static inline timebase_error_t setup_16_bit_timer(const uint8_t id, uint32_t const * const cpu_freq, uint32_t const * const target_freq)
+{
+    if(false == timer_16_bit_is_initialised(id))
+    {
+        return TIMEBASE_ERROR_TIMER_UNINITIALISED;
+    }
+
+    uint16_t ocra = 0;
+    uint32_t accumulator=  0;
+    timer_16_bit_prescaler_selection_t prescaler;
+    timer_16_bit_compute_matching_parameters(cpu_freq,
+                                             target_freq,
+                                             &prescaler,
+                                             &ocra,
+                                             &accumulator);
+    return TIMEBASE_ERROR_OK;
+}
+
 timebase_error_t timebase_init(const uint8_t id, timebase_config_t const * const config)
 {
     timebase_error_t ret = TIMEBASE_ERROR_OK;
@@ -67,27 +146,23 @@ timebase_error_t timebase_init(const uint8_t id, timebase_config_t const * const
             return TIMEBASE_ERROR_UNSUPPORTED_TIMESCALE;
     }
 
+    // Initialise each timer using the right parameters set
     switch(config->timer.type)
     {
         case TIMEBASE_TIMER_8_BIT:
-            {
-                uint8_t ocra = 0;
-                timer_8_bit_prescaler_selection_t prescaler;
-                timer_8_bit_compute_matching_parameters(config->cpu_freq,
-                                                        &target_freq,
-                                                        &prescaler,
-                                                        &ocra);
-            }
+            ret = setup_8_bit_timer(id, &(config->cpu_freq), &target_freq);
             break;
 
         case TIMEBASE_TIMER_8_BIT_ASYNC:
+            ret = setup_8_bit_async_timer(id, &(config->cpu_freq), &target_freq);
             break;
 
         case TIMEBASE_TIMER_16_BIT:
+            ret = setup_16_bit_timer(id, &(config->cpu_freq), &target_freq);
             break;
 
         default:
-            break;
+            return TIMEBASE_ERROR_UNSUPPORTED_TIMER_TYPE;
     }
 
 
