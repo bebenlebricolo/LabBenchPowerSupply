@@ -26,24 +26,29 @@ add_subdirectory( ${CMAKE_SOURCE_DIR}/../Drivers/Adc/Tests
 
 # Timer drivers
 add_subdirectory( ${CMAKE_SOURCE_DIR}/../Drivers/Timers/Timer_generic/Tests
-    ${CMAKE_BINARY_DIR}/Tests/Timers/Timer_generic
+    ${CMAKE_BINARY_DIR}/Tests/Drivers/Timers/Timer_generic
 )
 add_subdirectory( ${CMAKE_SOURCE_DIR}/../Drivers/Timers/Timer_8_bit/Tests
-    ${CMAKE_BINARY_DIR}/Tests/Timers/Timer_8_bit
+    ${CMAKE_BINARY_DIR}/Tests/Drivers/Timers/Timer_8_bit
 )
 add_subdirectory( ${CMAKE_SOURCE_DIR}/../Drivers/Timers/Timer_8_bit_async/Tests
-    ${CMAKE_BINARY_DIR}/Tests/Timers/Timer_8_bit_async
+    ${CMAKE_BINARY_DIR}/Tests/Drivers/Timers/Timer_8_bit_async
 )
 add_subdirectory( ${CMAKE_SOURCE_DIR}/../Drivers/Timers/Timer_16_bit/Tests
-    ${CMAKE_BINARY_DIR}/Tests/Timers/Timer_16_bit
+    ${CMAKE_BINARY_DIR}/Tests/Drivers/Timers/Timer_16_bit
 )
 
 # I2C driver
 add_subdirectory( ${CMAKE_SOURCE_DIR}/../Drivers/I2c/Tests
-    ${CMAKE_BINARY_DIR}/Tests/I2c
+    ${CMAKE_BINARY_DIR}/Tests/Drivers/I2c
 )
 
 # LCD Screen HD44780 driver
 add_subdirectory( ${CMAKE_SOURCE_DIR}/../Drivers/Lcd_screen/Tests
-    ${CMAKE_BINARY_DIR}/Tests/Lcd_screen
+    ${CMAKE_BINARY_DIR}/Tests/Drivers/Lcd_screen
+)
+
+# Modules
+add_subdirectory( ${CMAKE_SOURCE_DIR}/../Modules/Timebase/Tests
+    ${CMAKE_BINARY_DIR}/Tests/Modules/Timebase
 )

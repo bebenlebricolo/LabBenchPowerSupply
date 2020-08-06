@@ -28,7 +28,7 @@ const timer_generic_prescaler_pair_t timer_8_bit_async_prescaler_table[TIMER_8_B
     {.value = 1024, .type = (uint8_t) TIMER8BIT_ASYNC_CLK_PRESCALER_1024   },
 };
 
-static timer_8_bit_async_prescaler_selection_t convert_prescaler_value_to_type(uint16_t const * const input_prescaler)
+timer_8_bit_async_prescaler_selection_t timer_8_bit_async_prescaler_from_value(uint16_t const * const input_prescaler)
 {
     for (uint8_t i = 0 ; i < TIMER_8_BIT_ASYNC_MAX_PRESCALER_COUNT ; i++)
     {
@@ -38,6 +38,18 @@ static timer_8_bit_async_prescaler_selection_t convert_prescaler_value_to_type(u
         }
     }
     return TIMER8BIT_ASYNC_CLK_NO_CLOCK;
+}
+
+uint16_t timer_8_bit_async_prescaler_to_value(const timer_8_bit_async_prescaler_selection_t prescaler)
+{
+    for (uint8_t i = 0 ; i < TIMER_8_BIT_ASYNC_MAX_PRESCALER_COUNT ; i++)
+    {
+        if (prescaler == timer_8_bit_async_prescaler_table[i].type)
+        {
+            return timer_8_bit_async_prescaler_table[i].value;
+        }
+    }
+    return 0;
 }
 
 void timer_8_bit_async_compute_matching_parameters(const uint32_t * const cpu_freq,
@@ -58,7 +70,7 @@ void timer_8_bit_async_compute_matching_parameters(const uint32_t * const cpu_fr
         },
     };
     timer_generic_compute_parameters(&parameters);
-    *prescaler = convert_prescaler_value_to_type(&parameters.output.prescaler);
+    *prescaler = timer_8_bit_async_prescaler_from_value(&parameters.output.prescaler);
     *ocra = (uint8_t) parameters.output.ocra;
     *accumulator = parameters.output.accumulator;
 }

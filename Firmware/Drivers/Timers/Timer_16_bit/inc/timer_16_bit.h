@@ -437,6 +437,9 @@ void timer_16_bit_compute_matching_parameters(const uint32_t * const cpu_freq,
 */
 extern const timer_generic_prescaler_pair_t timer_16_bit_prescaler_table[TIMER_16_BIT_MAX_PRESCALER_COUNT];
 
+uint16_t timer_16_bit_prescaler_to_value(const timer_16_bit_prescaler_selection_t prescaler);
+timer_16_bit_prescaler_selection_t timer_16_bit_prescaler_from_value(uint16_t const * const input_prescaler);
+
 #ifdef __cplusplus
 }
 #endif

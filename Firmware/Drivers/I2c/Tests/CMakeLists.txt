@@ -45,5 +45,5 @@ target_link_libraries(i2c_driver_tests i2c_driver ${GTEST_LIBRARIES} pthread)
 
 set_target_properties(i2c_driver_tests
     PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/I2c
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/Drivers/I2c
 )

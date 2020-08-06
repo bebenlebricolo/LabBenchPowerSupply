@@ -35,5 +35,5 @@ target_link_libraries(timer_8_bit_async_driver_tests timer_8_bit_async_driver ti
 
 set_target_properties(timer_8_bit_async_driver_tests
     PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/Timers/
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/Drivers/Timers/
 )

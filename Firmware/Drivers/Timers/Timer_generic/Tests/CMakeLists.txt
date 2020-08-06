@@ -31,5 +31,5 @@ target_link_libraries(timer_generic_driver_tests timer_generic_driver ${GTEST_LI
 
 set_target_properties(timer_generic_driver_tests
     PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/Timers/
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/Drivers/Timers/
 )

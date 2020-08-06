@@ -70,7 +70,7 @@ typedef struct
  *                            E.g : selected timer is a 8bit async timer, then prescaler shall be cast to (timer_8_bit_async_prescaler_selection_t)
  * @param[out]  ocr_value   : Output Compare value used to trigger an interrupt and load the accumulator with it.
 */
-timebase_error_t timebase_compute_timer_parameters(timebase_config_t const * const config, uint8_t * const prescaler, uint16_t * const ocr_value);
+timebase_error_t timebase_compute_timer_parameters(timebase_config_t const * const config, uint16_t * const prescaler_val, uint16_t * const ocr_value, uint32_t * const accumulator);
 
 /**
  * @brief Initialises the timebase module using an id and a configuration.

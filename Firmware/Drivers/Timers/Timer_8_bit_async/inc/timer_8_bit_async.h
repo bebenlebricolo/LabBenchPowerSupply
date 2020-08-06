@@ -391,6 +391,10 @@ void timer_8_bit_async_compute_matching_parameters(const uint32_t * const cpu_fr
                                                    uint8_t * const ocra,
                                                    uint32_t * const accumulator);
 
+uint16_t timer_8_bit_async_prescaler_to_value(const timer_8_bit_async_prescaler_selection_t prescaler);
+timer_8_bit_async_prescaler_selection_t timer_8_bit_async_prescaler_from_value(uint16_t const * const input_prescaler);
+
+
 #ifdef __cplusplus
 }
 #endif

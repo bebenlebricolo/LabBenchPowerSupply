@@ -42,5 +42,5 @@ target_link_libraries(HD44780_lcd_driver_tests HD44780_lcd_driver ${GTEST_LIBRAR
 
 set_target_properties(HD44780_lcd_driver_tests
     PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/Lcd_screen
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/Drivers/Lcd_screen
 )
