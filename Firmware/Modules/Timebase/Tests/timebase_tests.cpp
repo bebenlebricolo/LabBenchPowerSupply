@@ -17,8 +17,8 @@ TEST(timebase_module_tests, test_compute_timer_parameters)
     timebase_error_t err = timebase_compute_timer_parameters(&config, &prescaler, &ocr_value, &accumulator);
     ASSERT_EQ(TIMEBASE_ERROR_OK, err);
     ASSERT_EQ(0U, accumulator);
-    ASSERT_EQ(prescaler, 64U);
-    ASSERT_EQ(ocr_value, 249U);
+    ASSERT_EQ(prescaler, 1U);
+    ASSERT_EQ(ocr_value, 15999U);
 
 }
 
