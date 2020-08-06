@@ -318,12 +318,14 @@ timer_error_t timer_8_bit_get_counter_value(uint8_t id, uint8_t * ticks);
 
 /**
  * @brief simply checks whether selected timer is initialised or not
- * @param[in]  id : selected timer registered id
+ * @param[in]  id             : selected timer registered id
+ * @param[in]  initialised    : tells whether targeted timer is initialised or not
  * @return
- *    true  :  timer is initialised
- *    false :  timer is not initialised
-*/
-bool timer_8_bit_is_initialised(uint8_t id);
+ *      TIMER_ERROR_OK             :   operation succeeded
+ *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
+ *      TIMER_ERROR_NULL_POINTER   :   given pointer points to null
+ */
+timer_error_t timer_8_bit_is_initialised(const uint8_t id, bool * const initialised);
 
 /**
  * @brief initialises targeted timer with the given configuration. Timer does not start yet, but will be fully configured.

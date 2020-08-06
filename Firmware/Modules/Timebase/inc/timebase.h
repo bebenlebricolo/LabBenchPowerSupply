@@ -126,6 +126,11 @@ timebase_error_t timebase_get_duration(uint16_t const * const reference, uint16_
 */
 timebase_error_t timebase_get_duration_now(const uint8_t id, uint16_t const * const reference, uint16_t * const duration);
 
+/**
+ * @brief A callback to be used within the Timer ISR which handles time increment
+ * @param[in]  id : index of targeted timebase module
+*/
+void timebase_interrupt_callback(const uint8_t id);
 
 #ifdef __cplusplus
 }

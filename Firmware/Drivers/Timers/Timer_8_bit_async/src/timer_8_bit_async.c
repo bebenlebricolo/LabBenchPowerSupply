@@ -908,6 +908,24 @@ static timer_error_t timer_8_bit_async_write_config(uint8_t id, timer_8_bit_asyn
     return ret;
 }
 
+timer_error_t timer_8_bit_async_is_initialised(const uint8_t id, bool * const initialised)
+{
+    timer_error_t ret = check_id(id);
+    if(TIMER_ERROR_OK != ret)
+    {
+        return ret;
+    }
+
+    if (NULL == initialised)
+    {
+        return TIMER_ERROR_NULL_POINTER;
+    }
+
+    *initialised = internal_config[id].is_initialised;
+
+    return ret;
+}
+
 timer_error_t timer_8_bit_async_init(uint8_t id, timer_8_bit_async_config_t * const config)
 {
     timer_error_t ret = check_id(id);

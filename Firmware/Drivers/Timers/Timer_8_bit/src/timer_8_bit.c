@@ -22,15 +22,7 @@ static struct
     timer_8_bit_handle_t handle;
     timer_8_bit_prescaler_selection_t prescaler;
     bool is_initialised;
-    void (*interrupt_callback)(void);
 } internal_config[TIMER_8_BIT_COUNT] = {0};
-
-// Default callback to avoid hard crashes.
-// Basically does nothing, looses one cycle.
-static inline void default_interrupt_callback(void)
-{
-    _asm("NOP");
-}
 
 const timer_generic_prescaler_pair_t timer_8_bit_prescaler_table[TIMER_8_BIT_MAX_PRESCALER_COUNT] =
 {
@@ -915,5 +907,23 @@ timer_error_t timer_8_bit_stop(uint8_t id)
 
     /* Reset prescaler to NO_CLOCK*/
     *(internal_config[id].handle.TCCRB) = (*(internal_config[id].handle.TCCRB) & ~CS_MSK) | TIMER8BIT_CLK_NO_CLOCK;
+    return ret;
+}
+
+timer_error_t timer_8_bit_is_initialised(const uint8_t id, bool * const initialised)
+{
+    timer_error_t ret = check_id(id);
+    if(TIMER_ERROR_OK != ret)
+    {
+        return ret;
+    }
+
+    if (NULL == initialised)
+    {
+        return TIMER_ERROR_NULL_POINTER;
+    }
+
+    *initialised = internal_config[id].is_initialised;
+
     return ret;
 }
