@@ -184,7 +184,7 @@ TEST(timer_8_bit_async_driver_tests, guard_null_pointer)
     ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
 
     /* Test compare match mode A get/set api */
-    timer_8_bit_compare_output_mode_t * nullptr_compare_output_mode = NULL;
+    timer_8_bit_async_compare_output_mode_t * nullptr_compare_output_mode = NULL;
     ret = timer_8_bit_async_get_compare_match_A(DT_ID, nullptr_compare_output_mode);
     ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
     ret = timer_8_bit_async_get_compare_match_B(DT_ID, nullptr_compare_output_mode);
@@ -196,7 +196,7 @@ TEST(timer_8_bit_async_driver_tests, guard_null_pointer)
     ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
 
     /* Test interrupt config get/set api */
-    timer_8_bit_interrupt_config_t * nullptr_interrupt_config = NULL;
+    timer_8_bit_async_interrupt_config_t * nullptr_interrupt_config = NULL;
     ret = timer_8_bit_async_set_interrupt_config(DT_ID, nullptr_interrupt_config);
     ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
     ret = timer_8_bit_async_get_interrupt_config(DT_ID, nullptr_interrupt_config);
@@ -225,7 +225,7 @@ TEST(timer_8_bit_async_driver_tests, guard_null_pointer)
     ret = timer_8_bit_async_get_prescaler(DT_ID, nullptr_prescaler);
     ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
 
-    timer_8_bit_waveform_generation_t * nullptr_waveform_mode = NULL;
+    timer_8_bit_async_waveform_generation_t * nullptr_waveform_mode = NULL;
     ret = timer_8_bit_async_get_waveform_generation(DT_ID, nullptr_waveform_mode);
     ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
 }
@@ -239,7 +239,7 @@ TEST(timer_8_bit_async_driver_tests, guard_wrong_id)
     ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
 
     /* Test compare match mode A get/set api */
-    timer_8_bit_compare_output_mode_t * nullptr_compare_output_mode = NULL;
+    timer_8_bit_async_compare_output_mode_t * nullptr_compare_output_mode = NULL;
     ret = timer_8_bit_async_get_compare_match_A(targeted_id, nullptr_compare_output_mode);
     ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
     ret = timer_8_bit_async_get_compare_match_B(targeted_id, nullptr_compare_output_mode);
@@ -251,7 +251,7 @@ TEST(timer_8_bit_async_driver_tests, guard_wrong_id)
     ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
 
     /* Test interrupt config get/set api */
-    timer_8_bit_interrupt_config_t * nullptr_interrupt_config = NULL;
+    timer_8_bit_async_interrupt_config_t * nullptr_interrupt_config = NULL;
     ret = timer_8_bit_async_set_interrupt_config(targeted_id, nullptr_interrupt_config);
     ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
     ret = timer_8_bit_async_get_interrupt_config(targeted_id, nullptr_interrupt_config);
@@ -280,7 +280,7 @@ TEST(timer_8_bit_async_driver_tests, guard_wrong_id)
     ret = timer_8_bit_async_get_prescaler(targeted_id, nullptr_prescaler);
     ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
 
-    timer_8_bit_waveform_generation_t * nullptr_waveform_mode = NULL;
+    timer_8_bit_async_waveform_generation_t * nullptr_waveform_mode = NULL;
     ret = timer_8_bit_async_get_waveform_generation(targeted_id, nullptr_waveform_mode);
     ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
 }
@@ -292,7 +292,7 @@ TEST_F(Timer8BitAsyncFixture, test_handle_is_set_correctly)
     // Data should be reset to its default state when we begin
 
     // Testing TCCRA register
-    config.timing_config.comp_match_a = TIMER8BIT_CMOD_SET_OCnX; // 11
+    config.timing_config.comp_match_a = TIMER8BIT_ASYNC_CMOD_SET_OCnX; // 11
     ASSERT_EQ(timer_8_bit_async_registers_stub.TCCRA & COMA_MSK, 0U);
     ret = timer_8_bit_async_set_compare_match_A(DT_ID, config.timing_config.comp_match_a);
     ASSERT_EQ(TIMER_ERROR_OK, ret);
@@ -356,27 +356,27 @@ TEST_F(Timer8BitAsyncFixture, test_timing_configuration_unitary_functions)
 {
     auto ret = TIMER_ERROR_OK;
     // Random configuration, with bits set everywhere
-    timer_8_bit_compare_output_mode_t received_compare_mode_a;
-    timer_8_bit_compare_output_mode_t received_compare_mode_b;
+    timer_8_bit_async_compare_output_mode_t received_compare_mode_a;
+    timer_8_bit_async_compare_output_mode_t received_compare_mode_b;
     uint8_t received_ocra_val;
     uint8_t received_ocrb_val;
     uint8_t received_counter_val;
     timer_8_bit_async_prescaler_selection_t received_prescaler;
-    timer_8_bit_waveform_generation_t received_waveform;
-    memcpy(&received_compare_mode_a, &config.timing_config.comp_match_a, sizeof(timer_8_bit_compare_output_mode_t));
-    memcpy(&received_compare_mode_b, &config.timing_config.comp_match_b, sizeof(timer_8_bit_compare_output_mode_t));
+    timer_8_bit_async_waveform_generation_t received_waveform;
+    memcpy(&received_compare_mode_a, &config.timing_config.comp_match_a, sizeof(timer_8_bit_async_compare_output_mode_t));
+    memcpy(&received_compare_mode_b, &config.timing_config.comp_match_b, sizeof(timer_8_bit_async_compare_output_mode_t));
     memcpy(&received_ocra_val, &config.timing_config.ocra_val, sizeof(uint8_t));
     memcpy(&received_ocrb_val, &config.timing_config.ocrb_val, sizeof(uint8_t));
     memcpy(&received_counter_val, &config.timing_config.counter, sizeof(uint8_t));
     memcpy(&received_prescaler, &config.timing_config.prescaler, sizeof(timer_8_bit_async_prescaler_selection_t));
-    memcpy(&received_waveform, &config.timing_config.waveform_mode, sizeof(timer_8_bit_waveform_generation_t));
+    memcpy(&received_waveform, &config.timing_config.waveform_mode, sizeof(timer_8_bit_async_waveform_generation_t));
 
-    config.timing_config.comp_match_a = TIMER8BIT_CMOD_TOGGLE_OCnX;
-    config.timing_config.comp_match_b = TIMER8BIT_CMOD_SET_OCnX;
+    config.timing_config.comp_match_a = TIMER8BIT_ASYNC_CMOD_TOGGLE_OCnX;
+    config.timing_config.comp_match_b = TIMER8BIT_ASYNC_CMOD_SET_OCnX;
     config.timing_config.ocra_val = 33U;
     config.timing_config.ocrb_val = 156U;
     config.timing_config.prescaler = TIMER8BIT_ASYNC_CLK_PRESCALER_64;
-    config.timing_config.waveform_mode = TIMER8BIT_WG_PWM_FAST_FULL_RANGE;
+    config.timing_config.waveform_mode = TIMER8BIT_ASYNC_WG_PWM_FAST_FULL_RANGE;
 
     // Compare match A mode
     ASSERT_EQ(timer_8_bit_async_registers_stub.TCCRA & COMA_MSK, 0U);
@@ -386,7 +386,7 @@ TEST_F(Timer8BitAsyncFixture, test_timing_configuration_unitary_functions)
     // Counter check value can also be read back from registers ...
     ret = timer_8_bit_async_get_compare_match_A(DT_ID,&received_compare_mode_a);
     ASSERT_EQ(TIMER_ERROR_OK, ret);
-    ASSERT_EQ(0, memcmp(&received_compare_mode_a, &config.timing_config.comp_match_a, sizeof(timer_8_bit_compare_output_mode_t)));
+    ASSERT_EQ(0, memcmp(&received_compare_mode_a, &config.timing_config.comp_match_a, sizeof(timer_8_bit_async_compare_output_mode_t)));
 
     // Compare match B mode
     ASSERT_EQ(timer_8_bit_async_registers_stub.TCCRA & COMB_MSK, 0U);
@@ -396,7 +396,7 @@ TEST_F(Timer8BitAsyncFixture, test_timing_configuration_unitary_functions)
     // Counter check value can also be read back from registers ...
     ret = timer_8_bit_async_get_compare_match_B(DT_ID,&received_compare_mode_b);
     ASSERT_EQ(TIMER_ERROR_OK, ret);
-    ASSERT_EQ(0, memcmp(&received_compare_mode_b, &config.timing_config.comp_match_b, sizeof(timer_8_bit_compare_output_mode_t)));
+    ASSERT_EQ(0, memcmp(&received_compare_mode_b, &config.timing_config.comp_match_b, sizeof(timer_8_bit_async_compare_output_mode_t)));
 
     // Waveform modes
     ASSERT_EQ(timer_8_bit_async_registers_stub.TCCRA & (WGM0_MSK | WGM1_MSK), 0U);
@@ -408,7 +408,7 @@ TEST_F(Timer8BitAsyncFixture, test_timing_configuration_unitary_functions)
     // Counter check value can also be read back from registers ...
     ret = timer_8_bit_async_get_waveform_generation(DT_ID, &received_waveform);
     ASSERT_EQ(TIMER_ERROR_OK, ret);
-    ASSERT_EQ(0, memcmp(&received_waveform, &config.timing_config.waveform_mode, sizeof(timer_8_bit_waveform_generation_t)));
+    ASSERT_EQ(0, memcmp(&received_waveform, &config.timing_config.waveform_mode, sizeof(timer_8_bit_async_waveform_generation_t)));
 
 
     // Prescaler settings
@@ -474,9 +474,9 @@ TEST_F(Timer8BitAsyncFixture, test_force_compare_flags)
 TEST_F(Timer8BitAsyncFixture, test_interrupt_enable_flags)
 {
     auto ret = TIMER_ERROR_OK;
-    timer_8_bit_interrupt_config_t received_interrupt_config;
+    timer_8_bit_async_interrupt_config_t received_interrupt_config;
     // Copy default state of interrupt config
-    memcpy(&received_interrupt_config, &config.interrupt_config, sizeof(timer_8_bit_interrupt_config_t));
+    memcpy(&received_interrupt_config, &config.interrupt_config, sizeof(timer_8_bit_async_interrupt_config_t));
 
     config.interrupt_config.it_comp_match_a = true;
     config.interrupt_config.it_comp_match_b = true;
@@ -490,7 +490,7 @@ TEST_F(Timer8BitAsyncFixture, test_interrupt_enable_flags)
     // Compare output to input : shall be exactly matching
     ret = timer_8_bit_async_get_interrupt_config(DT_ID, &received_interrupt_config);
     ASSERT_EQ(TIMER_ERROR_OK, ret);
-    ASSERT_EQ(0, memcmp(&config.interrupt_config, &received_interrupt_config, sizeof(timer_8_bit_interrupt_config_t)));
+    ASSERT_EQ(0, memcmp(&config.interrupt_config, &received_interrupt_config, sizeof(timer_8_bit_async_interrupt_config_t)));
 
     // set all interrupt flags to true
     received_interrupt_config.it_comp_match_a = false;
@@ -499,7 +499,7 @@ TEST_F(Timer8BitAsyncFixture, test_interrupt_enable_flags)
     timer_8_bit_async_registers_stub.TIFR = 0x07;
     ret = timer_8_bit_async_get_interrupt_flags(DT_ID, &received_interrupt_config);
     ASSERT_EQ(TIMER_ERROR_OK, ret);
-    ASSERT_EQ(0, memcmp(&config.interrupt_config, &received_interrupt_config, sizeof(timer_8_bit_interrupt_config_t)));
+    ASSERT_EQ(0, memcmp(&config.interrupt_config, &received_interrupt_config, sizeof(timer_8_bit_async_interrupt_config_t)));
 }
 
 TEST_F(Timer8BitAsyncFixture, test_initialisation_deinitialisation)

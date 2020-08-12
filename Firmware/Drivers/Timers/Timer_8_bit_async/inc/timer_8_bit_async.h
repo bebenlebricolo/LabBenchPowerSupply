@@ -2,7 +2,6 @@
 #define TIMER_8_BIT_ASYNC_HEADER
 
 #include <stdint.h>
-#include "timer_8_bit.h"
 #include "timer_generic.h"
 #include "timer_8_bit_async_reg.h"
 
@@ -39,9 +38,9 @@ typedef struct
    uint8_t                                 counter;       /**< Main Counter value used to start the timer                             */
    uint8_t                                 ocra_val;      /**< Value to be set inside OCRA register to control PWM for instance       */
    uint8_t                                 ocrb_val;      /**< Value to be set inside OCRB register to control PWM for instance       */
-   timer_8_bit_compare_output_mode_t       comp_match_a;  /**< Equivalent to TCCRnA COMnA0 and COMnA1 bits                            */
-   timer_8_bit_compare_output_mode_t       comp_match_b;  /**< Equivalent to TCCRnA COMnB0 and COMnB1 bits                            */
-   timer_8_bit_waveform_generation_t       waveform_mode; /**< Selects the right waveform mode and dispatch it to the right registers */
+   timer_8_bit_async_compare_output_mode_t comp_match_a;  /**< Equivalent to TCCRnA COMnA0 and COMnA1 bits                            */
+   timer_8_bit_async_compare_output_mode_t comp_match_b;  /**< Equivalent to TCCRnA COMnB0 and COMnB1 bits                            */
+   timer_8_bit_async_waveform_generation_t waveform_mode; /**< Selects the right waveform mode and dispatch it to the right registers */
    timer_8_bit_async_prescaler_selection_t prescaler;     /**< Selects the right prescaler to be fed in the timer                     */
    timer_8_bit_async_clock_source_t        clock_source;  /**< Selects the clock source used to feed                                  */
 } timer_8_bit_async_timing_config_t;
@@ -52,7 +51,7 @@ typedef struct
 typedef struct
 {
    timer_8_bit_async_timing_config_t         timing_config;    /**< Handles basic timing configuration for 8 bit timers                                */
-   timer_8_bit_interrupt_config_t            interrupt_config; /**< Handles interrupt configuraitons for 8 bit timers                                  */
+   timer_8_bit_async_interrupt_config_t      interrupt_config; /**< Handles interrupt configuraitons for 8 bit timers                                  */
    timer_8_bit_async_force_compare_config_t  force_compare;    /**< Handles force compare flags on output A and B, generic configuration among timers  */
    timer_8_bit_async_handle_t                handle;           /**< Stores pointer locations to peripheral registers                                   */
 } timer_8_bit_async_config_t;
@@ -125,7 +124,7 @@ timer_error_t timer_8_bit_async_get_force_compare_config(uint8_t id, timer_8_bit
  *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
  *      TIMER_ERROR_NULL_POINTER   :   given it_config parameter points to NULL
 */
-timer_error_t timer_8_bit_async_set_interrupt_config(uint8_t id, timer_8_bit_interrupt_config_t * const it_config);
+timer_error_t timer_8_bit_async_set_interrupt_config(uint8_t id, timer_8_bit_async_interrupt_config_t * const it_config);
 
 /**
  * @brief reads the actual interrupt configuration from internal memory and returns a copy of it
@@ -136,7 +135,7 @@ timer_error_t timer_8_bit_async_set_interrupt_config(uint8_t id, timer_8_bit_int
  *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
  *      TIMER_ERROR_NULL_POINTER   :   given it_config parameter points to NULL
 */
-timer_error_t timer_8_bit_async_get_interrupt_config(uint8_t id, timer_8_bit_interrupt_config_t * it_config);
+timer_error_t timer_8_bit_async_get_interrupt_config(uint8_t id, timer_8_bit_async_interrupt_config_t * it_config);
 
 #ifdef UNIT_TESTING
 /**
@@ -150,7 +149,7 @@ timer_error_t timer_8_bit_async_get_interrupt_config(uint8_t id, timer_8_bit_int
  *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
  *      TIMER_ERROR_NULL_POINTER   :   given it_config parameter points to NULL
 */
-timer_error_t timer_8_bit_async_get_interrupt_flags(uint8_t id, timer_8_bit_interrupt_config_t * it_flags);
+timer_error_t timer_8_bit_async_get_interrupt_flags(uint8_t id, timer_8_bit_async_interrupt_config_t * it_flags);
 #endif
 
 
@@ -196,7 +195,7 @@ timer_error_t timer_8_bit_async_get_prescaler(uint8_t id, timer_8_bit_async_pres
  *      TIMER_ERROR_OK             :   operation succeeded
  *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
 */
-timer_error_t timer_8_bit_async_set_compare_match_A(uint8_t id, const timer_8_bit_compare_output_mode_t compA);
+timer_error_t timer_8_bit_async_set_compare_match_A(uint8_t id, const timer_8_bit_async_compare_output_mode_t compA);
 
 /**
  * @brief reads targeted timer output compare configuration for channel A from internal configuration
@@ -207,7 +206,7 @@ timer_error_t timer_8_bit_async_set_compare_match_A(uint8_t id, const timer_8_bi
  *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
  *      TIMER_ERROR_NULL_POINTER   :   given compA parameter points to NULL
 */
-timer_error_t timer_8_bit_async_get_compare_match_A(uint8_t id, timer_8_bit_compare_output_mode_t * compA);
+timer_error_t timer_8_bit_async_get_compare_match_A(uint8_t id, timer_8_bit_async_compare_output_mode_t * compA);
 
 /**
  * @brief sets the targeted timer compare output mode for B channel
@@ -217,7 +216,7 @@ timer_error_t timer_8_bit_async_get_compare_match_A(uint8_t id, timer_8_bit_comp
  *      TIMER_ERROR_OK             :   operation succeeded
  *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
 */
-timer_error_t timer_8_bit_async_set_compare_match_B(uint8_t id, timer_8_bit_compare_output_mode_t compB);
+timer_error_t timer_8_bit_async_set_compare_match_B(uint8_t id, timer_8_bit_async_compare_output_mode_t compB);
 
 /**
  * @brief reads targeted timer output compare configuration for channel B from internal configuration
@@ -228,7 +227,7 @@ timer_error_t timer_8_bit_async_set_compare_match_B(uint8_t id, timer_8_bit_comp
  *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
  *      TIMER_ERROR_NULL_POINTER   :   given compB parameter points to NULL
 */
-timer_error_t timer_8_bit_async_get_compare_match_B(uint8_t id, timer_8_bit_compare_output_mode_t * compB);
+timer_error_t timer_8_bit_async_get_compare_match_B(uint8_t id, timer_8_bit_async_compare_output_mode_t * compB);
 
 /* ################################ Waveform & timing configuration ############################### */
 /**
@@ -239,7 +238,7 @@ timer_error_t timer_8_bit_async_get_compare_match_B(uint8_t id, timer_8_bit_comp
  *      TIMER_ERROR_OK             :   operation succeeded
  *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
 */
-timer_error_t timer_8_bit_async_set_waveform_generation(uint8_t id, const timer_8_bit_waveform_generation_t waveform);
+timer_error_t timer_8_bit_async_set_waveform_generation(uint8_t id, const timer_8_bit_async_waveform_generation_t waveform);
 
 /**
  * @brief reads targeted timer output compare configuration for channel B from internal configuration
@@ -250,7 +249,7 @@ timer_error_t timer_8_bit_async_set_waveform_generation(uint8_t id, const timer_
  *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
  *      TIMER_ERROR_NULL_POINTER   :   given waveform parameter points to NULL
 */
-timer_error_t timer_8_bit_async_get_waveform_generation(uint8_t id, timer_8_bit_waveform_generation_t * waveform);
+timer_error_t timer_8_bit_async_get_waveform_generation(uint8_t id, timer_8_bit_async_waveform_generation_t * const waveform);
 
 /**
  * @brief sets the targeted timer Output Compare A register value

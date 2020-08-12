@@ -13,7 +13,6 @@ add_library(timer_8_bit_async_driver STATIC
 target_include_directories(timer_8_bit_async_driver PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../inc
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Timer_generic/inc
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Timer_8_bit/inc
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
@@ -27,7 +26,6 @@ add_executable(timer_8_bit_async_driver_tests
 target_include_directories(timer_8_bit_async_driver_tests PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/Stub
     ${CMAKE_CURRENT_SOURCE_DIR}/../inc
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Timer_8_bit/inc
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Timer_generic/inc
     ${GTEST_INCLUDE_DIRS}
 )
