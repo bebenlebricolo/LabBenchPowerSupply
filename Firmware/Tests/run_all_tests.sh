@@ -17,22 +17,27 @@ echo "directories = : $directories"
 
 failed_once=0
 failed_tests=""
-for dir in $directories  
-do 
-    echo -e "\nentering ${dir} directory"
+for dir in $directories
+do
+    echo -e "\nentering $(basename ${dir}) directory"
     pushd $dir > /dev/null
-    for f in $(find -type f) 
-    do
-        echo -e "\n###########################################################\nRunning $f ... "
-        ./$f
+    fileList=$(find -maxdepth 1 -type f)
+    if [ -z $fileList ] ; then
+        echo -e "No files in directory"
+    else
+        for f in $fileList
+        do
+            echo -e "\n###########################################################\nRunning \033[1;36m$(basename $f) \033[0;0m ... "
+            ./$f
 
-        # Push failed tests in list
-        if [ $? -ne 0 ] ; then
-            failed_once=1
-            failed_tests="$failed_tests $f"
-        fi 
+            # Push failed tests in list
+            if [ $? -ne 0 ] ; then
+                failed_once=1
+                failed_tests="$failed_tests $(basename $f)"
+            fi
 
-    done
+        done
+    fi
     popd > /dev/null
 done
 
