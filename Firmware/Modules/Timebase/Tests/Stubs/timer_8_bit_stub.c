@@ -1,23 +1,37 @@
 #include "timer_8_bit_stub.h"
+#include "string.h"
 
 
-static struct
+typedef struct
 {
     timer_8_bit_prescaler_selection_t prescaler;
     uint8_t ocra;
     uint32_t accumulator;
-} parameters = {0};
+    bool initialised;
+} configuration_t;
+
+static configuration_t configuration = {0};
 
 static inline bool id_is_valid(const uint8_t id)
 {
-    return (id < TIMER_8_BIT_STUB_MAX_INSTANCES) && (0 != id);
+    return (id < TIMER_8_BIT_STUB_MAX_INSTANCES);
 }
 
 void timer_8_bit_stub_set_next_parameters(const timer_8_bit_prescaler_selection_t prescaler, const uint8_t ocra, const uint32_t accumulator)
 {
-    parameters.prescaler = prescaler;
-    parameters.ocra = ocra;
-    parameters.accumulator = accumulator;
+    configuration.prescaler = prescaler;
+    configuration.ocra = ocra;
+    configuration.accumulator = accumulator;
+}
+
+void timer_8_bit_stub_set_initialised(const bool initialised)
+{
+    configuration.initialised = initialised;
+}
+
+void timer_8_bit_stub_reset(void)
+{
+    memset(&configuration, 0, sizeof(configuration_t));
 }
 
 void timer_8_bit_compute_matching_parameters(const uint32_t * const cpu_freq,
@@ -28,21 +42,42 @@ void timer_8_bit_compute_matching_parameters(const uint32_t * const cpu_freq,
 {
     (void) cpu_freq;
     (void) target_freq;
-    *prescaler = parameters.prescaler;
-    *ocra = parameters.ocra;
-    *accumulator = parameters.accumulator;
+    *prescaler = configuration.prescaler;
+    *ocra = configuration.ocra;
+    *accumulator = configuration.accumulator;
+}
+
+const timer_generic_prescaler_pair_t timer_8_bit_prescaler_table[TIMER_8_BIT_MAX_PRESCALER_COUNT] =
+{
+    {.value = 1U,       .type = (uint8_t) TIMER8BIT_CLK_PRESCALER_1     },
+    {.value = 8U,       .type = (uint8_t) TIMER8BIT_CLK_PRESCALER_8     },
+    {.value = 64U,      .type = (uint8_t) TIMER8BIT_CLK_PRESCALER_64    },
+    {.value = 256U,     .type = (uint8_t) TIMER8BIT_CLK_PRESCALER_256   },
+    {.value = 1024U,    .type = (uint8_t) TIMER8BIT_CLK_PRESCALER_1024  },
+};
+
+timer_8_bit_prescaler_selection_t timer_8_bit_prescaler_from_value(uint16_t const * const input_prescaler)
+{
+    for (uint8_t i = 0 ; i < TIMER_8_BIT_MAX_PRESCALER_COUNT ; i++)
+    {
+        if (*input_prescaler == timer_8_bit_prescaler_table[i].value)
+        {
+            return (timer_8_bit_prescaler_selection_t) timer_8_bit_prescaler_table[i].type;
+        }
+    }
+    return TIMER8BIT_CLK_NO_CLOCK;
 }
 
 uint16_t timer_8_bit_prescaler_to_value(const timer_8_bit_prescaler_selection_t prescaler)
 {
-    (void) prescaler;
-    return 0U;
-}
-
-timer_8_bit_prescaler_selection_t timer_8_bit_prescaler_from_value(uint16_t const * const input_prescaler)
-{
-    (void) input_prescaler;
-    return TIMER8BIT_CLK_NO_CLOCK;
+    for (uint8_t i = 0 ; i < TIMER_8_BIT_MAX_PRESCALER_COUNT ; i++)
+    {
+        if (prescaler == timer_8_bit_prescaler_table[i].type)
+        {
+            return timer_8_bit_prescaler_table[i].value;
+        }
+    }
+    return 0;
 }
 
 timer_error_t timer_8_bit_get_default_config(timer_8_bit_config_t * config)
@@ -343,10 +378,10 @@ timer_error_t timer_8_bit_stop(uint8_t id)
 
 timer_error_t timer_8_bit_is_initialised(const uint8_t id, bool * const initialised)
 {
-    (void) initialised;
     if (!id_is_valid(id))
     {
         return TIMER_ERROR_UNKNOWN_TIMER;
     };
+    *initialised = configuration.initialised;
     return TIMER_ERROR_OK;
 }
