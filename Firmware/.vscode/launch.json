@@ -10,7 +10,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/Tests/build/bin/Modules/Timebase/timebase_module_tests",
-            "args": ["--gtest_filter=timebase_module_tests.test_wrong_index_error_forwarding"],
+            "args": ["--gtest_filter=TimebaseModuleFixture.test_timer_initialisation"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

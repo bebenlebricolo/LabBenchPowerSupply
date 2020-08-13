@@ -1,10 +1,13 @@
 #include "gtest/gtest.h"
 
+#include <string.h>
+
 #include "config.h"
 #include "timebase.h"
 #include "timer_8_bit_stub.h"
 #include "timer_8_bit_async_stub.h"
 #include "timer_16_bit_stub.h"
+
 
 class TimebaseModuleFixture : public ::testing::Test
 {
@@ -113,6 +116,29 @@ TEST(timebase_module_tests, test_uninitialised_timer_error)
     err = timebase_init(0U, &config);
     ASSERT_EQ(TIMEBASE_ERROR_TIMER_UNINITIALISED, err);
 }
+
+TEST_F(TimebaseModuleFixture, test_timer_initialisation)
+{
+    timer_8_bit_stub_set_initialised(true);
+    config.timer.type = TIMEBASE_TIMER_8_BIT;
+    config.timer.index = 0U;
+
+    timer_8_bit_prescaler_selection_t prescaler = TIMER8BIT_CLK_PRESCALER_64;
+    uint32_t accumulator = 5U;
+    uint8_t ocra = 0U;
+
+    timer_8_bit_stub_set_next_parameters(prescaler, ocra, accumulator);
+
+    timebase_error_t err = timebase_init(0U, &config);
+    ASSERT_EQ(TIMEBASE_ERROR_OK, err);
+    timer_8_bit_config_t driver_config;
+    memset(&driver_config, 0, sizeof(timer_8_bit_config_t));
+
+    timer_8_bit_stub_get_driver_configuration(&driver_config);
+    ASSERT_EQ(driver_config.timing_config.ocra_val, ocra);
+    ASSERT_EQ(driver_config.timing_config.prescaler, prescaler);
+}
+
 
 int main(int argc, char **argv)
 {

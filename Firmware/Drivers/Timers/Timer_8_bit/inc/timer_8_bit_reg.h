@@ -133,7 +133,6 @@ typedef struct
     bool it_comp_match_a;               /**< Enables (or not) the OCIEnA flag (interrupt on compare match A, or not)*/
     bool it_comp_match_b;               /**< Enables (or not) the OCIEnB flag (interrupt on compare match B, or not)*/
     bool it_timer_overflow;             /**< Enables (or not) the TOEIn flag (interrupt on timer overflow, or not)  */
-    void (*interrupt_callback)(void);   /**< Interrupt callback used when the interrupt fires.                      */
 } timer_8_bit_interrupt_config_t;
 
 #ifdef __cplusplus

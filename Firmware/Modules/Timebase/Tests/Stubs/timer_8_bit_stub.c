@@ -8,6 +8,7 @@ typedef struct
     uint8_t ocra;
     uint32_t accumulator;
     bool initialised;
+    timer_8_bit_config_t driver_config;
 } configuration_t;
 
 static configuration_t configuration = {0};
@@ -32,6 +33,11 @@ void timer_8_bit_stub_set_initialised(const bool initialised)
 void timer_8_bit_stub_reset(void)
 {
     memset(&configuration, 0, sizeof(configuration_t));
+}
+
+void timer_8_bit_stub_get_driver_configuration(timer_8_bit_config_t * const config)
+{
+    *config = configuration.driver_config;
 }
 
 void timer_8_bit_compute_matching_parameters(const uint32_t * const cpu_freq,
@@ -341,11 +347,11 @@ timer_error_t timer_8_bit_init(uint8_t id, timer_8_bit_config_t * const config)
 
 timer_error_t timer_8_bit_reconfigure(uint8_t id, timer_8_bit_config_t * const config)
 {
-    (void) config;
     if (!id_is_valid(id))
     {
         return TIMER_ERROR_UNKNOWN_TIMER;
     };
+    configuration.driver_config = *config;
     return TIMER_ERROR_OK;
 }
 
