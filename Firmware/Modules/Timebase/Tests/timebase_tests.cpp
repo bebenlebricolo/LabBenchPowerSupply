@@ -1,15 +1,17 @@
 #include "gtest/gtest.h"
 
 #include <string.h>
+#include <limits.h>
 
 #include "config.h"
 #include "timebase.h"
+#include "timebase_internal.h"
 #include "timer_8_bit_stub.h"
 #include "timer_8_bit_async_stub.h"
 #include "timer_16_bit_stub.h"
 
 
-class TimebaseModuleFixture : public ::testing::Test
+class TimebaseModuleBasicConfig : public ::testing::Test
 {
 public:
     void SetUp(void) override
@@ -31,6 +33,28 @@ public:
     timebase_config_t config;
 };
 
+class TimebaseModule8BitInitialised : public TimebaseModuleBasicConfig
+{
+public:
+    void SetUp(void)
+    {
+        TimebaseModuleBasicConfig::SetUp();
+        timer_8_bit_stub_set_initialised(true);
+
+        config.timer.type = TIMEBASE_TIMER_8_BIT;
+        config.timer.index = 0U;
+
+        timer_8_bit_prescaler_selection_t prescaler = TIMER8BIT_CLK_PRESCALER_64;
+        uint32_t accumulator = 5U;
+        uint8_t ocra = 0U;
+
+        timer_8_bit_stub_set_next_parameters(prescaler, ocra, accumulator);
+
+        timebase_error_t err = timebase_init(0U, &config);
+        ASSERT_EQ(TIMEBASE_ERROR_OK, err);
+    }
+};
+
 TEST(timebase_module_tests, test_compute_timer_parameters)
 {
     timebase_config_t config;
@@ -41,7 +65,7 @@ TEST(timebase_module_tests, test_compute_timer_parameters)
 
     uint16_t prescaler = 0;
     uint16_t ocr_value = 0;
-    uint32_t accumulator = 0;
+    uint16_t accumulator = 0;
 
     timer_16_bit_stub_set_next_parameters(TIMER16BIT_CLK_PRESCALER_1, 15999U, 0U);
 
@@ -117,7 +141,7 @@ TEST(timebase_module_tests, test_uninitialised_timer_error)
     ASSERT_EQ(TIMEBASE_ERROR_TIMER_UNINITIALISED, err);
 }
 
-TEST_F(TimebaseModuleFixture, test_timer_initialisation)
+TEST_F(TimebaseModuleBasicConfig, test_timer_initialisation)
 {
     timer_8_bit_stub_set_initialised(true);
     config.timer.type = TIMEBASE_TIMER_8_BIT;
@@ -137,6 +161,33 @@ TEST_F(TimebaseModuleFixture, test_timer_initialisation)
     timer_8_bit_stub_get_driver_configuration(&driver_config);
     ASSERT_EQ(driver_config.timing_config.ocra_val, ocra);
     ASSERT_EQ(driver_config.timing_config.prescaler, prescaler);
+}
+
+TEST_F(TimebaseModule8BitInitialised, test_ticks_and_durations)
+{
+    uint16_t tick = 0;
+    uint16_t duration = 0;
+    uint16_t reference = 153U;
+    timebase_internal_config[0U].tick = 1652U;
+
+    timebase_error_t err = timebase_get_tick(0U, &tick);
+    ASSERT_EQ(err, TIMEBASE_ERROR_OK);
+    ASSERT_EQ(tick, timebase_internal_config[0U].tick);
+
+    err = timebase_get_duration(&reference, &tick, &duration);
+    ASSERT_EQ(err, TIMEBASE_ERROR_OK);
+    ASSERT_EQ(duration, timebase_internal_config[0U].tick - reference);
+
+    err = timebase_get_duration_now(0U, &reference, &duration);
+    ASSERT_EQ(err, TIMEBASE_ERROR_OK);
+    ASSERT_EQ(duration, timebase_internal_config[0U].tick - reference);
+
+    // Overflowing case
+    timebase_internal_config[0U].tick = 356;
+    reference = 12563;
+    err = timebase_get_duration_now(0U, &reference, &duration);
+    ASSERT_EQ(err, TIMEBASE_ERROR_OK);
+    ASSERT_EQ(duration,((uint32_t) (timebase_internal_config[0U].tick) + USHRT_MAX) - (uint32_t) reference);
 }
 
 

@@ -1,8 +1,10 @@
 #include <stdbool.h>
 #include <stddef.h>
+#include <limits.h>
 
 #include "config.h"
 #include "timebase.h"
+#include "timebase_internal.h"
 
 #include "timer_8_bit.h"
 #include "timer_16_bit.h"
@@ -12,20 +14,7 @@
     #error "TIMEBASE_MAX_MODULES define is missing, please set the maximum number of available timebase modules in your config.h"
 #endif
 
-typedef struct
-{
-    timebase_timer_t timer;
-    uint8_t timer_id;
-    struct
-    {
-        uint32_t programmed;
-        uint32_t running;
-    } accumulator;
-    uint32_t tick;
-} internal_config_t;
-
-static internal_config_t internal_config[TIMEBASE_MAX_MODULES] = {0};
-
+timebase_internal_config_t timebase_internal_config[TIMEBASE_MAX_MODULES] = {0};
 
 static inline bool is_index_valid(const uint8_t id)
 {
@@ -40,7 +29,7 @@ static inline bool is_index_valid(const uint8_t id)
 static inline timebase_error_t setup_8_bit_timer(const uint8_t timebase_id, uint32_t const * const cpu_freq, uint32_t const * const target_freq)
 {
     bool initialised = false;
-    timer_error_t err = timer_8_bit_is_initialised(internal_config[timebase_id].timer_id, &initialised);
+    timer_error_t err = timer_8_bit_is_initialised(timebase_internal_config[timebase_id].timer_id, &initialised);
     if (TIMER_ERROR_OK != err)
     {
         return TIMEBASE_ERROR_TIMER_ERROR;
@@ -52,17 +41,17 @@ static inline timebase_error_t setup_8_bit_timer(const uint8_t timebase_id, uint
     }
 
     uint8_t ocra = 0;
-    internal_config[timebase_id].accumulator.programmed =  0;
+    timebase_internal_config[timebase_id].accumulator.programmed =  0;
     timer_8_bit_prescaler_selection_t prescaler;
     timer_8_bit_compute_matching_parameters(cpu_freq,
                                             target_freq,
                                             &prescaler,
                                             &ocra,
-                                            &internal_config[timebase_id].accumulator.programmed);
+                                            &timebase_internal_config[timebase_id].accumulator.programmed);
 
-    timer_error_t ret = timer_8_bit_stop(internal_config[timebase_id].timer_id);
+    timer_error_t ret = timer_8_bit_stop(timebase_internal_config[timebase_id].timer_id);
     timer_8_bit_handle_t handle = {0};
-    ret = timer_8_bit_get_handle(internal_config[timebase_id].timer_id, &handle);
+    ret = timer_8_bit_get_handle(timebase_internal_config[timebase_id].timer_id, &handle);
 
     if (TIMER_ERROR_OK != ret)
     {
@@ -84,7 +73,7 @@ static inline timebase_error_t setup_8_bit_timer(const uint8_t timebase_id, uint
     config.timing_config.prescaler = prescaler;
     config.interrupt_config.it_comp_match_a = true;
 
-    ret = timer_8_bit_reconfigure(internal_config[timebase_id].timer_id, &config);
+    ret = timer_8_bit_reconfigure(timebase_internal_config[timebase_id].timer_id, &config);
     if (TIMER_ERROR_OK != ret)
     {
         return TIMEBASE_ERROR_TIMER_ERROR;
@@ -96,7 +85,7 @@ static inline timebase_error_t setup_8_bit_timer(const uint8_t timebase_id, uint
 static inline timebase_error_t setup_8_bit_async_timer(const uint8_t timebase_id, uint32_t const * const cpu_freq, uint32_t const * const target_freq)
 {
     bool initialised = false;
-    timer_error_t err = timer_8_bit_async_is_initialised(internal_config[timebase_id].timer_id, &initialised);
+    timer_error_t err = timer_8_bit_async_is_initialised(timebase_internal_config[timebase_id].timer_id, &initialised);
     if (TIMER_ERROR_OK != err)
     {
         return TIMEBASE_ERROR_TIMER_ERROR;
@@ -107,20 +96,20 @@ static inline timebase_error_t setup_8_bit_async_timer(const uint8_t timebase_id
         return TIMEBASE_ERROR_TIMER_UNINITIALISED;
     }
     uint8_t ocra = 0;
-    internal_config[timebase_id].accumulator.programmed =  0;
+    timebase_internal_config[timebase_id].accumulator.programmed =  0;
     timer_8_bit_async_prescaler_selection_t prescaler;
     timer_8_bit_async_compute_matching_parameters(cpu_freq,
                                                   target_freq,
                                                   &prescaler,
                                                   &ocra,
-                                                  &internal_config[timebase_id].accumulator.programmed);
+                                                  &timebase_internal_config[timebase_id].accumulator.programmed);
     return TIMEBASE_ERROR_OK;
 }
 
 static inline timebase_error_t setup_16_bit_timer(const uint8_t timebase_id, uint32_t const * const cpu_freq, uint32_t const * const target_freq)
 {
     bool initialised = false;
-    timer_error_t err = timer_16_bit_is_initialised(internal_config[timebase_id].timer_id, &initialised);
+    timer_error_t err = timer_16_bit_is_initialised(timebase_internal_config[timebase_id].timer_id, &initialised);
     if (TIMER_ERROR_OK != err)
     {
         return TIMEBASE_ERROR_TIMER_ERROR;
@@ -132,13 +121,13 @@ static inline timebase_error_t setup_16_bit_timer(const uint8_t timebase_id, uin
     }
 
     uint16_t ocra = 0;
-    internal_config[timebase_id].accumulator.programmed =  0;
+    timebase_internal_config[timebase_id].accumulator.programmed =  0;
     timer_16_bit_prescaler_selection_t prescaler;
     timer_16_bit_compute_matching_parameters(cpu_freq,
                                              target_freq,
                                              &prescaler,
                                              &ocra,
-                                             &internal_config[timebase_id].accumulator.programmed);
+                                             &timebase_internal_config[timebase_id].accumulator.programmed);
     return TIMEBASE_ERROR_OK;
 }
 
@@ -165,7 +154,7 @@ static inline timebase_error_t convert_timescale_to_frequency(const timebase_con
     return TIMEBASE_ERROR_OK;
 }
 
-timebase_error_t timebase_compute_timer_parameters(timebase_config_t const * const config, uint16_t * const prescaler_val, uint16_t * const ocr_value, uint32_t * const accumulator)
+timebase_error_t timebase_compute_timer_parameters(timebase_config_t const * const config, uint16_t * const prescaler_val, uint16_t * const ocr_value, uint16_t * const accumulator)
 {
     timer_8_bit_prescaler_selection_t prescaler;
     uint32_t target_frequency = 0;
@@ -229,8 +218,8 @@ timebase_error_t timebase_init(const uint8_t timebase_id, timebase_config_t cons
         return TIMEBASE_ERROR_NULL_POINTER;
     }
 
-    internal_config[timebase_id].timer_id = config->timer.index;
-    internal_config[timebase_id].timer = config->timer.type;
+    timebase_internal_config[timebase_id].timer_id = config->timer.index;
+    timebase_internal_config[timebase_id].timer = config->timer.type;
     uint32_t target_freq = 0;
 
     ret = convert_timescale_to_frequency(config, &target_freq);
@@ -258,6 +247,7 @@ timebase_error_t timebase_init(const uint8_t timebase_id, timebase_config_t cons
             return TIMEBASE_ERROR_UNSUPPORTED_TIMER_TYPE;
     }
 
+    timebase_internal_config[timebase_id].initialised = true;
     return ret;
 }
 
@@ -270,21 +260,89 @@ void timebase_interrupt_callback(const uint8_t timebase_id)
 
     // If an accumulator value was set, increment it and when the running accumulator matches the programmed one,
     // This counts as a new tick.
-    if (internal_config[timebase_id].accumulator.programmed != 0)
+    if (timebase_internal_config[timebase_id].accumulator.programmed != 0)
     {
-        if (internal_config[timebase_id].accumulator.running < internal_config[timebase_id].accumulator.programmed)
+        if (timebase_internal_config[timebase_id].accumulator.running < timebase_internal_config[timebase_id].accumulator.programmed)
         {
-            internal_config[timebase_id].accumulator.running++;
+            timebase_internal_config[timebase_id].accumulator.running++;
         }
         else
         {
-            internal_config[timebase_id].accumulator.running = 0;
-            internal_config[timebase_id].tick++;
+            timebase_internal_config[timebase_id].accumulator.running = 0;
+            timebase_internal_config[timebase_id].tick++;
         }
     }
     // Otherwise, no accumulator is set, so an interrupt means direct tick increment.
     else
     {
-        internal_config[timebase_id].tick++;
+        timebase_internal_config[timebase_id].tick++;
     }
 }
+
+timebase_error_t timebase_get_tick(const uint8_t id, uint16_t * const tick)
+{
+    if (false == is_index_valid(id))
+    {
+        return TIMEBASE_ERROR_INVALID_INDEX;
+    }
+
+    if (NULL == tick)
+    {
+        return TIMEBASE_ERROR_NULL_POINTER;
+    }
+
+    if (false == timebase_internal_config[id].initialised)
+    {
+        return TIMEBASE_ERROR_UNINITIALISED;
+    }
+
+    *tick = timebase_internal_config[id].tick;
+
+    return TIMEBASE_ERROR_OK;
+}
+
+timebase_error_t timebase_get_duration(uint16_t const * const reference, uint16_t const * const new_tick, uint16_t * const duration)
+{
+    if( NULL == reference || NULL == new_tick || NULL == duration)
+    {
+        return TIMEBASE_ERROR_NULL_POINTER;
+    }
+
+    // Tick counter has overflowed ! As there is no particular event triggered by the overflowing of
+    // any tick variable, we can assume that overflowing happened only once and compute the absolute distance
+    // between the two variables
+    if (*reference > *new_tick)
+    {
+        uint32_t offset_tick = *new_tick + USHRT_MAX;
+        *duration = (offset_tick - (uint32_t) *reference);
+    }
+    else
+    {
+        *duration = *new_tick - *reference;
+    }
+
+    return TIMEBASE_ERROR_OK;
+}
+
+timebase_error_t timebase_get_duration_now(const uint8_t id, uint16_t const * const reference, uint16_t * const duration)
+{
+    if (false == is_index_valid(id))
+    {
+        return TIMEBASE_ERROR_INVALID_INDEX;
+    }
+
+    if (NULL == reference || NULL == duration)
+    {
+        return TIMEBASE_ERROR_NULL_POINTER;
+    }
+
+    uint16_t now = 0;
+    timebase_error_t err = timebase_get_tick(id, &now);
+    if (TIMEBASE_ERROR_OK != err)
+    {
+        return err;
+    }
+
+    return timebase_get_duration(reference, &now, duration);
+}
+

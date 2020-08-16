@@ -37,7 +37,7 @@ void timer_8_bit_async_compute_matching_parameters( const uint32_t * const cpu_f
                                                     const uint32_t * const target_freq,
                                                     timer_8_bit_async_prescaler_selection_t * const prescaler,
                                                     uint8_t * const ocra,
-                                                    uint32_t * const accumulator)
+                                                    uint16_t * const accumulator)
 {
     (void) cpu_freq;
     (void) target_freq;

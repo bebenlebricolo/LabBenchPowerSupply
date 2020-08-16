@@ -14,6 +14,9 @@ extern "C"
 typedef enum
 {
     TIMEBASE_ERROR_OK,                      /**< No particular error                                            */
+    TIMEBASE_ERROR_UNINITIALISED,           /**< Targeted timebase instance has not been initialised yet
+                                                 (essentially meaning underlying timer has not been configured
+                                                 yet, so timebase may run eratically)                           */
     TIMEBASE_ERROR_NULL_POINTER,            /**< One or more parameters are not initialised properly            */
     TIMEBASE_ERROR_INVALID_INDEX,           /**< Index is not set correctly, probably out of bounds             */
     TIMEBASE_ERROR_UNSUPPORTED_TIMER_TYPE,  /**< Given timer type is not compatible with timebase_timer_t enum  */
@@ -70,7 +73,7 @@ typedef struct
  *                            E.g : selected timer is a 8bit async timer, then prescaler shall be cast to (timer_8_bit_async_prescaler_selection_t)
  * @param[out]  ocr_value   : Output Compare value used to trigger an interrupt and load the accumulator with it.
 */
-timebase_error_t timebase_compute_timer_parameters(timebase_config_t const * const config, uint16_t * const prescaler_val, uint16_t * const ocr_value, uint32_t * const accumulator);
+timebase_error_t timebase_compute_timer_parameters(timebase_config_t const * const config, uint16_t * const prescaler_val, uint16_t * const ocr_value, uint16_t * const accumulator);
 
 /**
  * @brief Initialises the timebase module using an id and a configuration.
@@ -83,12 +86,25 @@ timebase_error_t timebase_compute_timer_parameters(timebase_config_t const * con
 */
 timebase_error_t timebase_init(const uint8_t id, timebase_config_t const * const config);
 
+
+/**
+ * @brief Checks whether selected timebase instance has been initialised or not
+ * @param[in]   id          :   selected timebase instance index
+ * @param[out]  initialised :   probes for initialisation
+ * @return
+ *          TIMEBASE_ERROR_OK               :   operation succeeded
+ *          TIMEBASE_ERROR_NULL_POINTER     :   given parameter is uninitialised
+ *          TIMEBASE_ERROR_INVALID_INDEX    :   given module id is out of bounds
+*/
+timebase_error_t timebase_id_initialised(const uint8_t id, bool * const initialsed);
+
 /**
  * @brief Deinitialises targeted timebase module
  * @param[in] id    :   targeted timebase module index
  * @return
  *          TIMEBASE_ERROR_OK               :   operation succeeded
  *          TIMEBASE_ERROR_INVALID_INDEX    :   given module id is out of bounds
+ *          TIMEBASE_ERROR_UNINITIALISED    :   cannot deinit a module which has not been initialised yet
 */
 timebase_error_t timebase_deinit(const uint8_t id);
 
@@ -100,6 +116,7 @@ timebase_error_t timebase_deinit(const uint8_t id);
  *          TIMEBASE_ERROR_OK               :   operation succeeded
  *          TIMEBASE_ERROR_NULL_POINTER     :   given parameter is uninitialised
  *          TIMEBASE_ERROR_INVALID_INDEX    :   given module id is out of bounds
+ *          TIMEBASE_ERROR_UNINITIALISED    :   selected module has not been initialised (meaning underlying timer is not configured)
 */
 timebase_error_t timebase_get_tick(const uint8_t id, uint16_t * const tick);
 

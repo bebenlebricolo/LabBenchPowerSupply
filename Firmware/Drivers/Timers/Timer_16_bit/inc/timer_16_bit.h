@@ -429,7 +429,7 @@ void timer_16_bit_compute_matching_parameters(const uint32_t * const cpu_freq,
                                               const uint32_t * const target_freq,
                                               timer_16_bit_prescaler_selection_t * const prescaler,
                                               uint16_t * const ocra,
-                                              uint32_t * const accumulator);
+                                              uint16_t * const accumulator);
 
 /**
  * @brief Timer 16 bit prescaler table, ascending order. Used to compute the closest prescaler

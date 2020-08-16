@@ -540,7 +540,7 @@ TEST(timer_8_bit_async_driver_tests, test_parameters_computation_prescaler)
     uint32_t cpu_freq = 16'000'000;
     uint32_t target_freq = 1'000;
     uint8_t ocra = 0;
-    uint32_t accumulator = 0;
+    uint16_t accumulator = 0;
 
     timer_8_bit_async_prescaler_selection_t prescaler = TIMER8BIT_ASYNC_CLK_PRESCALER_1;
     timer_8_bit_async_compute_matching_parameters(&cpu_freq, &target_freq, &prescaler, &ocra, &accumulator);
