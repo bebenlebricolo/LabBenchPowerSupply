@@ -94,6 +94,92 @@ TEST(timebase_module_tests, test_compute_timer_parameters)
     ASSERT_EQ(ocr_value, 127U);
 }
 
+TEST(timebase_module_test, test_guard_wrong_parameters)
+{
+    {
+        timebase_config_t config;
+        memset(&config, 0, sizeof(timebase_config_t));
+        uint16_t * null_prescaler = nullptr;
+        uint16_t * null_ocr_value = nullptr;
+        uint16_t * null_accumulator = nullptr;
+        auto ret = timebase_compute_timer_parameters(&config, null_prescaler, null_ocr_value, null_accumulator);
+        ASSERT_EQ(ret, TIMEBASE_ERROR_NULL_POINTER);
+        uint16_t prescaler = 0;
+        uint16_t accumulator = 0;
+        uint16_t ocr_value  = 0;
+
+        // Forcing a wrong timer type
+        config.timer.type = TIMEBASE_TIMER_UNDEFINED;
+        config.timescale = TIMEBASE_TIMESCALE_MICROSECONDS;
+        ret = timebase_compute_timer_parameters(&config, &prescaler, &ocr_value, &accumulator);
+        ASSERT_EQ(ret, TIMEBASE_ERROR_UNSUPPORTED_TIMER_TYPE);
+
+        config.timer.type = TIMEBASE_TIMER_16_BIT;
+        config.timescale = TIMEBASE_TIMESCALE_UNDEFINED;
+        ret = timebase_compute_timer_parameters(&config, &prescaler, &ocr_value, &accumulator);
+        ASSERT_EQ(ret, TIMEBASE_ERROR_UNSUPPORTED_TIMESCALE);
+    }
+    {
+        timebase_config_t * null_config = nullptr;
+        timebase_config_t config;
+        memset(&config, 0, sizeof(timebase_config_t));
+        auto ret = timebase_init(0U, null_config);
+        ASSERT_EQ(ret, TIMEBASE_ERROR_NULL_POINTER);
+
+        ret = timebase_init(TIMEBASE_MAX_MODULES, &config);
+        ASSERT_EQ(ret, TIMEBASE_ERROR_INVALID_INDEX);
+    }
+    {
+        timebase_internal_config[0U].initialised = false;
+        bool * null_initialised = nullptr;
+        bool initialised = false;
+        auto ret = timebase_is_initialised(0U, null_initialised);
+        ASSERT_EQ(ret, TIMEBASE_ERROR_NULL_POINTER);
+
+        ret = timebase_is_initialised(TIMEBASE_MAX_MODULES, &initialised);
+        ASSERT_EQ(ret, TIMEBASE_ERROR_INVALID_INDEX);
+    }
+    {
+        timebase_internal_config[0U].initialised = true;
+        auto ret = timebase_deinit(TIMEBASE_MAX_MODULES);
+        ASSERT_EQ(ret, TIMEBASE_ERROR_INVALID_INDEX);
+
+        timebase_internal_config[0U].initialised = false;
+        ret = timebase_deinit(0U);
+        ASSERT_EQ(ret, TIMEBASE_ERROR_UNINITIALISED);
+    }
+    {
+        uint16_t ticks = 0;
+        auto ret = timebase_get_tick(0U, nullptr);
+        ASSERT_EQ(ret, TIMEBASE_ERROR_NULL_POINTER);
+
+        ret = timebase_get_tick(TIMEBASE_MAX_MODULES, &ticks);
+        ASSERT_EQ(ret, TIMEBASE_ERROR_INVALID_INDEX);
+
+        timebase_internal_config[0U].initialised = false;
+        ret = timebase_get_tick(0U, &ticks);
+        ASSERT_EQ(ret, TIMEBASE_ERROR_UNINITIALISED);
+    }
+    {
+        auto ret = timebase_get_duration(nullptr, nullptr, nullptr);
+        ASSERT_EQ(ret, TIMEBASE_ERROR_NULL_POINTER);
+    }
+    {
+        uint16_t duration = 0;
+        uint16_t reference = 0;
+
+        auto ret = timebase_get_duration_now(0U,nullptr, nullptr);
+        ASSERT_EQ(ret, TIMEBASE_ERROR_NULL_POINTER);
+
+        ret = timebase_get_duration_now(TIMEBASE_MAX_MODULES, &reference, &duration);
+        ASSERT_EQ(ret, TIMEBASE_ERROR_INVALID_INDEX);
+
+        timebase_internal_config[0U].initialised = false;
+        ret = timebase_get_duration_now(0U, &reference, &duration);
+        ASSERT_EQ(ret, TIMEBASE_ERROR_UNINITIALISED);
+    }
+}
+
 TEST(timebase_module_tests, test_wrong_index_error_forwarding)
 {
     timebase_config_t config;

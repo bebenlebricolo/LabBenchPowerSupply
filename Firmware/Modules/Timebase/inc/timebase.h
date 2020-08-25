@@ -31,6 +31,7 @@ typedef enum
 */
 typedef enum
 {
+    TIMEBASE_TIMER_UNDEFINED,       /**< Undefined timer type, default value            */
     TIMEBASE_TIMER_8_BIT,           /**< Uses a regular 8 bit timer                     */
     TIMEBASE_TIMER_16_BIT,          /**< Uses a regular 16 bit timer                    */
     TIMEBASE_TIMER_8_BIT_ASYNC,     /**< Uses an advanced / async capable 8 bit timer   */
@@ -41,6 +42,7 @@ typedef enum
 */
 typedef enum
 {
+    TIMEBASE_TIMESCALE_UNDEFINED,       /**< Undefined timescale, default value                                                     */
     TIMEBASE_TIMESCALE_MICROSECONDS,    /**< Microsecond timescale                                                                  */
     TIMEBASE_TIMESCALE_MILLISECONDS,    /**< Millisecond timescale                                                                  */
     TIMEBASE_TIMESCALE_SECONDS,         /**< Second timescale                                                                       */
@@ -72,6 +74,10 @@ typedef struct
  * @param[out]  prescaler   : Computed prescaler. Shall be cast to the timer's according prescaler enum.
  *                            E.g : selected timer is a 8bit async timer, then prescaler shall be cast to (timer_8_bit_async_prescaler_selection_t)
  * @param[out]  ocr_value   : Output Compare value used to trigger an interrupt and load the accumulator with it.
+ * @return
+ *          TIMEBASE_ERROR_OK                       :   operation succeeded
+ *          TIMEBASE_ERROR_UNSUPPORTED_TIMER_TYPE   :   targeted timer type does not exist
+ *          TIMEBASE_ERROR_UNSUPPORTED_TIMESCALE    :   timescale is not relevant to timebase module
 */
 timebase_error_t timebase_compute_timer_parameters(timebase_config_t const * const config, uint16_t * const prescaler_val, uint16_t * const ocr_value, uint16_t * const accumulator);
 
@@ -96,7 +102,7 @@ timebase_error_t timebase_init(const uint8_t id, timebase_config_t const * const
  *          TIMEBASE_ERROR_NULL_POINTER     :   given parameter is uninitialised
  *          TIMEBASE_ERROR_INVALID_INDEX    :   given module id is out of bounds
 */
-timebase_error_t timebase_id_initialised(const uint8_t id, bool * const initialsed);
+timebase_error_t timebase_is_initialised(const uint8_t id, bool * const initialsed);
 
 /**
  * @brief Deinitialises targeted timebase module
@@ -140,6 +146,7 @@ timebase_error_t timebase_get_duration(uint16_t const * const reference, uint16_
  *          TIMEBASE_ERROR_OK               :   operation succeeded
  *          TIMEBASE_ERROR_NULL_POINTER     :   given parameter is uninitialised
  *          TIMEBASE_ERROR_INVALID_INDEX    :   given module id is out of bounds
+ *          TIMEBASE_ERROR_UNINITIALISED    :   selected module has not been initialised (meaning underlying timer is not configured)
 */
 timebase_error_t timebase_get_duration_now(const uint8_t id, uint16_t const * const reference, uint16_t * const duration);
 

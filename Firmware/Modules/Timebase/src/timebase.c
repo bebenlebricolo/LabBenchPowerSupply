@@ -26,6 +26,16 @@ static inline bool is_index_valid(const uint8_t id)
     return out;
 }
 
+static void reset_internal_config(const uint8_t id)
+{
+    timebase_internal_config[id].accumulator.programmed = 0;
+    timebase_internal_config[id].accumulator.running = 0;
+    timebase_internal_config[id].tick = 0;
+    timebase_internal_config[id].timer = TIMEBASE_TIMER_UNDEFINED;
+    timebase_internal_config[id].timer_id = 0;
+    timebase_internal_config[id].initialised = false;
+}
+
 static inline timebase_error_t setup_8_bit_timer(const uint8_t timebase_id, uint32_t const * const cpu_freq, uint32_t const * const target_freq)
 {
     bool initialised = false;
@@ -158,6 +168,11 @@ timebase_error_t timebase_compute_timer_parameters(timebase_config_t const * con
 {
     timer_8_bit_prescaler_selection_t prescaler;
     uint32_t target_frequency = 0;
+    if (NULL == config || NULL == prescaler_val || NULL == ocr_value || NULL == accumulator)
+    {
+        return TIMEBASE_ERROR_NULL_POINTER;
+    }
+
     timebase_error_t ret = convert_timescale_to_frequency(config, &target_frequency);
     if (TIMEBASE_ERROR_OK != ret)
     {
@@ -279,6 +294,23 @@ void timebase_interrupt_callback(const uint8_t timebase_id)
     }
 }
 
+timebase_error_t timebase_deinit(const uint8_t id)
+{
+    if (false == is_index_valid(id))
+    {
+        return TIMEBASE_ERROR_INVALID_INDEX;
+    }
+
+    if (false == timebase_internal_config[id].initialised)
+    {
+        return TIMEBASE_ERROR_UNINITIALISED;
+    }
+
+    reset_internal_config(id);
+    return TIMEBASE_ERROR_OK;
+}
+
+
 timebase_error_t timebase_get_tick(const uint8_t id, uint16_t * const tick)
 {
     if (false == is_index_valid(id))
@@ -346,3 +378,18 @@ timebase_error_t timebase_get_duration_now(const uint8_t id, uint16_t const * co
     return timebase_get_duration(reference, &now, duration);
 }
 
+timebase_error_t timebase_is_initialised(const uint8_t id, bool * const initialised)
+{
+    if (false == is_index_valid(id))
+    {
+        return TIMEBASE_ERROR_INVALID_INDEX;
+    }
+
+    if (NULL == initialised)
+    {
+        return TIMEBASE_ERROR_NULL_POINTER;
+    }
+
+    *initialised = timebase_internal_config[id].initialised;
+    return TIMEBASE_ERROR_OK;
+}

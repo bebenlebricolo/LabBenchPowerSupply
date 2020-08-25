@@ -25,7 +25,7 @@
                 "/usr/include/c++/*/*",
                 "/usr/include/gtest",
                 "/usr/avr/include",
-                "/usr/lib/gcc/avr/10.1.0/include"
+                "/usr/lib/gcc/avr/10.2.0/include"
             ],
             "defines": [
                 "__AVR_ATmega328__",
@@ -56,7 +56,7 @@
                 "/usr/include/c++/*/*",
                 "/usr/include/gtest",
                 "/usr/avr/include",
-                "/usr/lib/gcc/avr/10.1.0/include"
+                "/usr/lib/gcc/avr/10.2.0/include"
             ],
             "defines": [
                 "__AVR_ATmega328__",
@@ -79,7 +79,7 @@
                 "/usr/include/c++/**/*",
                 "/usr/include/gtest",
                 "/usr/avr/include",
-                "/usr/lib/gcc/avr/10.1.0/include/*"
+                "/usr/lib/gcc/avr/10.2.0/include/*"
             ],
             "defines": [
                 "__AVR_ATmega328__",
@@ -102,7 +102,7 @@
                 "/usr/include/c++/**/*",
                 "/usr/include/gtest",
                 "/usr/avr/include",
-                "/usr/lib/gcc/avr/10.1.0/include/*"
+                "/usr/lib/gcc/avr/10.2.0/include/*"
             ],
             "defines": [
                 "__AVR_ATmega328__",
@@ -124,7 +124,7 @@
                 "/usr/include/c++/**/*",
                 "/usr/include/gtest",
                 "/usr/avr/include",
-                "/usr/lib/gcc/avr/10.1.0/include/*"
+                "/usr/lib/gcc/avr/10.2.0/include/*"
             ],
             "defines": [
                 "__AVR_ATmega328__",
@@ -150,7 +150,7 @@
                 "/usr/include/c++/**/",
                 "/usr/include/gtest",
                 "/usr/avr/include",
-                "/usr/lib/gcc/avr/10.1.0/include"
+                "/usr/lib/gcc/avr/10.2.0/include"
             ],
             "defines": [
                 "__AVR_ATmega328__"
