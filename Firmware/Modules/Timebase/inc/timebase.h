@@ -7,6 +7,7 @@ extern "C"
 #endif
 
 #include <stdint.h>
+#include <stdbool.h>
 
 /**
  * @brief Describes available error codes for this timebase module

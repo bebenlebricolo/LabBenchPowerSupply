@@ -5,6 +5,7 @@ add_library(i2c_driver STATIC
 )
 
 target_include_directories(i2c_driver PUBLIC
+    ${CMAKE_SOURCE_DIR}/App/inc
     ${CMAKE_CURRENT_SOURCE_DIR}/inc
     ${AVR_INCLUDES}
 )

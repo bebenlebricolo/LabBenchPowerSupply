@@ -14,4 +14,5 @@ set(CMAKE_EXE_LINKER_FLAGS "-mmcu=${AVR_MCU}")
 
 # Adding sources
 add_subdirectory(${CMAKE_SOURCE_DIR}/Drivers)
+add_subdirectory(${CMAKE_SOURCE_DIR}/Modules)
 add_subdirectory(${CMAKE_SOURCE_DIR}/App)

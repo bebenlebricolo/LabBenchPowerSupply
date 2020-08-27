@@ -4,6 +4,8 @@
 #include "timer_16_bit.h"
 
 #include "driver_setup.h"
+#include "module_setup.h"
+
 #include <avr/interrupt.h>
 
 #ifdef USE_SIMAVR_VCD_TRACE
@@ -60,38 +62,50 @@ driver_setup_error_t adc_register_all_channels(void)
 
 int main(void)
 {
-    driver_setup_error_t init_error = DRIVER_SETUP_ERROR_OK;
+    driver_setup_error_t driver_init_error = DRIVER_SETUP_ERROR_OK;
+    module_setup_error_t module_init_error = MODULE_SETUP_ERROR_OK;
 
     /* Set up 8 bit timer 0 as 8 bit FAST PWM generator */
-    init_error = init_timer_0();
-    if (DRIVER_SETUP_ERROR_OK != init_error)
+    driver_init_error = driver_init_timer_0();
+    if (DRIVER_SETUP_ERROR_OK != driver_init_error)
     {
         error_handler();
     }
 
     /* Set up 16 bit timer 1 as 10 bit FAST PWM generator */
-    init_error = init_timer_1();
-    if (DRIVER_SETUP_ERROR_OK != init_error)
+    driver_init_error = driver_init_timer_1();
+    if (DRIVER_SETUP_ERROR_OK != driver_init_error)
     {
         error_handler();
     }
 
     /* Set up 8 bit timer 2 as 8 bit FAST PWM generator */
-    init_error = init_timer_2();
-    if (DRIVER_SETUP_ERROR_OK != init_error)
+    driver_init_error = driver_init_timer_2();
+    if (DRIVER_SETUP_ERROR_OK != driver_init_error)
     {
         error_handler();
     }
 
-
-    init_error = init_adc();
-    if (DRIVER_SETUP_ERROR_OK != init_error)
+    module_init_error = module_init_timebase();
+    if (MODULE_SETUP_ERROR_OK != module_init_error)
     {
         error_handler();
     }
 
-    init_error = adc_register_all_channels();
-    if (DRIVER_SETUP_ERROR_OK != init_error)
+    driver_init_error = driver_init_adc();
+    if (DRIVER_SETUP_ERROR_OK != driver_init_error)
+    {
+        error_handler();
+    }
+
+    driver_init_error = driver_init_i2c();
+    if (DRIVER_SETUP_ERROR_OK != driver_init_error)
+    {
+        error_handler();
+    }
+
+    driver_init_error = adc_register_all_channels();
+    if (DRIVER_SETUP_ERROR_OK != driver_init_error)
     {
         error_handler();
     }
