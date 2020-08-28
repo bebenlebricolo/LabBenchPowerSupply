@@ -2,9 +2,12 @@
 #include "timer_8_bit.h"
 #include "timer_8_bit_async.h"
 #include "timer_16_bit.h"
+#include "HD44780_lcd.h"
+#include "timebase.h"
 
 #include "driver_setup.h"
 #include "module_setup.h"
+
 
 #include <avr/interrupt.h>
 
@@ -34,9 +37,48 @@ static adc_mux_t mux_table[MAX_MUX] =
     ADC_MUX_ADC4,
 };
 
+static void error_handler(void);
+static void bootup_sequence(void);
+static driver_setup_error_t adc_register_all_channels(void);
+static void adc_read_values(void);
+static void print_data(void);
+
 ISR(ADC_vect)
 {
     adc_isr_handler();
+}
+
+ISR(TIMER2_COMPA_vect)
+{
+    timebase_interrupt_callback(0U);
+}
+
+int main(void)
+{
+
+    bootup_sequence();
+
+    while(true)
+    {
+        adc_read_values();
+        print_data();
+    }
+
+    return 0;
+}
+
+/* ########################################################################################
+   ########################## Static functions definitions ################################
+   ######################################################################################## */
+
+void adc_read_values(void)
+{
+    static uint8_t idx = 0;
+    adc_result_t results[5];
+    adc_read_raw(mux_table[idx % MAX_MUX], &results[idx]);
+
+    idx++;
+    idx %= MAX_MUX;
 }
 
 void error_handler(void)
@@ -60,8 +102,9 @@ driver_setup_error_t adc_register_all_channels(void)
     return DRIVER_SETUP_ERROR_OK;
 }
 
-int main(void)
+static void bootup_sequence(void)
 {
+
     driver_setup_error_t driver_init_error = DRIVER_SETUP_ERROR_OK;
     module_setup_error_t module_init_error = MODULE_SETUP_ERROR_OK;
 
@@ -104,6 +147,12 @@ int main(void)
         error_handler();
     }
 
+    driver_init_error = driver_init_lcd();
+    if (DRIVER_SETUP_ERROR_OK != driver_init_error)
+    {
+        error_handler();
+    }
+
     driver_init_error = adc_register_all_channels();
     if (DRIVER_SETUP_ERROR_OK != driver_init_error)
     {
@@ -129,16 +178,20 @@ int main(void)
     {
         error_handler();
     }
+}
 
-    while(true)
+static void print_data(void)
+{
+    char msg[30] = "Hello World!\n";
+    hd44780_lcd_state_t state = hd44780_lcd_get_state();
+    hd44780_lcd_error_t err = HD44780_LCD_ERROR_OK;
+    if (HD44780_LCD_STATE_READY != state)
     {
-        static uint8_t idx = 0;
-        adc_result_t results[5];
-        adc_read_raw(mux_table[idx % MAX_MUX], &results[idx]);
-
-        idx++;
-        idx %= MAX_MUX;
+        err = hd44780_lcd_process();
     }
-
-    return 0;
+    else
+    {
+        err = hd44780_lcd_print(30U, msg);
+    }
+    (void) err;
 }

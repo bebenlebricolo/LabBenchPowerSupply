@@ -52,6 +52,32 @@
                     "ignoreFailures": true
                 }
             ]
+        },
+        {
+            "name": "(avr-gdb) Debug firmware app",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/App/firmware",
+            "miDebuggerServerAddress" : "localhost:1234",
+            "miDebuggerPath": "/usr/bin/avr-gdb",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "re enables randomization",
+                    "text": "set disable-randomization off",
+                    "ignoreFailures": true
+                }
+            ]
         }
     ]
 }

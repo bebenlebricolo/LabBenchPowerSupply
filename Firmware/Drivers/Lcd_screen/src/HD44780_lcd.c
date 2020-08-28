@@ -557,6 +557,8 @@ void bootup_sequence_handler(uint8_t time_to_wait, bool end_with_wait)
         if( TIMEBASE_ERROR_OK != tim_err)
         {
             // Error handling placeholder
+            last_error = HD44780_LCD_ERROR_TIMEBASE_BROKEN;
+            return;
         }
         prepare_i2c_buffer(TRANSMISSION_MODE_INSTRUCTION);
         data_byte = HD44780_LCD_CMD_INIT_4BITS_MODE;
@@ -583,6 +585,12 @@ void bootup_sequence_handler(uint8_t time_to_wait, bool end_with_wait)
             tim_err = timebase_get_duration_now(internal_configuration.indexes.timebase,
                                                 &command_sequencer.start_time,
                                                 &duration);
+            if (TIMEBASE_ERROR_OK != tim_err)
+            {
+                last_error = HD44780_LCD_ERROR_TIMEBASE_BROKEN;
+                return;
+            }
+
             if(true == command_sequencer.sequence.pulse_sent)
             {
                 if (duration >= HD44780_LCD_ENABLE_PULSE_DURATION_WAIT)
@@ -667,7 +675,8 @@ bool write_buffer(void)
                                             &duration);
         if (TIMEBASE_ERROR_OK != tim_err)
         {
-            // Error handling here
+            last_error = HD44780_LCD_ERROR_TIMEBASE_BROKEN;
+            return false;
         }
 
         // Time to reset the "enable" pulse
@@ -701,6 +710,8 @@ bool write_buffer(void)
                 if (TIMEBASE_ERROR_OK != tim_err)
                 {
                     // Error handling here
+                    last_error = HD44780_LCD_ERROR_TIMEBASE_BROKEN;
+                    return false;
                 }
                 command_sequencer.sequence.waiting = true;
             }
@@ -1002,6 +1013,7 @@ void internal_command_set_backlight(void)
     {
         // Error handling here
         // Let the driver know something bad happen (usually, we are in a wrong state)
+        last_error = HD44780_LCD_ERROR_I2C_PERIPHERAL_ISSUE;
         return;
     }
 
