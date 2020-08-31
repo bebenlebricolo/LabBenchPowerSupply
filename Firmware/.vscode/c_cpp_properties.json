@@ -136,16 +136,24 @@
             "intelliSenseMode": "gcc-x64"
         },
         {
-            "name": "LabBenchPowerSupply",
+            "name": "LabBenchPowerSupply firmware",
             "includePath": [
-                "${workspaceFolder}/App/inc",
                 "${workspaceFolder}/Drivers/Adc/inc",
                 "${workspaceFolder}/Drivers/Adc/private_inc",
-                "${workspaceFolder}/Drivers/Timers/Timer_generic/inc",
+                "${workspaceFolder}/Drivers/Adc/Tests/Stub",
+
                 "${workspaceFolder}/Drivers/Timers/Timer_8_bit/inc",
-                "${workspaceFolder}/Drivers/Timers/Timer_8_bit_async/inc",
                 "${workspaceFolder}/Drivers/Timers/Timer_16_bit/inc",
+                "${workspaceFolder}/Drivers/Timers/Timer_8_bit_async/inc",
+                "${workspaceFolder}/Drivers/Timers/Timer_8_bit/Tests/Stub",
+                "${workspaceFolder}/Drivers/Timers/Timer_8_bit_async/Tests/Stub",
+                "${workspaceFolder}/Drivers/Timers/Timer_16_bit/Tests/Stub",
+
+                "${workspaceFolder}/Drivers/I2c/inc",
+                "${workspaceFolder}/Drivers/I2c/Tests",
+                "${workspaceFolder}/Modules/Timebase/inc",
                 "${workspaceFolder}/**",
+
                 "/usr/include",
                 "/usr/include/c++/**/",
                 "/usr/include/gtest",
@@ -153,7 +161,8 @@
                 "/usr/lib/gcc/avr/10.2.0/include"
             ],
             "defines": [
-                "__AVR_ATmega328__"
+                "__AVR_ATmega328__",
+                "DEBUG_WITH_SIMAVR"
             ],
             "compilerPath": "/usr/bin/avr-gcc",
             "cStandard": "c11",

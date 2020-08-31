@@ -12,8 +12,8 @@ add_compile_options(-mmcu=${AVR_MCU})
 
 set(CMAKE_EXE_LINKER_FLAGS "-mmcu=${AVR_MCU}")
 
-#set(CMAKE_CXX_FLAGS_DEBUG "-O3 -g3 -Wall -Wextra")
-#set(CMAKE_C_FLAGS_DEBUG "-O3 -g3 -Wall -Wextra")
+set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 -Wall -Wextra")
+set(CMAKE_C_FLAGS_DEBUG "-O0 -g3 -Wall -Wextra")
 #set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -Wextra")
 #set(CMAKE_C_FLAGS_RELEASE "-O3 -Wall -Wextra")
 

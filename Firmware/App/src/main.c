@@ -4,6 +4,7 @@
 #include "timer_16_bit.h"
 #include "HD44780_lcd.h"
 #include "timebase.h"
+#include "i2c.h"
 
 #include "driver_setup.h"
 #include "module_setup.h"
@@ -55,11 +56,18 @@ ISR(TIMER2_COMPA_vect)
 
 int main(void)
 {
-
+    #ifdef DEBUG_WITH_SIMAVR
+        // Should start with the INT flag set, TWI peripheral boots up in its 'awaiting request' mode
+        TWCR |= TWINT_MSK;
+    #endif
     bootup_sequence();
+
+    i2c_error_t i2c_err = I2C_ERROR_OK;
 
     while(true)
     {
+        i2c_err = i2c_process(0U);
+        (void) i2c_err;
         adc_read_values();
         print_data();
     }
