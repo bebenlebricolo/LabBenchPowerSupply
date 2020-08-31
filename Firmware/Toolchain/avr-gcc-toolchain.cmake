@@ -112,11 +112,11 @@ set (CMAKE_C_FLAGS_RELEASE "-O3 ${FULL_OPTIONS} -flto" CACHE STRING "Default C f
 set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -gdwarf-2 -fno-exceptions ${FULL_OPTIONS} -flto" CACHE STRING "Default C++ flags for release with debug info" FORCE )
 set (CMAKE_C_FLAGS_RELWITHDEBINFO "-O3 -g -gdwarf-2 ${FULL_OPTIONS} -flto" CACHE STRING "Default C flags for release with debug info" FORCE )
 
-set( CMAKE_C_FLAGS_MINSIZEREL "-Os -mcall-prologues ${FULL_OPTIONS} -flto" CACHE STRING "Default C flags for minimum size release" FORCE )
 set( CMAKE_CXX_FLAGS_MINSIZEREL "-Os -mcall-prologues ${FULL_OPTIONS} -flto" CACHE STRING "Default C++ flags for minimum size release" FORCE )
+set( CMAKE_C_FLAGS_MINSIZEREL "-Os -mcall-prologues ${FULL_OPTIONS} -flto" CACHE STRING "Default C flags for minimum size release" FORCE )
 
-set (CMAKE_CXX_FLAGS_DEBUG "-Og -g -gdwarf-2 -fno-exceptions ${FULL_OPTIONS}")
-set (CMAKE_C_FLAGS_DEBUG " -Og -g -gdwarf-2 ${FULL_OPTIONS}")
+set (CMAKE_CXX_FLAGS_DEBUG "-O0 -g -gdwarf-2 -fno-exceptions ${FULL_OPTIONS} -flto" CACHE STRING "Default C++ flags for debug configuration" FORCE )
+set (CMAKE_C_FLAGS_DEBUG " -O0 -g -gdwarf-2 ${FULL_OPTIONS} -flto" CACHE STRING "Default C flags for debug configuration" FORCE )
 
 
 ### Function to add an avr executable

@@ -26,5 +26,4 @@ target_link_libraries(firmware
     HD44780_lcd_driver
 )
 
-add_definitions(-DDEBUG_WITH_SIMAVR)
 add_extra_avr_targets(firmware)
