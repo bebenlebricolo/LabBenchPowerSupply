@@ -828,6 +828,11 @@ timer_error_t timer_8_bit_reconfigure(uint8_t id, timer_8_bit_config_t * const c
         return ret;
     }
 
+    if (NULL == config)
+    {
+        return TIMER_ERROR_NULL_POINTER;
+    }
+
     ret = check_handle(&config->handle);
     if (TIMER_ERROR_OK != ret)
     {

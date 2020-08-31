@@ -45,6 +45,11 @@ TEST(timer_16_bit_driver_tests, guard_null_handle)
     ASSERT_TRUE(NULL == (void*) (config.handle.TIFR));
     ASSERT_TRUE(NULL == (void*) (config.handle.TIMSK));
 
+    ret = timer_16_bit_init(DT_ID, &config);
+    ASSERT_EQ(TIMER_ERROR_NULL_HANDLE, ret);
+    ret = timer_16_bit_reconfigure(DT_ID, &config);
+    ASSERT_EQ(TIMER_ERROR_NULL_HANDLE, ret);
+
     /* Test compare match mode A get/set api */
     ret = timer_16_bit_set_compare_match_A(DT_ID, config.timing_config.comp_match_a);
     ASSERT_EQ(TIMER_ERROR_NULL_HANDLE, ret);
@@ -59,6 +64,8 @@ TEST(timer_16_bit_driver_tests, guard_null_handle)
 
     /* Test handle setting function */
     ret = timer_16_bit_set_handle(DT_ID, &config.handle);
+    ASSERT_EQ(TIMER_ERROR_OK, ret);
+    ret = timer_16_bit_get_handle(DT_ID, &config.handle);
     ASSERT_EQ(TIMER_ERROR_OK, ret);
 
     /* Test interrupt config get/set api */
@@ -130,9 +137,16 @@ TEST(timer_16_bit_driver_tests, guard_null_pointer)
     ret = timer_16_bit_get_compare_match_B(DT_ID, nullptr_compare_output_mode);
     ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
 
+    ret = timer_16_bit_reconfigure(DT_ID, nullptr_config);
+    ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
+    ret = timer_16_bit_init(DT_ID, nullptr_config);
+    ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
+
     timer_16_bit_handle_t * nullptr_handle = NULL;
     /* Test handle setting function */
     ret = timer_16_bit_set_handle(DT_ID, nullptr_handle);
+    ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
+    ret = timer_16_bit_get_handle(DT_ID, nullptr_handle);
     ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
 
     /* Test interrupt config get/set api */
@@ -188,15 +202,23 @@ TEST(timer_16_bit_driver_tests, guard_wrong_id)
     timer_error_t ret = timer_16_bit_get_default_config(&config);
     ASSERT_EQ(TIMER_ERROR_OK, ret);
 
-    /* Test compare match mode A get/set api */
-    timer_16_bit_compare_output_mode_t * nullptr_compare_output_mode = NULL;
-    ret = timer_16_bit_get_compare_match_A(targeted_id, nullptr_compare_output_mode);
+    ret = timer_16_bit_init(targeted_id, &config);
     ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
-    ret = timer_16_bit_get_compare_match_B(targeted_id, nullptr_compare_output_mode);
+    ret = timer_16_bit_deinit(targeted_id);
+    ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
+    ret = timer_16_bit_reconfigure(targeted_id, &config);
+    ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
+
+    /* Test compare match mode A get/set api */
+    ret = timer_16_bit_get_compare_match_A(targeted_id, &config.timing_config.comp_match_a);
+    ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
+    ret = timer_16_bit_get_compare_match_B(targeted_id, &config.timing_config.comp_match_b);
     ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
 
     /* Test handle setting function */
     ret = timer_16_bit_set_handle(targeted_id, &config.handle);
+    ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
+    ret = timer_16_bit_get_handle(targeted_id, &config.handle);
     ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
 
     /* Test interrupt config get/set api */

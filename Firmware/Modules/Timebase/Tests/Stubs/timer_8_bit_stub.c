@@ -142,7 +142,7 @@ timer_error_t timer_8_bit_get_handle(uint8_t id, timer_8_bit_handle_t * const ha
     if (!id_is_valid(id))
     {
         return TIMER_ERROR_UNKNOWN_TIMER;
-    };
+    }
     return TIMER_ERROR_OK;
 }
 

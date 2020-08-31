@@ -84,6 +84,17 @@ timer_error_t timer_8_bit_async_get_default_config(timer_8_bit_async_config_t * 
 */
 timer_error_t timer_8_bit_async_set_handle(uint8_t id, timer_8_bit_async_handle_t * const handle);
 
+/**
+ * @brief gets the handle of timer_8_bit driver
+ * @param[in]   id     : targeted timer id (used to fetch internal configuration based on ids)
+ * @param[in]   handle : handle to be fetched from internal configuration
+ * @return
+ *      TIMER_ERROR_OK             :   operation succeeded
+ *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
+ *      TIMER_ERROR_NULL_POINTER   :   given force_comp_config parameter points to NULL
+*/
+timer_error_t timer_8_bit_async_get_handle(uint8_t id, timer_8_bit_async_handle_t * const handle);
+
 
 
 
@@ -354,6 +365,17 @@ timer_error_t timer_8_bit_async_init(uint8_t id, timer_8_bit_async_config_t * co
 */
 timer_error_t timer_8_bit_async_deinit(uint8_t id);
 
+
+/**
+ * @brief Reconfigures the targeted timer with the given configuration. Previous configuration will be overwritten.
+ * @param[in]   id     : targeted timer id (used to fetch internal configuration based on ids)
+ * @param[in]   config : container holding timer configuration to be written into its registers
+ * @return
+ *      TIMER_ERROR_OK             :   operation succeeded
+ *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
+ *      TIMER_ERROR_NULL_HANDLE    :   targeted timer's handle is still NULL (unitialised). Operation failed
+*/
+timer_error_t timer_8_bit_async_reconfigure(uint8_t id, timer_8_bit_async_config_t * const config);
 
 /**
  * @brief starts selected timer based on its internal configuration. Basically, this function sets the adequate prescaler to internal registers to start it.

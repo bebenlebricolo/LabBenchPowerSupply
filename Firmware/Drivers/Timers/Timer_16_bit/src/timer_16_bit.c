@@ -135,6 +135,23 @@ timer_error_t timer_16_bit_set_handle(uint8_t id, timer_16_bit_handle_t * const 
     return ret;
 }
 
+timer_error_t timer_16_bit_get_handle(uint8_t id, timer_16_bit_handle_t * const handle)
+{
+    timer_error_t ret = check_id(id);
+    if (TIMER_ERROR_OK != ret)
+    {
+        return ret;
+    }
+
+    if (NULL == handle)
+    {
+        return TIMER_ERROR_NULL_POINTER;
+    }
+
+    memcpy(handle, &internal_config[id].handle, sizeof(timer_16_bit_handle_t));
+    return ret;
+}
+
 timer_error_t timer_16_bit_get_default_config(timer_16_bit_config_t * config)
 {
     timer_error_t ret = TIMER_ERROR_OK;
@@ -977,23 +994,13 @@ timer_error_t timer_16_bit_init(uint8_t id, timer_16_bit_config_t * const config
         return ret;
     }
 
-    ret = check_handle(&config->handle);
-    if (TIMER_ERROR_OK != ret)
+    // Prevents multiple initialisations (misuse of the driver)
+    if (true == internal_config[id].is_initialised)
     {
-        return ret;
+        ret = TIMER_ERROR_ALREADY_INITIALISED;
     }
 
-    ret = timer_16_bit_set_handle(id, &config->handle);
-    if (TIMER_ERROR_OK != ret)
-    {
-        return ret;
-    }
-
-    ret = timer_16_bit_write_config(id,config);
-    if (TIMER_ERROR_OK == ret)
-    {
-        internal_config[id].is_initialised = true;
-    }
+    ret = timer_16_bit_reconfigure(id, config);
     return ret;
 }
 
@@ -1028,6 +1035,40 @@ timer_error_t timer_16_bit_deinit(uint8_t id)
         }
     }
     return ret;
+}
+
+timer_error_t timer_16_bit_reconfigure(uint8_t id, timer_16_bit_config_t * const config)
+{
+    timer_error_t ret = check_id(id);
+    if(TIMER_ERROR_OK != ret)
+    {
+        return ret;
+    }
+
+    if (NULL == config)
+    {
+        return TIMER_ERROR_NULL_POINTER;
+    }
+
+    ret = check_handle(&config->handle);
+    if (TIMER_ERROR_OK != ret)
+    {
+        return ret;
+    }
+
+    ret = timer_16_bit_set_handle(id, &config->handle);
+    if (TIMER_ERROR_OK != ret)
+    {
+        return ret;
+    }
+
+    ret = timer_16_bit_write_config(id,config);
+    if (TIMER_ERROR_OK == ret)
+    {
+        internal_config[id].is_initialised = true;
+    }
+    return ret;
+
 }
 
 
