@@ -18,8 +18,9 @@
     #include "test_isr_stub.h"
 #endif
 
-/* Minimum I2C request size is 2 to account for : 1 op code + 1 read/write data */
-#define MINIMUM_REQUEST_SIZE (2U)
+/* Minimum I2C request size is 2 to account for : 1 op code + 1 read/write data for configurablde devices
+   or 1 for "dumb" devices such as IO Expanders with no Op Code */
+#define MINIMUM_REQUEST_SIZE (1U)
 
 
 typedef enum
@@ -589,7 +590,16 @@ i2c_error_t i2c_get_state(const uint8_t id, i2c_state_t * const state)
         return I2C_ERROR_NULL_POINTER;
     }
 
+    // Check if we are in a state where the device is busy and the internal state machine is
+    // not already in sync with it => Update internal state machine to reflect this
+    if (I2C_STATE_READY == internal_configuration[id].state
+    && !is_twint_set(id))
+    {
+        internal_configuration[id].state = I2C_STATE_DEVICE_BUSY;
+    }
+
     *state = internal_configuration[id].state;
+
     return I2C_ERROR_OK;
 }
 
@@ -1124,10 +1134,15 @@ i2c_error_t i2c_write(const uint8_t id, const uint8_t target_address , uint8_t *
     {
         return I2C_ERROR_INVALID_ADDRESS;
     }
+
+    // Check if device is already processing
     if (I2C_STATE_READY != internal_configuration[id].state || !is_twint_set(id))
     {
         return I2C_ERROR_ALREADY_PROCESSING;
     }
+
+    // Devices with OP Code needs 2 bytes whereas other simple devices such as IO expander sometimes does not implement OP Codes
+    // and directly expose functionality using their input register only
     if (length < MINIMUM_REQUEST_SIZE)
     {
         return I2C_ERROR_REQUEST_TOO_SHORT;

@@ -474,7 +474,9 @@ hd44780_lcd_error_t hd44780_lcd_print(const uint8_t length, char const * const b
 
 hd44780_lcd_error_t hd44780_lcd_process(void)
 {
-    if (HD44780_LCD_ERROR_OK != last_error)
+    if (HD44780_LCD_ERROR_OK != last_error
+    && (HD44780_LCD_ERROR_I2C_BUSY != last_error)
+    && (HD44780_LCD_ERROR_DEVICE_BUSY != last_error))
     {
         ++error_count;
         if (error_count >= MAX_ERROR_COUNT)

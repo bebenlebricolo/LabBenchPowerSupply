@@ -95,7 +95,7 @@ static inline timebase_error_t setup_8_bit_timer(const uint8_t timebase_id, uint
 static inline timebase_error_t setup_8_bit_async_timer(const uint8_t timebase_id, uint32_t const * const cpu_freq, uint32_t const * const target_freq)
 {
     bool initialised = false;
-    timer_error_t err = timer_8_bit_is_initialised(timebase_internal_config[timebase_id].timer_id, &initialised);
+    timer_error_t err = timer_8_bit_async_is_initialised(timebase_internal_config[timebase_id].timer_id, &initialised);
     if (TIMER_ERROR_OK != err)
     {
         return TIMEBASE_ERROR_TIMER_ERROR;
