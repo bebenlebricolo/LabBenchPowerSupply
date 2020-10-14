@@ -6,8 +6,11 @@ find_program( AVR_OBJCOPY avr-objcopy )
 find_program( AVR_SIZE_TOOL avr-size )
 find_program( AVR_OBJDUMP avr-objdump )
 
-set( CMAKE_SYSTEM_NAME Generic )
-set( CMAKE_SYSTEM_PROCESSOR avr )
+set( CMAKE_SYSTEM_NAME AVR )
+set( CMAKE_SYSTEM_PROCESSOR AVR8 )
+# see CMAKE_SYSTEM_NAME for cross compiling and Cmake system version
+set( CMAKE_SYSTEM_VERSION "GENERIC" )
+set (CMAKE_GENERATOR_PLATFORM AVR8)
 set( CMAKE_C_COMPILER ${AVR_CC} )
 set( CMAKE_CXX_COMPILER ${AVR_CXX} )
 
@@ -21,23 +24,31 @@ set(CMAKE_C_ARCHIVE_FINISH   true)
 ###########################################################################
 # some cmake cross-compile necessities
 ##########################################################################
-if( DEFINED ENV{AVR_FIND_ROOT_PATH} )
-    set( CMAKE_FIND_ROOT_PATH $ENV{AVR_FIND_ROOT_PATH} )
-else( DEFINED ENV{AVR_FIND_ROOT_PATH} )
-    if( EXISTS "/opt/local/avr" )
-      set( CMAKE_FIND_ROOT_PATH "/opt/local/avr" )
-    elseif( EXISTS "/usr/local/avr" )
-      set( CMAKE_FIND_ROOT_PATH "/usr/local/avr" )
-    elseif( EXISTS "/usr/avr" )
-      set( CMAKE_FIND_ROOT_PATH "/usr/avr" )
-    elseif( EXISTS "/usr/local/avr" )
-      set( CMAKE_FIND_ROOT_PATH "/usr/local/avr" )
-    elseif( EXISTS "/usr/lib/avr" )
-      set( CMAKE_FIND_ROOT_PATH "/usr/lib/avr" )
-    else( EXISTS "/opt/local/avr" )
-      message( FATAL_ERROR "Please set AVR_FIND_ROOT_PATH in your environment." )
-    endif( EXISTS "/opt/local/avr" )
-endif( DEFINED ENV{AVR_FIND_ROOT_PATH} )
+if(WIN32)
+  get_filename_component(ATMEL_STUDIO_7_INSTALLATION "[HKEY_CURRENT_USER\\Software\\Atmel\\AtmelStudio\\7.0_Config;Install_Dir]" ABSOLUTE CACHE)
+  if(${ATMEL_STUDIO_7_INSTALLATION} STREQUAL "")
+    message( FATAL_ERROR "Could not find any AtmelStudio7 installation directory in registries." )
+  endif()
+else()
+  if( DEFINED ENV{AVR_FIND_ROOT_PATH} )
+      set( CMAKE_FIND_ROOT_PATH $ENV{AVR_FIND_ROOT_PATH} )
+  else( DEFINED ENV{AVR_FIND_ROOT_PATH} )
+      if( EXISTS "/opt/local/avr" )
+        set( CMAKE_FIND_ROOT_PATH "/opt/local/avr" )
+      elseif( EXISTS "/usr/local/avr" )
+        set( CMAKE_FIND_ROOT_PATH "/usr/local/avr" )
+      elseif( EXISTS "/usr/avr" )
+        set( CMAKE_FIND_ROOT_PATH "/usr/avr" )
+      elseif( EXISTS "/usr/local/avr" )
+        set( CMAKE_FIND_ROOT_PATH "/usr/local/avr" )
+      elseif( EXISTS "/usr/lib/avr" )
+        set( CMAKE_FIND_ROOT_PATH "/usr/lib/avr" )
+      else( EXISTS "/opt/local/avr" )
+        message( FATAL_ERROR "Please set AVR_FIND_ROOT_PATH in your environment." )
+      endif( EXISTS "/opt/local/avr" )
+  endif( DEFINED ENV{AVR_FIND_ROOT_PATH} )
+endif()
+
 
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
@@ -85,39 +96,42 @@ endif( NOT ( (CMAKE_BUILD_TYPE MATCHES Release) OR
 ####################
 # Build configurations with long list of flags
 ####################
-set(COMPILE_OPTIONS "-funsigned-char \
--funsigned-bitfields \
--fpack-struct \
--fshort-enums \
--ffunction-sections \
--fdata-sections \
--fno-split-wide-types \
--fno-tree-scev-cprop "
-)
-set(COMPILER_WARNINGS "-Wall \
--Wextra \
--Wno-main \
--Wundef \
--pedantic \
--Wstrict-prototypes \
--Werror \
--Wfatal-errors ")
 
-set(COMPILER_LINKER_FORWARD_OPTIONS "-Wl,--relax,--gc-sections")
-set(FULL_OPTIONS "${COMPILE_OPTIONS} ${COMPILER_WARNINGS} ${COMPILER_LINKER_FORWARD_OPTIONS}")
+if(WIN32)
+else(UNIX)
+  set(COMPILE_OPTIONS "-funsigned-char \
+  -funsigned-bitfields \
+  -fpack-struct \
+  -fshort-enums \
+  -ffunction-sections \
+  -fdata-sections \
+  -fno-split-wide-types \
+  -fno-tree-scev-cprop "
+  )
+  set(COMPILER_WARNINGS "-Wall \
+  -Wextra \
+  -Wno-main \
+  -Wundef \
+  -pedantic \
+  -Wstrict-prototypes \
+  -Werror \
+  -Wfatal-errors ")
 
-set (CMAKE_CXX_FLAGS_RELEASE "-O3 -fno-exceptions ${FULL_OPTIONS} -flto " CACHE STRING "Default C++ flags for release" FORCE )
-set (CMAKE_C_FLAGS_RELEASE "-O3 ${FULL_OPTIONS} -flto" CACHE STRING "Default C flags for release" FORCE )
+  set(COMPILER_LINKER_FORWARD_OPTIONS "-Wl,--relax,--gc-sections")
+  set(FULL_OPTIONS "${COMPILE_OPTIONS} ${COMPILER_WARNINGS} ${COMPILER_LINKER_FORWARD_OPTIONS}")
 
-set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -gdwarf-2 -fno-exceptions ${FULL_OPTIONS} -flto" CACHE STRING "Default C++ flags for release with debug info" FORCE )
-set (CMAKE_C_FLAGS_RELWITHDEBINFO "-O3 -g -gdwarf-2 ${FULL_OPTIONS} -flto" CACHE STRING "Default C flags for release with debug info" FORCE )
+  set (CMAKE_CXX_FLAGS_RELEASE "-O3 -fno-exceptions ${FULL_OPTIONS} -flto " CACHE STRING "Default C++ flags for release" FORCE )
+  set (CMAKE_C_FLAGS_RELEASE "-O3 ${FULL_OPTIONS} -flto" CACHE STRING "Default C flags for release" FORCE )
 
-set( CMAKE_CXX_FLAGS_MINSIZEREL "-Os -mcall-prologues ${FULL_OPTIONS} -flto" CACHE STRING "Default C++ flags for minimum size release" FORCE )
-set( CMAKE_C_FLAGS_MINSIZEREL "-Os -mcall-prologues ${FULL_OPTIONS} -flto" CACHE STRING "Default C flags for minimum size release" FORCE )
+  set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -gdwarf-2 -fno-exceptions ${FULL_OPTIONS} -flto" CACHE STRING "Default C++ flags for release with debug info" FORCE )
+  set (CMAKE_C_FLAGS_RELWITHDEBINFO "-O3 -g -gdwarf-2 ${FULL_OPTIONS} -flto" CACHE STRING "Default C flags for release with debug info" FORCE )
 
-set (CMAKE_CXX_FLAGS_DEBUG "-O0 -g -gdwarf-2 -fno-exceptions ${FULL_OPTIONS} -flto" CACHE STRING "Default C++ flags for debug configuration" FORCE )
-set (CMAKE_C_FLAGS_DEBUG " -O0 -g -gdwarf-2 ${FULL_OPTIONS} -flto" CACHE STRING "Default C flags for debug configuration" FORCE )
+  set( CMAKE_CXX_FLAGS_MINSIZEREL "-Os -mcall-prologues ${FULL_OPTIONS} -flto" CACHE STRING "Default C++ flags for minimum size release" FORCE )
+  set( CMAKE_C_FLAGS_MINSIZEREL "-Os -mcall-prologues ${FULL_OPTIONS} -flto" CACHE STRING "Default C flags for minimum size release" FORCE )
 
+  set (CMAKE_CXX_FLAGS_DEBUG "-O0 -g -gdwarf-2 -fno-exceptions ${FULL_OPTIONS} -flto" CACHE STRING "Default C++ flags for debug configuration" FORCE )
+  set (CMAKE_C_FLAGS_DEBUG " -O0 -g -gdwarf-2 ${FULL_OPTIONS} -flto" CACHE STRING "Default C flags for debug configuration" FORCE )
+endif()
 
 ### Function to add an avr executable
 function ( add_avr_executable EXECUTABLE_NAME)

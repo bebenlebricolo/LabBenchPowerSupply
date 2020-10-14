@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 # Use AVR GCC toolchain
-set(CMAKE_TOOLCHAIN_FILE ${CMAKE_SOURCE_DIR}/Toolchain/avr-gcc-toolchain.cmake)
+set(CMAKE_TOOLCHAIN_FILE ${CMAKE_SOURCE_DIR}/Toolchain/avr8-gcc-toolchain.cmake)
 
 project(firmware C)
 
