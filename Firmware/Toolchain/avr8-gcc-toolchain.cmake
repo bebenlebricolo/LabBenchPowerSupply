@@ -1,22 +1,15 @@
 cmake_minimum_required(VERSION 3.3)
 
-find_program( AVR_CC avr-gcc )
-find_program( AVR_CXX avr-g++ )
-find_program( AVR_OBJCOPY avr-objcopy )
-find_program( AVR_SIZE_TOOL avr-size )
-find_program( AVR_OBJDUMP avr-objdump )
-
-set( CMAKE_SYSTEM_NAME AVR )
-set( CMAKE_SYSTEM_PROCESSOR AVR8 )
 # see CMAKE_SYSTEM_NAME for cross compiling and Cmake system version
-set( CMAKE_SYSTEM_VERSION "GENERIC" )
+set( CMAKE_SYSTEM_NAME "BareMetal" )
+set( CMAKE_SYSTEM_PROCESSOR AVR8 )
+set( CMAKE_SYSTEM_VERSION "Generic" )
+set( CMAKE_SYSTEM_VENDOR_NAME "Atmel" )
 set (CMAKE_GENERATOR_PLATFORM AVR8)
-set( CMAKE_C_COMPILER ${AVR_CC} )
-set( CMAKE_CXX_COMPILER ${AVR_CXX} )
 
+find_program( GCC_AR gcc-ar)
 # Needed to use the link-time optimization feature
 # @see : https://stackoverflow.com/questions/39236917/using-gccs-link-time-optimization-with-static-linked-libraries
-find_program( GCC_AR gcc-ar)
 set( CMAKE_AR  ${GCC_AR})
 set(CMAKE_C_ARCHIVE_CREATE "<CMAKE_AR> qcs <TARGET> <LINK_FLAGS> <OBJECTS>")
 set(CMAKE_C_ARCHIVE_FINISH   true)
@@ -29,6 +22,33 @@ if(WIN32)
   if(${ATMEL_STUDIO_7_INSTALLATION} STREQUAL "")
     message( FATAL_ERROR "Could not find any AtmelStudio7 installation directory in registries." )
   endif()
+  find_program( AVR_CC avr-gcc  PATHS ${ATMEL_STUDIO_7_INSTALLATION}  )
+  find_program( AVR_CXX avr-g++ PATHS ${ATMEL_STUDIO_7_INSTALLATION} )
+  find_program( AVR_OBJCOPY avr-objcopy PATHS ${ATMEL_STUDIO_7_INSTALLATION} )
+  find_program( AVR_SIZE_TOOL avr-size  PATHS ${ATMEL_STUDIO_7_INSTALLATION})
+  find_program( AVR_OBJDUMP avr-objdump  PATHS ${ATMEL_STUDIO_7_INSTALLATION} )
+else()
+  find_program( AVR_CC avr-gcc )
+  find_program( AVR_CXX avr-g++ )
+  find_program( AVR_OBJCOPY avr-objcopy )
+  find_program( AVR_SIZE_TOOL avr-size )
+  find_program( AVR_OBJDUMP avr-objdump )
+endif()
+
+# Verify that toolchain has been resolved correctly
+if( NOT DEFINED AVR_CC
+    OR NOT DEFINED AVR_CXX
+    OR NOT DEFINED AVR_OBJCOPY
+    OR NOT DEFINED AVR_SIZE_TOOL
+    OR NOT DEFINED AVR_OBJDUMP )
+    message(FATAL_ERROR "Could not resolve avr8 toolchain")
+endif()
+
+set( CMAKE_C_COMPILER ${AVR_CC} )
+set( CMAKE_CXX_COMPILER ${AVR_CXX} )
+
+if (WIN32)
+  # Nothing yet to be done
 else()
   if( DEFINED ENV{AVR_FIND_ROOT_PATH} )
       set( CMAKE_FIND_ROOT_PATH $ENV{AVR_FIND_ROOT_PATH} )
@@ -56,8 +76,10 @@ set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 
 # not added automatically, since CMAKE_SYSTEM_NAME is "generic"
-set( CMAKE_SYSTEM_INCLUDE_PATH "${CMAKE_FIND_ROOT_PATH}/include" )
-set( CMAKE_SYSTEM_LIBRARY_PATH "${CMAKE_FIND_ROOT_PATH}/lib" )
+if( NOT WIN32)
+  set( CMAKE_SYSTEM_INCLUDE_PATH "${CMAKE_FIND_ROOT_PATH}/include" )
+  set( CMAKE_SYSTEM_LIBRARY_PATH "${CMAKE_FIND_ROOT_PATH}/lib" )
+endif()
 
 ##########################################################################
 # status messages for generating
@@ -97,8 +119,8 @@ endif( NOT ( (CMAKE_BUILD_TYPE MATCHES Release) OR
 # Build configurations with long list of flags
 ####################
 
-if(WIN32)
-else(UNIX)
+#if(WIN32)
+#else(UNIX)
   set(COMPILE_OPTIONS "-funsigned-char \
   -funsigned-bitfields \
   -fpack-struct \
@@ -108,6 +130,7 @@ else(UNIX)
   -fno-split-wide-types \
   -fno-tree-scev-cprop "
   )
+
   set(COMPILER_WARNINGS "-Wall \
   -Wextra \
   -Wno-main \
@@ -120,18 +143,18 @@ else(UNIX)
   set(COMPILER_LINKER_FORWARD_OPTIONS "-Wl,--relax,--gc-sections")
   set(FULL_OPTIONS "${COMPILE_OPTIONS} ${COMPILER_WARNINGS} ${COMPILER_LINKER_FORWARD_OPTIONS}")
 
-  set (CMAKE_CXX_FLAGS_RELEASE "-O3 -fno-exceptions ${FULL_OPTIONS} -flto " CACHE STRING "Default C++ flags for release" FORCE )
-  set (CMAKE_C_FLAGS_RELEASE "-O3 ${FULL_OPTIONS} -flto" CACHE STRING "Default C flags for release" FORCE )
+  set (CMAKE_CXX_FLAGS_RELEASE "-O3 -fno-exceptions ${FULL_OPTIONS} " CACHE STRING "Default C++ flags for release" FORCE )
+  set (CMAKE_C_FLAGS_RELEASE "-O3 ${FULL_OPTIONS}" CACHE STRING "Default C flags for release" FORCE )
 
-  set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -gdwarf-2 -fno-exceptions ${FULL_OPTIONS} -flto" CACHE STRING "Default C++ flags for release with debug info" FORCE )
-  set (CMAKE_C_FLAGS_RELWITHDEBINFO "-O3 -g -gdwarf-2 ${FULL_OPTIONS} -flto" CACHE STRING "Default C flags for release with debug info" FORCE )
+  set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -gdwarf-2 -fno-exceptions ${FULL_OPTIONS} " CACHE STRING "Default C++ flags for release with debug info" FORCE )
+  set (CMAKE_C_FLAGS_RELWITHDEBINFO "-O3 -g -gdwarf-2 ${FULL_OPTIONS} " CACHE STRING "Default C flags for release with debug info" FORCE )
 
-  set( CMAKE_CXX_FLAGS_MINSIZEREL "-Os -mcall-prologues ${FULL_OPTIONS} -flto" CACHE STRING "Default C++ flags for minimum size release" FORCE )
-  set( CMAKE_C_FLAGS_MINSIZEREL "-Os -mcall-prologues ${FULL_OPTIONS} -flto" CACHE STRING "Default C flags for minimum size release" FORCE )
+  set( CMAKE_CXX_FLAGS_MINSIZEREL "-Os -mcall-prologues ${FULL_OPTIONS} " CACHE STRING "Default C++ flags for minimum size release" FORCE )
+  set( CMAKE_C_FLAGS_MINSIZEREL "-Os -mcall-prologues ${FULL_OPTIONS} " CACHE STRING "Default C flags for minimum size release" FORCE )
 
-  set (CMAKE_CXX_FLAGS_DEBUG "-O0 -g -gdwarf-2 -fno-exceptions ${FULL_OPTIONS} -flto" CACHE STRING "Default C++ flags for debug configuration" FORCE )
-  set (CMAKE_C_FLAGS_DEBUG " -O0 -g -gdwarf-2 ${FULL_OPTIONS} -flto" CACHE STRING "Default C flags for debug configuration" FORCE )
-endif()
+  set (CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 -gdwarf-2 -fno-exceptions ${FULL_OPTIONS} " CACHE STRING "Default C++ flags for debug configuration" FORCE )
+  set (CMAKE_C_FLAGS_DEBUG " -O0 -g3 -gdwarf-2 ${FULL_OPTIONS} " CACHE STRING "Default C flags for debug configuration" FORCE )
+#endif()
 
 ### Function to add an avr executable
 function ( add_avr_executable EXECUTABLE_NAME)
