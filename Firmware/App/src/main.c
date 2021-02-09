@@ -93,7 +93,6 @@ void error_handler(void)
 {
     while(1)
     {
-        asm("NOP");
     }
 }
 
