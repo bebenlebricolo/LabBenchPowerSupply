@@ -38,6 +38,11 @@ TEST(timer_8_bit_driver_tests, guard_null_handle)
     ASSERT_TRUE(NULL == (void*) (config.handle.TIFR)   );
     ASSERT_TRUE(NULL == (void*) (config.handle.TIMSK)  );
 
+    ret = timer_8_bit_reconfigure(DT_ID, &config);
+    ASSERT_EQ(TIMER_ERROR_NULL_HANDLE, ret);
+    ret = timer_8_bit_init(DT_ID, &config);
+    ASSERT_EQ(TIMER_ERROR_NULL_HANDLE, ret);
+
     /* Test compare match mode A get/set api */
     ret = timer_8_bit_set_compare_match_A(DT_ID, config.timing_config.comp_match_a);
     ASSERT_EQ(TIMER_ERROR_NULL_HANDLE, ret);
@@ -135,74 +140,88 @@ TEST(timer_8_bit_driver_tests, guard_null_pointer)
     ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
 
     /* Test force compare flags get/set api */
-    timer_x_bit_force_compare_config_t * nullptr_force_compare = NULL;
+    timer_8_bit_force_compare_config_t * nullptr_force_compare = NULL;
     ret = timer_8_bit_set_force_compare_config(DT_ID, nullptr_force_compare);
     ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
     ret = timer_8_bit_get_force_compare_config(DT_ID, nullptr_force_compare);
     ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
 
     /* Test prescaler get/set api */
-    timer_x_bit_prescaler_selection_t * nullptr_prescaler = NULL;
+    timer_8_bit_prescaler_selection_t * nullptr_prescaler = NULL;
     ret = timer_8_bit_get_prescaler(DT_ID, nullptr_prescaler);
     ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
 
     timer_8_bit_waveform_generation_t * nullptr_waveform_mode = NULL;
     ret = timer_8_bit_get_waveform_generation(DT_ID, nullptr_waveform_mode);
     ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
+
+    ret = timer_8_bit_reconfigure(DT_ID, nullptr_config);
+    ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
+
+    ret = timer_8_bit_get_handle(DT_ID, nullptr_handle);
+    ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
 }
 
 TEST(timer_8_bit_driver_tests, guard_wrong_id)
 {
-    timer_8_bit_config_t * nullptr_config = NULL;
+    timer_8_bit_config_t config;
     uint8_t targeted_id = DT_ID + 1;
 
-    timer_error_t ret = timer_8_bit_get_default_config(nullptr_config);
-    ASSERT_EQ(TIMER_ERROR_NULL_POINTER, ret);
+    timer_error_t ret = timer_8_bit_get_default_config(&config);
+    ASSERT_EQ(TIMER_ERROR_OK, ret);
+
+    ret = timer_8_bit_init(targeted_id, &config);
+    ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
+    ret = timer_8_bit_reconfigure(targeted_id, &config);
+    ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
+    ret = timer_8_bit_deinit(targeted_id);
+    ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
 
     /* Test compare match mode A get/set api */
-    timer_8_bit_compare_output_mode_t * nullptr_compare_output_mode = NULL;
-    ret = timer_8_bit_get_compare_match_A(targeted_id, nullptr_compare_output_mode);
+    ret = timer_8_bit_get_compare_match_A(targeted_id, &config.timing_config.comp_match_a);
     ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
-    ret = timer_8_bit_get_compare_match_B(targeted_id, nullptr_compare_output_mode);
+    ret = timer_8_bit_get_compare_match_B(targeted_id, &config.timing_config.comp_match_b);
     ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
 
-    timer_8_bit_handle_t * nullptr_handle = NULL;
     /* Test handle setting function */
-    ret = timer_8_bit_set_handle(targeted_id, nullptr_handle);
+    ret = timer_8_bit_set_handle(targeted_id, &config.handle);
+    ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
+    ret = timer_8_bit_get_handle(targeted_id, &config.handle);
     ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
 
     /* Test interrupt config get/set api */
-    timer_8_bit_interrupt_config_t * nullptr_interrupt_config = NULL;
-    ret = timer_8_bit_set_interrupt_config(targeted_id, nullptr_interrupt_config);
+    ret = timer_8_bit_set_interrupt_config(targeted_id, &config.interrupt_config);
     ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
-    ret = timer_8_bit_get_interrupt_config(targeted_id, nullptr_interrupt_config);
+    ret = timer_8_bit_get_interrupt_config(targeted_id, &config.interrupt_config);
     ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
 
     /* Test OCRA get/set api */
-    uint8_t * nullptr_ocrx_val = NULL;
-    ret = timer_8_bit_get_ocra_register_value(targeted_id, nullptr_ocrx_val);
+    ret = timer_8_bit_get_ocra_register_value(targeted_id, &config.timing_config.ocra_val);
     ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
     /* Test OCRB get/set api */
-    ret = timer_8_bit_get_ocrb_register_value(targeted_id, nullptr_ocrx_val);
-    ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
-    /* Test counter get/set api */
-    ret = timer_8_bit_get_counter_value(targeted_id, nullptr_ocrx_val);
+    ret = timer_8_bit_get_ocrb_register_value(targeted_id, &config.timing_config.ocra_val);
     ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
 
+    /* Test counter get/set api */
+    {
+        uint8_t ticks = 0;
+        ret = timer_8_bit_get_counter_value(targeted_id, &ticks);
+        ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
+        ret = timer_8_bit_set_counter_value(targeted_id, ticks);
+        ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
+    }
+
     /* Test force compare flags get/set api */
-    timer_x_bit_force_compare_config_t * nullptr_force_compare = NULL;
-    ret = timer_8_bit_set_force_compare_config(targeted_id, nullptr_force_compare);
+    ret = timer_8_bit_set_force_compare_config(targeted_id, &config.force_compare);
     ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
-    ret = timer_8_bit_get_force_compare_config(targeted_id, nullptr_force_compare);
+    ret = timer_8_bit_get_force_compare_config(targeted_id, &config.force_compare);
     ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
 
     /* Test prescaler get/set api */
-    timer_x_bit_prescaler_selection_t * nullptr_prescaler = NULL;
-    ret = timer_8_bit_get_prescaler(targeted_id, nullptr_prescaler);
+    ret = timer_8_bit_get_prescaler(targeted_id, &config.timing_config.prescaler);
     ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
 
-    timer_8_bit_waveform_generation_t * nullptr_waveform_mode = NULL;
-    ret = timer_8_bit_get_waveform_generation(targeted_id, nullptr_waveform_mode);
+    ret = timer_8_bit_get_waveform_generation(targeted_id, &config.timing_config.waveform_mode);
     ASSERT_EQ(TIMER_ERROR_UNKNOWN_TIMER, ret);
 }
 
@@ -220,8 +239,8 @@ TEST_F(Timer8BitFixture, test_handle_is_set_correctly)
     ASSERT_EQ(timer_8_bit_registers_stub.TCCRA & COMA_MSK, 0x3 << COMA_BIT);
 
     // Testing TCCRB register
-    config.timing_config.prescaler = TIMERxBIT_CLK_PRESCALER_256; // 11
-    ASSERT_EQ(timer_8_bit_registers_stub.TCCRB & CS_MSK, (uint8_t)TIMERxBIT_CLK_NO_CLOCK);
+    config.timing_config.prescaler = TIMER8BIT_CLK_PRESCALER_256; // 11
+    ASSERT_EQ(timer_8_bit_registers_stub.TCCRB & CS_MSK, (uint8_t)TIMER8BIT_CLK_NO_CLOCK);
     ret = timer_8_bit_set_prescaler(DT_ID, config.timing_config.prescaler);
     ASSERT_EQ(TIMER_ERROR_OK, ret);
     ASSERT_EQ(timer_8_bit_registers_stub.TCCRB & CS_MSK, (uint8_t) config.timing_config.prescaler);
@@ -282,21 +301,21 @@ TEST_F(Timer8BitFixture, test_timing_configuration_unitary_functions)
     uint8_t received_ocra_val;
     uint8_t received_ocrb_val;
     uint8_t received_counter_val;
-    timer_x_bit_prescaler_selection_t received_prescaler;
+    timer_8_bit_prescaler_selection_t received_prescaler;
     timer_8_bit_waveform_generation_t received_waveform;
     memcpy(&received_compare_mode_a, &config.timing_config.comp_match_a, sizeof(timer_8_bit_compare_output_mode_t));
     memcpy(&received_compare_mode_b, &config.timing_config.comp_match_b, sizeof(timer_8_bit_compare_output_mode_t));
     memcpy(&received_ocra_val, &config.timing_config.ocra_val, sizeof(uint8_t));
     memcpy(&received_ocrb_val, &config.timing_config.ocrb_val, sizeof(uint8_t));
     memcpy(&received_counter_val, &config.timing_config.counter, sizeof(uint8_t));
-    memcpy(&received_prescaler, &config.timing_config.prescaler, sizeof(timer_x_bit_prescaler_selection_t));
+    memcpy(&received_prescaler, &config.timing_config.prescaler, sizeof(timer_8_bit_prescaler_selection_t));
     memcpy(&received_waveform, &config.timing_config.waveform_mode, sizeof(timer_8_bit_waveform_generation_t));
 
     config.timing_config.comp_match_a = TIMER8BIT_CMOD_TOGGLE_OCnX;
     config.timing_config.comp_match_b = TIMER8BIT_CMOD_SET_OCnX;
     config.timing_config.ocra_val = 33U;
     config.timing_config.ocrb_val = 156U;
-    config.timing_config.prescaler = TIMERxBIT_CLK_PRESCALER_64;
+    config.timing_config.prescaler = TIMER8BIT_CLK_PRESCALER_64;
     config.timing_config.waveform_mode = TIMER8BIT_WG_PWM_FAST_FULL_RANGE;
 
     // Compare match A mode
@@ -339,7 +358,7 @@ TEST_F(Timer8BitFixture, test_timing_configuration_unitary_functions)
     ASSERT_EQ(timer_8_bit_registers_stub.TCCRB & CS_MSK, config.timing_config.prescaler);
     ret = timer_8_bit_get_prescaler(DT_ID, &received_prescaler);
     ASSERT_EQ(TIMER_ERROR_OK, ret);
-    ASSERT_EQ(0, memcmp(&received_prescaler, &config.timing_config.prescaler, sizeof(timer_x_bit_prescaler_selection_t)));
+    ASSERT_EQ(0, memcmp(&received_prescaler, &config.timing_config.prescaler, sizeof(timer_8_bit_prescaler_selection_t)));
 
 
     // Timer counter main register value
@@ -376,8 +395,8 @@ TEST_F(Timer8BitFixture, test_timing_configuration_unitary_functions)
 TEST_F(Timer8BitFixture, test_force_compare_flags)
 {
     auto ret = TIMER_ERROR_OK;
-    timer_x_bit_force_compare_config_t received_config;
-    memcpy(&received_config, &config.force_compare, sizeof(timer_x_bit_force_compare_config_t));
+    timer_8_bit_force_compare_config_t received_config;
+    memcpy(&received_config, &config.force_compare, sizeof(timer_8_bit_force_compare_config_t));
 
     config.force_compare.force_comp_match_a = true;
     config.force_compare.force_comp_match_b = true;
@@ -389,7 +408,7 @@ TEST_F(Timer8BitFixture, test_force_compare_flags)
 
     ret = timer_8_bit_get_force_compare_config(DT_ID, &received_config);
     ASSERT_EQ(TIMER_ERROR_OK, ret);
-    ASSERT_EQ(0, memcmp(&config.force_compare, &received_config, sizeof(timer_x_bit_force_compare_config_t)));
+    ASSERT_EQ(0, memcmp(&config.force_compare, &received_config, sizeof(timer_8_bit_force_compare_config_t)));
 }
 
 TEST_F(Timer8BitFixture, test_interrupt_enable_flags)
@@ -453,8 +472,55 @@ TEST_F(Timer8BitFixture, test_initialisation_deinitialisation)
 
     ret = timer_8_bit_stop(DT_ID);
     ASSERT_EQ(ret, TIMER_ERROR_NOT_INITIALISED);
-
 }
+
+TEST(timer_8_bit_driver_tests, test_parameters_computation_prescaler)
+{
+    uint32_t cpu_freq = 16'000'000;
+    uint32_t target_freq = 1'000;
+    uint8_t ocra = 0;
+    uint16_t accumulator = 0;
+
+    timer_8_bit_prescaler_selection_t prescaler = TIMER8BIT_CLK_PRESCALER_1;
+    timer_8_bit_compute_matching_parameters(&cpu_freq, &target_freq, &prescaler, &ocra, &accumulator);
+
+    ASSERT_EQ(prescaler, TIMER8BIT_CLK_PRESCALER_64);
+    ASSERT_EQ(ocra, 249U);
+    ASSERT_EQ(accumulator, 0U);
+
+    target_freq = 3'000;
+    timer_8_bit_compute_matching_parameters(&cpu_freq, &target_freq, &prescaler, &ocra, &accumulator);
+    ASSERT_EQ(prescaler, TIMER8BIT_CLK_PRESCALER_64);
+    ASSERT_EQ(ocra, 82U);
+    ASSERT_EQ(accumulator, 0U);
+
+    target_freq = 5'000;
+    timer_8_bit_compute_matching_parameters(&cpu_freq, &target_freq, &prescaler, &ocra, &accumulator);
+    ASSERT_EQ(prescaler, TIMER8BIT_CLK_PRESCALER_64);
+    ASSERT_EQ(ocra, 49U);
+    ASSERT_EQ(accumulator, 0U);
+
+    target_freq = 1'000'000;
+    timer_8_bit_compute_matching_parameters(&cpu_freq, &target_freq, &prescaler, &ocra, &accumulator);
+    ASSERT_EQ(prescaler, TIMER8BIT_CLK_PRESCALER_1);
+    ASSERT_EQ(ocra, 15U);
+    ASSERT_EQ(accumulator, 0U);
+
+    cpu_freq = 8'000'000;
+    target_freq = 440;
+    timer_8_bit_compute_matching_parameters(&cpu_freq, &target_freq, &prescaler, &ocra, &accumulator);
+    ASSERT_EQ(prescaler, TIMER8BIT_CLK_PRESCALER_256);
+    ASSERT_EQ(ocra, 70U);
+    ASSERT_EQ(accumulator, 0U);
+
+    cpu_freq = 16'000'000;
+    target_freq = 1;
+    timer_8_bit_compute_matching_parameters(&cpu_freq, &target_freq, &prescaler, &ocra, &accumulator);
+    ASSERT_EQ(prescaler, TIMER8BIT_CLK_PRESCALER_1024);
+    ASSERT_EQ(ocra, 124U);
+    ASSERT_EQ(accumulator, 124U);
+}
+
 
 int main(int argc, char **argv)
 {

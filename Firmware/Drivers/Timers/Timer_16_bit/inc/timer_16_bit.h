@@ -45,7 +45,7 @@ typedef struct
 {
     timer_16_bit_timing_config_t                       timing_config;    /**< Handles basic timing configuration for 16 bit timers                               */
     timer_16_bit_interrupt_config_t                    interrupt_config; /**< Handles interrupt configuraitons for 16 bit timers                                 */
-    timer_x_bit_force_compare_config_t                 force_compare;    /**< Handles force compare flags on output A and B, generic configuration among timers  */
+    timer_16_bit_force_compare_config_t                force_compare;    /**< Handles force compare flags on output A and B, generic configuration among timers  */
     timer_16_bit_input_capture_noise_canceler_config_t input_capture;    /**< Handles input capture noise canceler configuration for 16-bit timers               */
     timer_16_bit_handle_t                              handle;           /**< Stores pointer locations to peripheral registers                                   */
 } timer_16_bit_config_t;
@@ -77,6 +77,16 @@ timer_error_t timer_16_bit_get_default_config(timer_16_bit_config_t * config);
 */
 timer_error_t timer_16_bit_set_handle(uint8_t id, timer_16_bit_handle_t * const handle);
 
+/**
+ * @brief gets the handle of timer_16_bit driver
+ * @param[in]   id     : targeted timer id (used to fetch internal configuration based on ids)
+ * @param[in]   handle : handle to be copied from internal configuration
+ * @return
+ *      TIMER_ERROR_OK             :   operation succeeded
+ *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
+ *      TIMER_ERROR_NULL_POINTER   :   given force_comp_config parameter points to NULL
+*/
+timer_error_t timer_16_bit_get_handle(uint8_t id, timer_16_bit_handle_t * const handle);
 
 
 
@@ -90,7 +100,7 @@ timer_error_t timer_16_bit_set_handle(uint8_t id, timer_16_bit_handle_t * const 
  *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
  *      TIMER_ERROR_NULL_POINTER   :   given force_comp_config parameter points to NULL
 */
-timer_error_t timer_16_bit_set_force_compare_config(uint8_t id, timer_x_bit_force_compare_config_t * const force_comp_config);
+timer_error_t timer_16_bit_set_force_compare_config(uint8_t id, timer_16_bit_force_compare_config_t * const force_comp_config);
 
 /**
  * @brief gets force compare configuration object from timer internal configuration
@@ -101,7 +111,7 @@ timer_error_t timer_16_bit_set_force_compare_config(uint8_t id, timer_x_bit_forc
  *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
  *      TIMER_ERROR_NULL_POINTER   :   given it_config parameter points to NULL
 */
-timer_error_t timer_16_bit_get_force_compare_config(uint8_t id, timer_x_bit_force_compare_config_t * force_comp_config);
+timer_error_t timer_16_bit_get_force_compare_config(uint8_t id, timer_16_bit_force_compare_config_t * force_comp_config);
 
 
 
@@ -200,7 +210,7 @@ timer_error_t timer_16_bit_get_input_compare_edge_select(uint8_t id, timer_16_bi
  *      TIMER_ERROR_OK             :   operation succeeded
  *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
 */
-timer_error_t timer_16_bit_set_prescaler(uint8_t id, const timer_x_bit_prescaler_selection_t prescaler);
+timer_error_t timer_16_bit_set_prescaler(uint8_t id, const timer_16_bit_prescaler_selection_t prescaler);
 
 /**
  * @brief reads targeted timer prescaler from internal configuration
@@ -211,7 +221,7 @@ timer_error_t timer_16_bit_set_prescaler(uint8_t id, const timer_x_bit_prescaler
  *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
  *      TIMER_ERROR_NULL_POINTER   :   given prescaler parameter points to NULL
 */
-timer_error_t timer_16_bit_get_prescaler(uint8_t id, timer_x_bit_prescaler_selection_t * prescaler);
+timer_error_t timer_16_bit_get_prescaler(uint8_t id, timer_16_bit_prescaler_selection_t * prescaler);
 
 
 
@@ -402,6 +412,17 @@ timer_error_t timer_16_bit_deinit(uint8_t id);
 
 
 /**
+ * @brief Reconfigures the targeted timer with the given configuration. Previous configuration will be overwritten.
+ * @param[in]   id     : targeted timer id (used to fetch internal configuration based on ids)
+ * @param[in]   config : container holding timer configuration to be written into its registers
+ * @return
+ *      TIMER_ERROR_OK             :   operation succeeded
+ *      TIMER_ERROR_UNKNOWN_TIMER  :   given id is out of range
+ *      TIMER_ERROR_NULL_HANDLE    :   targeted timer's handle is still NULL (unitialised). Operation failed
+*/
+timer_error_t timer_16_bit_reconfigure(uint8_t id, timer_16_bit_config_t * const config);
+
+/**
  * @brief starts selected timer based on its internal configuration. Basically, this function sets the adequate prescaler to internal registers to start it.
  * @param[in]   id     : targeted timer id (used to fetch internal configuration based on ids)
  * @return
@@ -421,6 +442,24 @@ timer_error_t timer_16_bit_start(uint8_t id);
  *      TIMER_ERROR_NULL_POINTER   :   given config parameter points to NULL
 */
 timer_error_t timer_16_bit_stop(uint8_t id);
+
+#define TIMER_16_BIT_MAX_PRESCALER_COUNT (5U)
+
+
+void timer_16_bit_compute_matching_parameters(const uint32_t * const cpu_freq,
+                                              const uint32_t * const target_freq,
+                                              timer_16_bit_prescaler_selection_t * const prescaler,
+                                              uint16_t * const ocra,
+                                              uint16_t * const accumulator);
+
+/**
+ * @brief Timer 16 bit prescaler table, ascending order. Used to compute the closest prescaler
+ * which can be used to generate any given frequency
+*/
+extern const timer_generic_prescaler_pair_t timer_16_bit_prescaler_table[TIMER_16_BIT_MAX_PRESCALER_COUNT];
+
+uint16_t timer_16_bit_prescaler_to_value(const timer_16_bit_prescaler_selection_t prescaler);
+timer_16_bit_prescaler_selection_t timer_16_bit_prescaler_from_value(uint16_t const * const input_prescaler);
 
 #ifdef __cplusplus
 }

@@ -115,12 +115,12 @@ typedef enum
 */
 typedef struct
 {
-    volatile uint8_t * TWCR;  /**< Two Wire Interface Control register              */
-    volatile uint8_t * TWBR;  /**< Two Wire Interface Bit Rate register             */
-    volatile uint8_t * TWSR;  /**< Two Wire Interface Status register               */
-    volatile uint8_t * TWDR;  /**< Two Wire Interface Data (in/out) register        */
-    volatile uint8_t * TWAR;  /**< Two Wire Interface Slave Address register        */
-    volatile uint8_t * TWAMR; /**< Two Wire Interface Slave Address Mask register   */
+    volatile uint8_t * _TWCR;  /**< Two Wire Interface Control register              */
+    volatile uint8_t * _TWBR;  /**< Two Wire Interface Bit Rate register             */
+    volatile uint8_t * _TWSR;  /**< Two Wire Interface Status register               */
+    volatile uint8_t * _TWDR;  /**< Two Wire Interface Data (in/out) register        */
+    volatile uint8_t * _TWAR;  /**< Two Wire Interface Slave Address register        */
+    volatile uint8_t * _TWAMR; /**< Two Wire Interface Slave Address Mask register   */
 } i2c_handle_t;
 
 

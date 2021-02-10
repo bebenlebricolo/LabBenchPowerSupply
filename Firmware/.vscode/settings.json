@@ -29,7 +29,14 @@
         "driver_setup.h": "c",
         "avr_mcu_section.h": "c",
         "i2c.h": "c",
-        "random": "c"
+        "random": "c",
+        "array": "c",
+        "hash_map": "c",
+        "bitset": "c",
+        "string_view": "c",
+        "initializer_list": "c",
+        "ranges": "c",
+        "utility": "c"
     },
     "editor.tokenColorCustomizations": {
         "textMateRules": [

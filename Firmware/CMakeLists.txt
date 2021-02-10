@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 # Use AVR GCC toolchain
-set(CMAKE_TOOLCHAIN_FILE ${CMAKE_SOURCE_DIR}/Toolchain/avr-gcc-toolchain.cmake)
+set(CMAKE_TOOLCHAIN_FILE ${CMAKE_SOURCE_DIR}/Toolchain/avr8-gcc-toolchain.cmake)
 
 project(firmware C)
 
@@ -12,6 +12,11 @@ add_compile_options(-mmcu=${AVR_MCU})
 
 set(CMAKE_EXE_LINKER_FLAGS "-mmcu=${AVR_MCU}")
 
+if(CMAKE_BUILD_TYPE MATCHES Debug)
+    add_definitions(-DDEBUG_WITH_SIMAVR)
+endif()
+
 # Adding sources
 add_subdirectory(${CMAKE_SOURCE_DIR}/Drivers)
+add_subdirectory(${CMAKE_SOURCE_DIR}/Modules)
 add_subdirectory(${CMAKE_SOURCE_DIR}/App)

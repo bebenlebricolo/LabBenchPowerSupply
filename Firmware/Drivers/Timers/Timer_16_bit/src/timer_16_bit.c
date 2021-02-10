@@ -13,9 +13,65 @@
 static struct
 {
     timer_16_bit_handle_t handle;
-    timer_x_bit_prescaler_selection_t prescaler;
+    timer_16_bit_prescaler_selection_t prescaler;
     bool is_initialised;
 } internal_config[TIMER_16_BIT_COUNT] = {0};
+
+const timer_generic_prescaler_pair_t timer_16_bit_prescaler_table[TIMER_16_BIT_MAX_PRESCALER_COUNT] =
+{
+    {.value = 1,        .type = (uint8_t) TIMER16BIT_CLK_PRESCALER_1    },
+    {.value = 8,        .type = (uint8_t) TIMER16BIT_CLK_PRESCALER_8    },
+    {.value = 64,       .type = (uint8_t) TIMER16BIT_CLK_PRESCALER_64   },
+    {.value = 256,      .type = (uint8_t) TIMER16BIT_CLK_PRESCALER_256  },
+    {.value = 1024,     .type = (uint8_t) TIMER16BIT_CLK_PRESCALER_1024 },
+};
+
+timer_16_bit_prescaler_selection_t timer_16_bit_prescaler_from_value(uint16_t const * const input_prescaler)
+{
+    for (uint8_t i = 0 ; i < TIMER_16_BIT_MAX_PRESCALER_COUNT ; i++)
+    {
+        if (*input_prescaler == timer_16_bit_prescaler_table[i].value)
+        {
+            return (timer_16_bit_prescaler_selection_t) timer_16_bit_prescaler_table[i].type;
+        }
+    }
+    return TIMER16BIT_CLK_NO_CLOCK;
+}
+
+uint16_t timer_16_bit_prescaler_to_value(const timer_16_bit_prescaler_selection_t prescaler)
+{
+    for (uint8_t i = 0 ; i < TIMER_16_BIT_MAX_PRESCALER_COUNT ; i++)
+    {
+        if (prescaler == timer_16_bit_prescaler_table[i].type)
+        {
+            return timer_16_bit_prescaler_table[i].value;
+        }
+    }
+    return 0;
+}
+
+void timer_16_bit_compute_matching_parameters(const uint32_t * const cpu_freq,
+                                              const uint32_t * const target_freq,
+                                              timer_16_bit_prescaler_selection_t * const prescaler,
+                                              uint16_t * const ocra,
+                                              uint16_t * const accumulator)
+{
+    timer_generic_parameters_t parameters =
+    {
+        .input =
+        {
+            .cpu_frequency = *cpu_freq,
+            .target_frequency = *target_freq,
+            .resolution = TIMER_GENERIC_RESOLUTION_16_BIT,
+            .prescaler_lookup_array.array = timer_16_bit_prescaler_table,
+            .prescaler_lookup_array.size = TIMER_16_BIT_MAX_PRESCALER_COUNT,
+        },
+    };
+    timer_generic_compute_parameters(&parameters);
+    *prescaler = timer_16_bit_prescaler_from_value(&parameters.output.prescaler);
+    *ocra = parameters.output.ocra;
+    *accumulator = parameters.output.accumulator;
+}
 
 static inline timer_error_t check_handle(timer_16_bit_handle_t * const handle)
 {
@@ -79,6 +135,23 @@ timer_error_t timer_16_bit_set_handle(uint8_t id, timer_16_bit_handle_t * const 
     return ret;
 }
 
+timer_error_t timer_16_bit_get_handle(uint8_t id, timer_16_bit_handle_t * const handle)
+{
+    timer_error_t ret = check_id(id);
+    if (TIMER_ERROR_OK != ret)
+    {
+        return ret;
+    }
+
+    if (NULL == handle)
+    {
+        return TIMER_ERROR_NULL_POINTER;
+    }
+
+    memcpy(handle, &internal_config[id].handle, sizeof(timer_16_bit_handle_t));
+    return ret;
+}
+
 timer_error_t timer_16_bit_get_default_config(timer_16_bit_config_t * config)
 {
     timer_error_t ret = TIMER_ERROR_OK;
@@ -101,7 +174,7 @@ timer_error_t timer_16_bit_get_default_config(timer_16_bit_config_t * config)
     config->timing_config.counter = 0U;
     config->timing_config.ocra_val = 0U;
     config->timing_config.ocrb_val = 0U;
-    config->timing_config.prescaler = TIMERxBIT_CLK_NO_CLOCK;
+    config->timing_config.prescaler = TIMER16BIT_CLK_NO_CLOCK;
     config->timing_config.waveform_mode = TIMER16BIT_WG_NORMAL;
     config->timing_config.comp_match_a = TIMER16BIT_CMOD_NORMAL;
     config->timing_config.comp_match_b = TIMER16BIT_CMOD_NORMAL;
@@ -128,7 +201,7 @@ timer_error_t timer_16_bit_get_default_config(timer_16_bit_config_t * config)
     return ret;
 }
 
-timer_error_t timer_16_bit_set_force_compare_config(uint8_t id, timer_x_bit_force_compare_config_t * const force_comp_config)
+timer_error_t timer_16_bit_set_force_compare_config(uint8_t id, timer_16_bit_force_compare_config_t * const force_comp_config)
 {
     timer_error_t ret = check_id(id);
 
@@ -170,7 +243,7 @@ timer_error_t timer_16_bit_set_force_compare_config(uint8_t id, timer_x_bit_forc
     return ret;
 }
 
-timer_error_t timer_16_bit_get_force_compare_config(uint8_t id, timer_x_bit_force_compare_config_t * force_comp_config)
+timer_error_t timer_16_bit_get_force_compare_config(uint8_t id, timer_16_bit_force_compare_config_t * force_comp_config)
 {
     timer_error_t ret = check_id(id);
     if (TIMER_ERROR_OK != ret)
@@ -400,7 +473,7 @@ timer_error_t timer_16_bit_get_interrupt_flags(uint8_t id, timer_16_bit_interrup
 
 
 
-timer_error_t timer_16_bit_set_prescaler(uint8_t id, const timer_x_bit_prescaler_selection_t prescaler)
+timer_error_t timer_16_bit_set_prescaler(uint8_t id, const timer_16_bit_prescaler_selection_t prescaler)
 {
     timer_error_t ret = check_id(id);
     if (TIMER_ERROR_OK != ret)
@@ -418,7 +491,7 @@ timer_error_t timer_16_bit_set_prescaler(uint8_t id, const timer_x_bit_prescaler
     return ret;
 }
 
-timer_error_t timer_16_bit_get_prescaler(uint8_t id, timer_x_bit_prescaler_selection_t * prescaler)
+timer_error_t timer_16_bit_get_prescaler(uint8_t id, timer_16_bit_prescaler_selection_t * prescaler)
 {
     timer_error_t ret = check_id(id);
     if (TIMER_ERROR_OK != ret)
@@ -921,23 +994,13 @@ timer_error_t timer_16_bit_init(uint8_t id, timer_16_bit_config_t * const config
         return ret;
     }
 
-    ret = check_handle(&config->handle);
-    if (TIMER_ERROR_OK != ret)
+    // Prevents multiple initialisations (misuse of the driver)
+    if (true == internal_config[id].is_initialised)
     {
-        return ret;
+        ret = TIMER_ERROR_ALREADY_INITIALISED;
     }
 
-    ret = timer_16_bit_set_handle(id, &config->handle);
-    if (TIMER_ERROR_OK != ret)
-    {
-        return ret;
-    }
-
-    ret = timer_16_bit_write_config(id,config);
-    if (TIMER_ERROR_OK == ret)
-    {
-        internal_config[id].is_initialised = true;
-    }
+    ret = timer_16_bit_reconfigure(id, config);
     return ret;
 }
 
@@ -972,6 +1035,40 @@ timer_error_t timer_16_bit_deinit(uint8_t id)
         }
     }
     return ret;
+}
+
+timer_error_t timer_16_bit_reconfigure(uint8_t id, timer_16_bit_config_t * const config)
+{
+    timer_error_t ret = check_id(id);
+    if(TIMER_ERROR_OK != ret)
+    {
+        return ret;
+    }
+
+    if (NULL == config)
+    {
+        return TIMER_ERROR_NULL_POINTER;
+    }
+
+    ret = check_handle(&config->handle);
+    if (TIMER_ERROR_OK != ret)
+    {
+        return ret;
+    }
+
+    ret = timer_16_bit_set_handle(id, &config->handle);
+    if (TIMER_ERROR_OK != ret)
+    {
+        return ret;
+    }
+
+    ret = timer_16_bit_write_config(id,config);
+    if (TIMER_ERROR_OK == ret)
+    {
+        internal_config[id].is_initialised = true;
+    }
+    return ret;
+
 }
 
 
@@ -1013,7 +1110,7 @@ timer_error_t timer_16_bit_stop(uint8_t id)
     }
 
     /* Reset prescaler to NO_CLOCK*/
-    *(internal_config[id].handle.TCCRB) = (*(internal_config[id].handle.TCCRB) & ~CS_MSK) | TIMERxBIT_CLK_NO_CLOCK;
+    *(internal_config[id].handle.TCCRB) = (*(internal_config[id].handle.TCCRB) & ~CS_MSK) | TIMER16BIT_CLK_NO_CLOCK;
     return ret;
 }
 

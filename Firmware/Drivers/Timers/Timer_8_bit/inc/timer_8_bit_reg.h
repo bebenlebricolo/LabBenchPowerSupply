@@ -73,6 +73,30 @@ typedef enum
     TIMER8BIT_WG_CTC                            = 2U,  /**< | Clear Timer Compare match |   OCRA  |       Immediate    |      MAX         |*/
 } timer_8_bit_waveform_generation_t;
 
+/**
+ * @brief Prescaler selection bits
+*/
+typedef enum
+{
+    TIMER8BIT_CLK_NO_CLOCK                  = 0, /**< No clock is fed to the timer : timer is stopped                      */
+    TIMER8BIT_CLK_PRESCALER_1               = 1, /**< Clock is not prescaled : clock speed is the same as the main clock   */
+    TIMER8BIT_CLK_PRESCALER_8               = 2, /**< Clock is divided by 8                                                */
+    TIMER8BIT_CLK_PRESCALER_64              = 3, /**< Clock is divided by 64                                               */
+    TIMER8BIT_CLK_PRESCALER_256             = 4, /**< Clock is divided by 256                                              */
+    TIMER8BIT_CLK_PRESCALER_1024            = 5, /**< Clock is divided by 1024                                            */
+    TIMER8BIT_CLK_EXTERNAL_CLK_FALLING_EDGE = 6, /**< External clock is used as source on pin T0, clock on falling edge    */
+    TIMER8BIT_CLK_EXTERNAL_CLK_RISING_EDGE  = 7  /**< External clock is used as source on pin T0, clock on rising edge     */
+} timer_8_bit_prescaler_selection_t;
+
+/**
+ * @brief describes a generic configuration for Force Output Compare A/B flags for
+ * 8 bit and 16 bit timers, regardless of their actual architecture
+*/
+typedef struct
+{
+    bool force_comp_match_a; /**< Enables (or not) FOCnA flag (forces output compare A)                   */
+    bool force_comp_match_b; /**< Enables (or not) FOCnB flag (forces output compare B)                   */
+} timer_8_bit_force_compare_config_t;
 
 /**
  * @brief Describes Compare output modes
@@ -98,7 +122,7 @@ typedef struct
     timer_8_bit_compare_output_mode_t comp_match_a;     /**< Equivalent to TCCRnA COMnA0 and COMnA1 bits                            */
     timer_8_bit_compare_output_mode_t comp_match_b;     /**< Equivalent to TCCRnA COMnB0 and COMnB1 bits                            */
     timer_8_bit_waveform_generation_t waveform_mode;    /**< Selects the right waveform mode and dispatch it to the right registers */
-    timer_x_bit_prescaler_selection_t prescaler;        /**< Selects the right prescaler to be fed in the timer                     */
+    timer_8_bit_prescaler_selection_t prescaler;        /**< Selects the right prescaler to be fed in the timer                     */
 } timer_8_bit_timing_config_t;
 
 /**
@@ -106,9 +130,9 @@ typedef struct
 */
 typedef struct
 {
-    bool it_comp_match_a;   /**< Enables (or not) the OCIEnA flag (interrupt on compare match A, or not)*/
-    bool it_comp_match_b;   /**< Enables (or not) the OCIEnB flag (interrupt on compare match B, or not)*/
-    bool it_timer_overflow; /**< Enables (or not) the TOEIn flag (interrupt on timer overflow, or not)  */
+    bool it_comp_match_a;               /**< Enables (or not) the OCIEnA flag (interrupt on compare match A, or not)*/
+    bool it_comp_match_b;               /**< Enables (or not) the OCIEnB flag (interrupt on compare match B, or not)*/
+    bool it_timer_overflow;             /**< Enables (or not) the TOEIn flag (interrupt on timer overflow, or not)  */
 } timer_8_bit_interrupt_config_t;
 
 #ifdef __cplusplus

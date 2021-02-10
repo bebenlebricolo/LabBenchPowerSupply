@@ -6,4 +6,7 @@
 #define TIMER_8_BIT_ASYNC_COUNT 1
 #define TIMER_16_BIT_COUNT      1
 
+#define TIMEBASE_MAX_MODULES 3U
+#define I2C_DEVICES_COUNT 1U
+
 #endif /* CONFIG_HEADER */

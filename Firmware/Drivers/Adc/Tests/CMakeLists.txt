@@ -79,5 +79,5 @@ target_link_libraries(adc_driver_tests adc_driver ${GTEST_LIBRARIES} pthread)
 
 set_target_properties(adc_driver_tests
     PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/Adc
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/Drivers/Adc
 )

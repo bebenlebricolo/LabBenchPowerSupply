@@ -70,9 +70,10 @@ typedef enum
 
 typedef enum
 {
-    I2C_STATE_DISABLED              = 0, /**< Configured, but peripheral disabled                        */
-    I2C_STATE_NOT_INITIALISED,           /**< Not configured, need to call i2c_init first                */
-    I2C_STATE_READY,                     /**< Configured and enabled                                     */
+    I2C_STATE_DISABLED              = 0, /**< Configured, but peripheral disabled                               */
+    I2C_STATE_NOT_INITIALISED,           /**< Not configured, need to call i2c_init first                       */
+    I2C_STATE_READY,                     /**< Configured and enabled                                            */
+    I2C_STATE_DEVICE_BUSY,               /**< General Busy flag stating that device is used (TWINT is set to 0) */
 
     /* I2C busy states */
     I2C_STATE_SLAVE_RECEIVING,           /**< Peripheral is currently receiving data as slave device  */

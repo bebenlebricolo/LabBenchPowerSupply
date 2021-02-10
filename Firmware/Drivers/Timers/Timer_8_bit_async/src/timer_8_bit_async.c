@@ -5,7 +5,7 @@
 #include <string.h>
 
 #ifndef TIMER_8_BIT_ASYNC_COUNT
-    #error "TIMER_8_BIT_ASYNC_COUNT is not defined. Please add #define TIMER_8_BIT_ASYNC_COUNT n in config.h to use this timer"
+    #error "TIMER_8_BIT_ASYNC_COUNT is not defined. Please add #define TIMER_8_BIT_ASYNC_COUNT in config.h to use this timer"
 #elif TIMER_8_BIT_ASYNC_COUNT == 0
     #warning "TIMER_8_BIT_ASYNC_COUNT is set to 0. If you don't project to use this timer, refer to not compile this file instead of setting this define to 0"
 #endif
@@ -16,6 +16,64 @@ static struct
     timer_8_bit_async_prescaler_selection_t prescaler;
     bool is_initialised;
 } internal_config[TIMER_8_BIT_ASYNC_COUNT] = {0};
+
+const timer_generic_prescaler_pair_t timer_8_bit_async_prescaler_table[TIMER_8_BIT_ASYNC_MAX_PRESCALER_COUNT] =
+{
+    {.value = 1,    .type = (uint8_t) TIMER8BIT_ASYNC_CLK_PRESCALER_1      },
+    {.value = 8,    .type = (uint8_t) TIMER8BIT_ASYNC_CLK_PRESCALER_8      },
+    {.value = 32,   .type = (uint8_t) TIMER8BIT_ASYNC_CLK_PRESCALER_32     },
+    {.value = 64,   .type = (uint8_t) TIMER8BIT_ASYNC_CLK_PRESCALER_64     },
+    {.value = 128,  .type = (uint8_t) TIMER8BIT_ASYNC_CLK_PRESCALER_128    },
+    {.value = 256,  .type = (uint8_t) TIMER8BIT_ASYNC_CLK_PRESCALER_256    },
+    {.value = 1024, .type = (uint8_t) TIMER8BIT_ASYNC_CLK_PRESCALER_1024   },
+};
+
+timer_8_bit_async_prescaler_selection_t timer_8_bit_async_prescaler_from_value(uint16_t const * const input_prescaler)
+{
+    for (uint8_t i = 0 ; i < TIMER_8_BIT_ASYNC_MAX_PRESCALER_COUNT ; i++)
+    {
+        if (*input_prescaler == timer_8_bit_async_prescaler_table[i].value)
+        {
+            return (timer_8_bit_async_prescaler_selection_t) timer_8_bit_async_prescaler_table[i].type;
+        }
+    }
+    return TIMER8BIT_ASYNC_CLK_NO_CLOCK;
+}
+
+uint16_t timer_8_bit_async_prescaler_to_value(const timer_8_bit_async_prescaler_selection_t prescaler)
+{
+    for (uint8_t i = 0 ; i < TIMER_8_BIT_ASYNC_MAX_PRESCALER_COUNT ; i++)
+    {
+        if (prescaler == timer_8_bit_async_prescaler_table[i].type)
+        {
+            return timer_8_bit_async_prescaler_table[i].value;
+        }
+    }
+    return 0;
+}
+
+void timer_8_bit_async_compute_matching_parameters(const uint32_t * const cpu_freq,
+                                                   const uint32_t * const target_freq,
+                                                   timer_8_bit_async_prescaler_selection_t * const prescaler,
+                                                   uint8_t * const ocra,
+                                                   uint16_t * const accumulator)
+{
+    timer_generic_parameters_t parameters =
+    {
+        .input =
+        {
+            .cpu_frequency = *cpu_freq,
+            .target_frequency = *target_freq,
+            .resolution = TIMER_GENERIC_RESOLUTION_8_BIT,
+            .prescaler_lookup_array.array = timer_8_bit_async_prescaler_table,
+            .prescaler_lookup_array.size = TIMER_8_BIT_ASYNC_MAX_PRESCALER_COUNT,
+        },
+    };
+    timer_generic_compute_parameters(&parameters);
+    *prescaler = timer_8_bit_async_prescaler_from_value(&parameters.output.prescaler);
+    *ocra = (uint8_t) parameters.output.ocra;
+    *accumulator = parameters.output.accumulator;
+}
 
 static inline timer_error_t check_handle(timer_8_bit_async_handle_t * const handle)
 {
@@ -79,6 +137,23 @@ timer_error_t timer_8_bit_async_set_handle(uint8_t id, timer_8_bit_async_handle_
     return ret;
 }
 
+timer_error_t timer_8_bit_async_get_handle(uint8_t id, timer_8_bit_async_handle_t * const handle)
+{
+    timer_error_t ret = check_id(id);
+    if (TIMER_ERROR_OK != ret)
+    {
+        return ret;
+    }
+
+    if (NULL == handle)
+    {
+        return TIMER_ERROR_NULL_POINTER;
+    }
+
+    memcpy(handle, &internal_config[id].handle, sizeof(timer_8_bit_async_handle_t));
+    return ret;
+}
+
 timer_error_t timer_8_bit_async_get_default_config(timer_8_bit_async_config_t * config)
 {
     timer_error_t ret = TIMER_ERROR_OK;
@@ -101,9 +176,9 @@ timer_error_t timer_8_bit_async_get_default_config(timer_8_bit_async_config_t * 
     config->timing_config.ocra_val = 0U;
     config->timing_config.ocrb_val = 0U;
     config->timing_config.prescaler = TIMER8BIT_ASYNC_CLK_NO_CLOCK;
-    config->timing_config.waveform_mode = TIMER8BIT_WG_NORMAL;
-    config->timing_config.comp_match_a = TIMER8BIT_CMOD_NORMAL;
-    config->timing_config.comp_match_b = TIMER8BIT_CMOD_NORMAL;
+    config->timing_config.waveform_mode = TIMER8BIT_ASYNC_WG_NORMAL;
+    config->timing_config.comp_match_a = TIMER8BIT_ASYNC_CMOD_NORMAL;
+    config->timing_config.comp_match_b = TIMER8BIT_ASYNC_CMOD_NORMAL;
     config->timing_config.clock_source = TIMER8BIT_ASYNC_CLK_SOURCE_INTERNAL;
 
     config->force_compare.force_comp_match_a = false;
@@ -121,7 +196,7 @@ timer_error_t timer_8_bit_async_get_default_config(timer_8_bit_async_config_t * 
     return ret;
 }
 
-timer_error_t timer_8_bit_async_set_force_compare_config(uint8_t id, timer_x_bit_force_compare_config_t * const force_comp_config)
+timer_error_t timer_8_bit_async_set_force_compare_config(uint8_t id, timer_8_bit_async_force_compare_config_t * const force_comp_config)
 {
     timer_error_t ret = check_id(id);
 
@@ -171,7 +246,7 @@ timer_error_t timer_8_bit_async_set_force_compare_config(uint8_t id, timer_x_bit
     return ret;
 }
 
-timer_error_t timer_8_bit_async_get_force_compare_config(uint8_t id, timer_x_bit_force_compare_config_t * force_comp_config)
+timer_error_t timer_8_bit_async_get_force_compare_config(uint8_t id, timer_8_bit_async_force_compare_config_t * force_comp_config)
 {
     timer_error_t ret = check_id(id);
     if (TIMER_ERROR_OK != ret)
@@ -217,7 +292,7 @@ timer_error_t timer_8_bit_async_get_force_compare_config(uint8_t id, timer_x_bit
     return ret;
 }
 
-timer_error_t timer_8_bit_async_set_interrupt_config(uint8_t id, timer_8_bit_interrupt_config_t * const it_config)
+timer_error_t timer_8_bit_async_set_interrupt_config(uint8_t id, timer_8_bit_async_interrupt_config_t * const it_config)
 {
     timer_error_t ret = check_id(id);
     if (TIMER_ERROR_OK != ret)
@@ -267,7 +342,7 @@ timer_error_t timer_8_bit_async_set_interrupt_config(uint8_t id, timer_8_bit_int
 }
 
 
-timer_error_t timer_8_bit_async_get_interrupt_config(uint8_t id, timer_8_bit_interrupt_config_t * it_config)
+timer_error_t timer_8_bit_async_get_interrupt_config(uint8_t id, timer_8_bit_async_interrupt_config_t * it_config)
 {
     timer_error_t ret = check_id(id);
     if (TIMER_ERROR_OK != ret)
@@ -319,7 +394,7 @@ timer_error_t timer_8_bit_async_get_interrupt_config(uint8_t id, timer_8_bit_int
 }
 
 #ifdef UNIT_TESTING
-timer_error_t timer_8_bit_async_get_interrupt_flags(uint8_t id, timer_8_bit_interrupt_config_t * it_flags)
+timer_error_t timer_8_bit_async_get_interrupt_flags(uint8_t id, timer_8_bit_async_interrupt_config_t * it_flags)
 {
     timer_error_t ret = check_id(id);
     if (TIMER_ERROR_OK != ret)
@@ -433,7 +508,7 @@ timer_error_t timer_8_bit_async_get_prescaler(uint8_t id, timer_8_bit_async_pres
     return ret;
 }
 
-timer_error_t timer_8_bit_async_set_compare_match_A(uint8_t id, const timer_8_bit_compare_output_mode_t compA)
+timer_error_t timer_8_bit_async_set_compare_match_A(uint8_t id, const timer_8_bit_async_compare_output_mode_t compA)
 {
     timer_error_t ret = check_id(id);
     if (TIMER_ERROR_OK != ret)
@@ -459,7 +534,7 @@ timer_error_t timer_8_bit_async_set_compare_match_A(uint8_t id, const timer_8_bi
     return ret;
 }
 
-timer_error_t timer_8_bit_async_get_compare_match_A(uint8_t id, timer_8_bit_compare_output_mode_t * compA)
+timer_error_t timer_8_bit_async_get_compare_match_A(uint8_t id, timer_8_bit_async_compare_output_mode_t * compA)
 {
     timer_error_t ret = check_id(id);
     if (TIMER_ERROR_OK != ret)
@@ -490,7 +565,7 @@ timer_error_t timer_8_bit_async_get_compare_match_A(uint8_t id, timer_8_bit_comp
     return ret;
 }
 
-timer_error_t timer_8_bit_async_set_compare_match_B(uint8_t id, timer_8_bit_compare_output_mode_t compB)
+timer_error_t timer_8_bit_async_set_compare_match_B(uint8_t id, timer_8_bit_async_compare_output_mode_t compB)
 {
     timer_error_t ret = check_id(id);
     if (TIMER_ERROR_OK != ret)
@@ -516,7 +591,7 @@ timer_error_t timer_8_bit_async_set_compare_match_B(uint8_t id, timer_8_bit_comp
     return ret;
 }
 
-timer_error_t timer_8_bit_async_get_compare_match_B(uint8_t id, timer_8_bit_compare_output_mode_t * compB)
+timer_error_t timer_8_bit_async_get_compare_match_B(uint8_t id, timer_8_bit_async_compare_output_mode_t * compB)
 {
     timer_error_t ret = check_id(id);
     if (TIMER_ERROR_OK != ret)
@@ -547,7 +622,7 @@ timer_error_t timer_8_bit_async_get_compare_match_B(uint8_t id, timer_8_bit_comp
     return ret;
 }
 
-timer_error_t timer_8_bit_async_set_waveform_generation(uint8_t id, const timer_8_bit_waveform_generation_t waveform)
+timer_error_t timer_8_bit_async_set_waveform_generation(uint8_t id, const timer_8_bit_async_waveform_generation_t waveform)
 {
     timer_error_t ret = check_id(id);
     if (TIMER_ERROR_OK != ret)
@@ -573,7 +648,7 @@ timer_error_t timer_8_bit_async_set_waveform_generation(uint8_t id, const timer_
     return ret;
 }
 
-timer_error_t timer_8_bit_async_get_waveform_generation(uint8_t id, timer_8_bit_waveform_generation_t * waveform)
+timer_error_t timer_8_bit_async_get_waveform_generation(uint8_t id, timer_8_bit_async_waveform_generation_t * const waveform)
 {
     timer_error_t ret = check_id(id);
     if (TIMER_ERROR_OK != ret)
@@ -598,7 +673,7 @@ timer_error_t timer_8_bit_async_get_waveform_generation(uint8_t id, timer_8_bit_
         return ret;
     }
 
-    *waveform = (timer_8_bit_waveform_generation_t)(0U);
+    *waveform = (timer_8_bit_async_waveform_generation_t)(0U);
     *waveform |= (*(internal_config[id].handle.TCCRA) & (WGM0_MSK | WGM1_MSK));
     *waveform |= (*(internal_config[id].handle.TCCRB) & (WGM2_MSK)) >> 1U;
     return ret;
@@ -862,6 +937,24 @@ static timer_error_t timer_8_bit_async_write_config(uint8_t id, timer_8_bit_asyn
     return ret;
 }
 
+timer_error_t timer_8_bit_async_is_initialised(const uint8_t id, bool * const initialised)
+{
+    timer_error_t ret = check_id(id);
+    if(TIMER_ERROR_OK != ret)
+    {
+        return ret;
+    }
+
+    if (NULL == initialised)
+    {
+        return TIMER_ERROR_NULL_POINTER;
+    }
+
+    *initialised = internal_config[id].is_initialised;
+
+    return ret;
+}
+
 timer_error_t timer_8_bit_async_init(uint8_t id, timer_8_bit_async_config_t * const config)
 {
     timer_error_t ret = check_id(id);
@@ -870,26 +963,15 @@ timer_error_t timer_8_bit_async_init(uint8_t id, timer_8_bit_async_config_t * co
         return ret;
     }
 
-    ret = check_handle(&config->handle);
-    if (TIMER_ERROR_OK != ret)
+    // Prevents multiple initialisations (misuse of the driver)
+    if (true == internal_config[id].is_initialised)
     {
-        return ret;
+        ret = TIMER_ERROR_ALREADY_INITIALISED;
     }
 
-    ret = timer_8_bit_async_set_handle(id, &config->handle);
-    if (TIMER_ERROR_OK != ret)
-    {
-        return ret;
-    }
-
-    ret = timer_8_bit_async_write_config(id,config);
-    if (TIMER_ERROR_OK == ret)
-    {
-        internal_config[id].is_initialised = true;
-    }
+    ret = timer_8_bit_async_reconfigure(id, config);
     return ret;
 }
-
 
 timer_error_t timer_8_bit_async_deinit(uint8_t id)
 {
@@ -919,6 +1001,39 @@ timer_error_t timer_8_bit_async_deinit(uint8_t id)
         {
             internal_config[id].is_initialised = false;
         }
+    }
+    return ret;
+}
+
+timer_error_t timer_8_bit_async_reconfigure(uint8_t id, timer_8_bit_async_config_t * const config)
+{
+    timer_error_t ret = check_id(id);
+    if(TIMER_ERROR_OK != ret)
+    {
+        return ret;
+    }
+
+    if (NULL == config)
+    {
+        return TIMER_ERROR_NULL_POINTER;
+    }
+
+    ret = check_handle(&config->handle);
+    if (TIMER_ERROR_OK != ret)
+    {
+        return ret;
+    }
+
+    ret = timer_8_bit_async_set_handle(id, &config->handle);
+    if (TIMER_ERROR_OK != ret)
+    {
+        return ret;
+    }
+
+    ret = timer_8_bit_async_write_config(id,config);
+    if (TIMER_ERROR_OK == ret)
+    {
+        internal_config[id].is_initialised = true;
     }
     return ret;
 }
@@ -978,6 +1093,6 @@ timer_error_t timer_8_bit_async_stop(uint8_t id)
     }
 
     /* Reset prescaler to NO_CLOCK*/
-    *(internal_config[id].handle.TCCRB) = (*(internal_config[id].handle.TCCRB) & ~CS_MSK) | TIMERxBIT_CLK_NO_CLOCK;
+    *(internal_config[id].handle.TCCRB) = (*(internal_config[id].handle.TCCRB) & ~CS_MSK) | TIMER8BIT_ASYNC_CLK_NO_CLOCK;
     return ret;
 }
