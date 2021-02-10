@@ -209,9 +209,9 @@ driver_setup_error_t driver_init_i2c(void)
     // targeted SCL frequency = 100'000 Hz
     // -> bitrate * prescaler = 72
     // choose highest where 72 / prescaler is a pure integer number (prescaler = 4)
-    // then bitrate = (72/4) = 18 - 1 (-1 to account for le 0 based register value) = 17
+    // then bitrate = (72/4) = 18 - 1 (-1 to account for the 0 based register value) = 17
     config.baudrate = 17U;
-    config.interrupt_enabled = true;
+    config.interrupt_enabled = false;
     config.prescaler = I2C_PRESCALER_4;
     config.slave_address = (0x32);
     config.handle._TWAMR = &TWAMR;

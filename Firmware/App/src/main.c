@@ -9,6 +9,8 @@
 #include "driver_setup.h"
 #include "module_setup.h"
 
+#include <stdlib.h>
+#include <string.h>
 
 #include <avr/interrupt.h>
 
@@ -93,7 +95,6 @@ void error_handler(void)
 {
     while(1)
     {
-        asm("NOP");
     }
 }
 
@@ -190,16 +191,77 @@ static void bootup_sequence(void)
 
 static void print_data(void)
 {
-    char msg[30] = "Hello World!\n";
+    static char msg1[30] = "Hello World!";
+    static char msg2[30] = "i = ";
+	static uint8_t state_count = 0;
+	static uint8_t iterations = 0;
+	static bool move_cursor = false;
+	
+	static char iteration_string[5] = "";
+	
     hd44780_lcd_state_t state = hd44780_lcd_get_state();
     hd44780_lcd_error_t err = HD44780_LCD_ERROR_OK;
+	
     if (HD44780_LCD_STATE_READY != state)
     {
         err = hd44780_lcd_process();
     }
     else
     {
-        err = hd44780_lcd_print(30U, msg);
+		switch(state_count)
+		{
+			case 0 :
+				err = hd44780_lcd_set_display_on_off(true);
+				break;
+			case 1 :
+				err = hd44780_lcd_move_cursor_to_coord(0,0);
+				break;
+			case 2 :
+				err = hd44780_lcd_print(strnlen(msg1, 30U), msg1);
+				break;
+			case 3 :
+				err = hd44780_lcd_move_cursor_to_coord(1,0);
+				break;
+			case 4 :
+				err = hd44780_lcd_print(strnlen(msg2, 30U), msg2);
+				break;
+			case 5 :
+				err = hd44780_lcd_set_blinking_cursor(false);
+				break;
+			case 6:
+				err = hd44780_lcd_set_cursor_visible(false);
+				break;
+			case 7 :
+				if (move_cursor)
+				{
+					err = hd44780_lcd_move_cursor_to_coord(1, 4U);	
+					move_cursor = false;
+				}
+				else
+				{
+					itoa(iterations, iteration_string, 10U);
+					// Replace null-terminating characters in string
+					for (uint8_t i = 0 ; i < 5U ; i++)
+					{
+						if (iteration_string[i] == 0)
+						{
+							iteration_string[i] = ' ';
+						}
+					}
+					err = hd44780_lcd_print(3U, iteration_string);
+					iterations++;	
+					move_cursor = true;
+				}
+				break;
+				
+			default:
+				break;
+		}
+		
+		if (state_count < 7U)
+		{
+			state_count++;	
+		}
     }
     (void) err;
 }

@@ -9,6 +9,12 @@
 #define I2C_CMD_READ_BIT  1U
 #define I2C_CMD_MASK (0x01)
 
+/* We can override this buffer with -D or in a future config file */
+/* TODO : add support for a config file !*/
+#ifndef I2C_MAX_BUFFER_SIZE
+#define I2C_MAX_BUFFER_SIZE (30U)
+#endif
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -54,6 +60,7 @@ typedef enum
     I2C_ERROR_NOT_INITIALISED,    /**< Extension of the error above (device not initialised)                    */
     I2C_ERROR_MAX_RETRIES_HIT,    /**< Too much errors were encountered, maximum allowed retries count was hit  */
     I2C_ERROR_REQUEST_TOO_SHORT,  /**< The given request (i2c_read or i2c_write) is too short                   */
+    I2C_ERROR_REQUEST_TOO_LONG,   /**< The given request (i2c_read or i2c_write) is too long for this driver    */
     I2C_ERROR_ALREADY_PROCESSING, /**< Not really an error : indicates driver is busy and get_state() might be  */
                                     /* called to know which state the I2C driver is running on                  */
 } i2c_error_t;
@@ -94,10 +101,8 @@ typedef enum
 */
 typedef struct
 {
-    uint8_t * data;  /**< pointer to targeted buffer. NULL if command is invalid or after first initialisation */
-    uint8_t length;  /**< length of the selected buffer, to prevent writing/reading past the end of the buffer */
-    bool * locked;   /**< Indicates whether the selected buffer is being written to / read from.
-                                   If this boolean is set, it prevents buffer update while being accessed               */
+    uint8_t data[I2C_MAX_BUFFER_SIZE];  /**< pointer to targeted buffer. NULL if command is invalid or after first initialisation */
+    uint8_t length;                     /**< length of the selected buffer, to prevent writing/reading past the end of the buffer */
 } i2c_command_handling_buffers_t;
 
 /**
@@ -508,7 +513,7 @@ i2c_error_t i2c_write(const uint8_t id, const uint8_t target_address , uint8_t *
  *      I2C_ERROR_REQUEST_TOO_SHORT   : Given request's length is too short (shall be >= 2)
  *      I2C_ERROR_ALREADY_PROCESSING  : Selected instance is already processing (either in master or slave mode). @see i2c_get_state()
 */
-i2c_error_t i2c_read(const uint8_t id, const uint8_t target_address, uint8_t * buffer, const uint8_t length, const uint8_t retries);
+i2c_error_t i2c_read(const uint8_t id, const uint8_t target_address, uint8_t const * buffer, const uint8_t length, const uint8_t retries);
 
 #ifdef __cplusplus
 }

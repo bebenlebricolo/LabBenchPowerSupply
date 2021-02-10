@@ -1050,7 +1050,7 @@ void internal_command_move_cursor_to_coord(void)
         uint8_t ddram_value = 0;
         if (internal_configuration.display.two_lines_mode)
         {
-            ddram_value = command_sequencer.parameters.cursor_position.line * (HD44780_LCD_MAX_CHARACTERS / 2);
+            ddram_value = command_sequencer.parameters.cursor_position.line * HD44780_LCD_2_LINES_MODE_START_ADDRESS;
         }
         ddram_value += command_sequencer.parameters.cursor_position.column;
         data_byte |= (data_byte & HD44780_LCD_DDRAM_ADDRESS_MSK) + ddram_value;

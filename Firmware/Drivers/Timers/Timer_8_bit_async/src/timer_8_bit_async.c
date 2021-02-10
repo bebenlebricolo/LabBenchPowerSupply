@@ -873,8 +873,11 @@ static timer_error_t timer_8_bit_async_write_config(uint8_t id, timer_8_bit_asyn
     /* Initialise counter as well */
     *(handle->TCNT) = config->timing_config.counter;
 
-    /* TCCRA register */
-    *(handle->OCRA) = config->timing_config.ocra_val;
+    /* Clear TCCRA register first, otherwise we can't reconfigure the OCRA/OCRB regs!*/
+	*(handle->TCCRA) = 0;
+    
+	/* TCCRA register */
+	*(handle->OCRA) = config->timing_config.ocra_val;
     *(handle->OCRB) = config->timing_config.ocrb_val;
     *(handle->TCCRA) = (*(handle->TCCRA) & ~COMA_MSK) | (config->timing_config.comp_match_a << COMA_BIT);
     *(handle->TCCRA) = (*(handle->TCCRA) & ~COMB_MSK) | (config->timing_config.comp_match_b << COMB_BIT);
@@ -1030,6 +1033,17 @@ timer_error_t timer_8_bit_async_reconfigure(uint8_t id, timer_8_bit_async_config
         return ret;
     }
 
+	/* Stop the timer before reconfiguring it */
+    if (true == internal_config[id].is_initialised)
+	{
+		ret = timer_8_bit_async_stop(id);
+		if (TIMER_ERROR_OK != ret)
+		{
+			return ret;
+		}
+	}
+
+	/* Then rewrite its configuration */
     ret = timer_8_bit_async_write_config(id,config);
     if (TIMER_ERROR_OK == ret)
     {

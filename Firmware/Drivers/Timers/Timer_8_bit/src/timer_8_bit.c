@@ -738,6 +738,9 @@ static timer_error_t timer_8_bit_write_config(uint8_t id, timer_8_bit_config_t *
     /* Clear all interrupts */
     *(handle->TIFR) = 0U;
 
+	/* Clear TCCRA register first, otherwise we can't reconfigure the OCRA/OCRB regs!*/
+	*(handle->TCCRA) = 0;
+
     /* TCCRA register */
     *(handle->OCRA) = config->timing_config.ocra_val;
     *(handle->OCRB) = config->timing_config.ocrb_val;
@@ -844,6 +847,16 @@ timer_error_t timer_8_bit_reconfigure(uint8_t id, timer_8_bit_config_t * const c
     {
         return ret;
     }
+	
+	/* Stop the timer before reconfiguring it */
+	if (true == internal_config[id].is_initialised)
+	{
+		ret = timer_8_bit_stop(id);
+		if (TIMER_ERROR_OK != ret)
+		{
+			return ret;
+		}
+	}
 
     ret = timer_8_bit_write_config(id,config);
     if (TIMER_ERROR_OK == ret)

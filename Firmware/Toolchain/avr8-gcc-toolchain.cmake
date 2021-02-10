@@ -1,11 +1,18 @@
 cmake_minimum_required(VERSION 3.3)
 
 # see CMAKE_SYSTEM_NAME for cross compiling and Cmake system version
-set( CMAKE_SYSTEM_NAME "BareMetal" )
-set( CMAKE_SYSTEM_PROCESSOR AVR8 )
-set( CMAKE_SYSTEM_VERSION "Generic" )
-set( CMAKE_SYSTEM_VENDOR_NAME "Atmel" )
-set (CMAKE_GENERATOR_PLATFORM AVR8)
+if(WIN32)
+  set( CMAKE_SYSTEM_NAME "BareMetal" )
+  set( CMAKE_SYSTEM_VERSION "Generic" )
+  set( CMAKE_SYSTEM_VENDOR_NAME "Atmel" )
+  set (CMAKE_GENERATOR_PLATFORM AVR8)
+else(UNIX)
+  set( CMAKE_SYSTEM_NAME "Generic" )
+  set( CMAKE_SYSTEM_VERSION "GENERIC" )
+  set( CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+endif()
+  set( CMAKE_SYSTEM_PROCESSOR AVR8 )
+
 
 find_program( GCC_AR gcc-ar)
 # Needed to use the link-time optimization feature

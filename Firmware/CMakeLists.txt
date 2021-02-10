@@ -11,8 +11,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_C_STANDARD 11)
 
 add_compile_definitions(
-    -DF_CPU=${AVR_MCU_SPEED}
-    -D__AVR_ATmega328P__
+    F_CPU=${AVR_MCU_SPEED}
+    __AVR_ATmega328P__
 )
 add_compile_options(-mmcu=${AVR_MCU})
 
