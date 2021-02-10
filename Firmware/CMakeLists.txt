@@ -7,7 +7,13 @@ project(firmware C)
 set(AVR_MCU atmega328p)
 set(AVR_MCU_SPEED 16000000)
 
-add_definitions(-DF_CPU=${AVR_MCU_SPEED})
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_C_STANDARD 11)
+
+add_compile_definitions(
+    -DF_CPU=${AVR_MCU_SPEED}
+    -D__AVR_ATmega328P__
+)
 add_compile_options(-mmcu=${AVR_MCU})
 
 set(CMAKE_EXE_LINKER_FLAGS "-mmcu=${AVR_MCU}")

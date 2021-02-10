@@ -26,4 +26,7 @@ target_link_libraries(firmware
     HD44780_lcd_driver
 )
 
-add_extra_avr_targets(firmware)
+# Only add those targets if this is used on a Linux environment, as Atmel Studio already handles them itself
+if (UNIX)
+    add_extra_avr_targets(firmware)
+endif()
