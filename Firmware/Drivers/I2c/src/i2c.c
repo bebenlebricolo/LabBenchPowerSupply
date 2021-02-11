@@ -30,6 +30,7 @@ typedef enum
     I2C_REQUEST_IDLE,
 } i2c_request_t;
 
+
 typedef struct
 {
     bool is_initialised;                    /**< Determines whether this instance has been initialised or not                                   */
@@ -72,6 +73,62 @@ static inline void reset_i2c_command_handling_buffers(const uint8_t id)
     memset(internal_buffer[id].i2c_buffer.data, 0, I2C_MAX_BUFFER_SIZE);
     internal_buffer[id].i2c_buffer.length = 0;
 }
+
+/**
+ * @brief this function replaces the traditional |= operator
+ * @param[in] id    : driver id
+ * @param[in] mask  : bitmask which will be added to TWCR with an equivalent |= operation
+ * @example :
+ *      add_to_TWCR(id, TWSTA_MSK) is equivalent to :
+ *          *internal_configuration[id].handle._TWCR = (*internal_configuration[id].handle._TWCR & ~ TWINT_MSK) | TWSTA_MSK
+ * @note this function is required because traditional |= operator will trigger unwanted operations such as :
+ *      TWCR |= TWSTA_MSK
+ * is equivalent to :
+ *      TWCR = TWCR | TWSTA_MSK
+ * but as TWINT bit is a "Clear on write" bit, if TWINT bit is set while TWCR |= <mask> is written
+ * then TWINT (=1) will be written over itself, clearing the flag in the same time and restarting TWI hardware
+ *
+ * So proper micro handling is required and TWCR should always be written with TWCR = (~TWINT_MSK | <new value>);
+*/
+static inline void add_to_TWCR(const uint8_t id, uint8_t new_value)
+{
+    *internal_configuration[id].handle._TWCR = (~TWINT_MSK & new_value);
+    //volatile uint8_t old_TWCR = *internal_configuration[id].handle._TWCR & ~TWINT_MSK;
+    //*internal_configuration[id].handle._TWCR = old_TWCR | mask;
+}
+
+
+//#pragma GCC push_options
+//#pragma GCC optimize ("O0")
+
+/**
+ * @brief this function should be used whenever we want to set the TWCR register to a new value
+ * @param[in] id        : driver id
+ * @param[in] new_value : new value for TWCR
+ * @example :
+ * @note this function is required because TWCR register contains the TWINT flag which is of the Clear On Write type
+ *  Hence, this kind of manipulations, despite being conceptually right clears the TWINT flag if it is already set within TWCR !
+ *      TWCR |= TWSTA_MSK
+ * is equivalent to :
+ *      TWCR = TWCR | TWSTA_MSK
+ * but as TWINT bit is a "Clear on write" bit, if TWINT bit is set while TWCR |= <mask> is written
+ * then TWINT (=1) will be written over itself, clearing the flag in the same time and restarting TWI hardware
+ *
+ * So proper micro handling is required and TWCR should always be written with TWCR = (~TWINT_MSK | <new value>);
+*/
+static inline void set_TWCR_register(const uint8_t id, uint8_t new_value)
+{
+    *internal_configuration[id].handle._TWCR = (~TWINT_MSK & new_value);
+}
+//#pragma GCC pop_options
+
+
+static inline void remove_from_TWCR(const uint8_t id, uint8_t mask)
+{
+    volatile uint8_t old_TWCR = *internal_configuration[id].handle._TWCR & ~TWINT_MSK;
+    *internal_configuration[id].handle._TWCR = old_TWCR & (~mask);
+}
+
 
 /* handlers used to process in/out data when TWI peripheral needs servicing */
 static i2c_error_t i2c_master_tx_process(const uint8_t id);
@@ -517,6 +574,8 @@ static i2c_error_t write_config(const uint8_t id, const i2c_config_t * const con
     return I2C_ERROR_OK;
 }
 
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
 i2c_error_t i2c_init(const uint8_t id, const i2c_config_t * const config)
 {
     if (!is_id_valid(id))
@@ -551,6 +610,7 @@ i2c_error_t i2c_init(const uint8_t id, const i2c_config_t * const config)
 
     return local_error;
 }
+#pragma GCC pop_options
 
 
 i2c_error_t i2c_deinit(const uint8_t id)
@@ -578,6 +638,8 @@ i2c_error_t i2c_deinit(const uint8_t id)
     return local_error;
 }
 
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
 i2c_error_t i2c_get_state(const uint8_t id, i2c_state_t * const state)
 {
     if (!is_id_valid(id))
@@ -592,6 +654,7 @@ i2c_error_t i2c_get_state(const uint8_t id, i2c_state_t * const state)
     *state = internal_configuration[id].state;
     return I2C_ERROR_OK;
 }
+#pragma GCC pop_options
 
 #ifdef UNIT_TESTING
 void i2c_set_state(const uint8_t id, const i2c_state_t state)
@@ -599,6 +662,9 @@ void i2c_set_state(const uint8_t id, const i2c_state_t state)
     internal_configuration[id].state = state;
 }
 #endif
+
+//#pragma GCC push_options
+//#pragma GCC optimize ("O0")
 
 static i2c_error_t i2c_master_tx_process(const uint8_t id)
 {
@@ -628,7 +694,8 @@ static i2c_error_t i2c_master_tx_process(const uint8_t id)
             *internal_configuration[id].handle._TWDR = *get_current_internal_buffer_byte(id);
 
             // Clear TWSTA to prevent repeated start action
-            *internal_configuration[id].handle._TWCR &= ~TWSTA_MSK;
+            set_TWCR_register(id, *internal_configuration[id].handle._TWCR & ~TWSTA_MSK);
+            //*internal_configuration[id].handle._TWCR &= ~TWSTA_MSK;
 
             retries = 0;
             break;
@@ -654,7 +721,9 @@ static i2c_error_t i2c_master_tx_process(const uint8_t id)
                    Hence, the result is a shorter command [Start, payload, Start, payload, Stop] with the guarantee that the master
                    keeps the I2C bus priority for the whole communication duration */
                 internal_buffer[id].command = (internal_buffer[id].target_address << 1U) | I2C_CMD_READ_BIT;
-                *internal_configuration[id].handle._TWCR = (*internal_configuration[id].handle._TWCR & ~TWINT_MSK) | TWSTA_MSK;
+                set_TWCR_register(id, *internal_configuration[id].handle._TWCR | TWSTA_MSK);
+
+                //*internal_configuration[id].handle._TWCR = (*internal_configuration[id].handle._TWCR & ~TWINT_MSK) | TWSTA_MSK;
                 /* Switch to TX finished state at next process loop to indicate we are ready to perform the 'real' read operation */
                 internal_configuration[id].state = I2C_STATE_MASTER_TX_FINISHED;
             }
@@ -668,7 +737,9 @@ static i2c_error_t i2c_master_tx_process(const uint8_t id)
                 else
                 {
                     // If we hit the end of the buffer, stop the transmission
+                    //set_TWCR_register(id, *internal_configuration[id].handle._TWCR | TWSTO_MSK);
                     *internal_configuration[id].handle._TWCR = (*internal_configuration[id].handle._TWCR & ~TWINT_MSK) | TWSTO_MSK;
+                    //*internal_configuration[id].handle._TWCR = (*internal_configuration[id].handle._TWCR & ~TWINT_MSK) | TWSTO_MSK;
                     internal_configuration[id].state = I2C_STATE_MASTER_TX_FINISHED;
                 }
             }
@@ -699,8 +770,10 @@ static i2c_error_t i2c_master_tx_process(const uint8_t id)
         reset_i2c_command_handling_buffers(id);
         internal_configuration[id].state = I2C_STATE_READY;
         internal_configuration[id].request_type = I2C_REQUEST_IDLE;
-        *internal_configuration[id].handle._TWCR = (*internal_configuration[id].handle._TWCR & ~TWINT_MSK) | TWSTO_MSK;
-        *internal_configuration[id].handle._TWCR &= ~(TWSTA_MSK | TWEA_MSK);
+        set_TWCR_register(id, (*internal_configuration[id].handle._TWCR | TWSTO_MSK) & ~(TWSTA_MSK | TWEA_MSK));
+
+        //*internal_configuration[id].handle._TWCR ((= (*internal_configuration[id].handle._TWCR& )~TWINT_MSK) | TWSTO_MSK;
+        //*internal_configuration[id].handle._TWCR &= ~(TWSTA_MSK | TWEA_MSK);
         retries = 0;
         ret = I2C_ERROR_MAX_RETRIES_HIT;
     }
@@ -708,6 +781,8 @@ static i2c_error_t i2c_master_tx_process(const uint8_t id)
     clear_twint(id);
     return ret;
 }
+
+//#pragma GCC pop_options
 
 static i2c_error_t i2c_master_rx_process(const uint8_t id)
 {
@@ -1004,7 +1079,8 @@ static i2c_error_t i2c_slave_rx_process(const uint8_t id)
     return ret;
 }
 
-
+//#pragma GCC push_options
+//#pragma GCC optimize ("O0")
 static i2c_error_t process_helper_single(const uint8_t id)
 {
     i2c_error_t ret = I2C_ERROR_OK;
@@ -1097,6 +1173,7 @@ static i2c_error_t process_helper_single(const uint8_t id)
     }
     return ret;
 }
+//#pragma GCC pop_options
 
 /* Iterates over available i2c devices to find which one needs servicing */
 #pragma GCC push_options
@@ -1113,7 +1190,8 @@ static void process_helper(void)
 }
 #pragma GCC pop_options
 
-
+//#pragma GCC push_options
+//#pragma GCC optimize ("O0")
 i2c_error_t i2c_process(const uint8_t id)
 {
     if (!is_id_valid(id))
@@ -1126,7 +1204,10 @@ i2c_error_t i2c_process(const uint8_t id)
     }
     return process_helper_single(id);
 }
+//#pragma GCC pop_options
 
+//#pragma GCC push_options
+//#pragma GCC optimize ("O0")
 i2c_error_t i2c_write(const uint8_t id, const uint8_t target_address , uint8_t * const buffer, const uint8_t length, const uint8_t retries)
 {
     if (!is_id_valid(id))
@@ -1193,6 +1274,7 @@ i2c_error_t i2c_write(const uint8_t id, const uint8_t target_address , uint8_t *
 
     return I2C_ERROR_OK;
 }
+//#pragma GCC pop_options
 
 
 i2c_error_t i2c_read(const uint8_t id, const uint8_t target_address, uint8_t const * buffer, const uint8_t length, const uint8_t retries)

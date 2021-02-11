@@ -135,8 +135,7 @@ endif( NOT ( (CMAKE_BUILD_TYPE MATCHES Release) OR
   -ffunction-sections \
   -fdata-sections \
   -fno-split-wide-types \
-  -fno-tree-scev-cprop \
-  -mrelax "
+  -fno-tree-scev-cprop "
   )
 
   set(COMPILER_WARNINGS "-Wall \
@@ -148,7 +147,7 @@ endif( NOT ( (CMAKE_BUILD_TYPE MATCHES Release) OR
   -Werror \
   -Wfatal-errors ")
 
-  set(COMPILER_LINKER_FORWARD_OPTIONS "-Wl,--relax -Wl,--gc-sections")
+  set(COMPILER_LINKER_FORWARD_OPTIONS "-Wl,--gc-sections")
   set(FULL_OPTIONS "${COMPILE_OPTIONS} ${COMPILER_WARNINGS} ${COMPILER_LINKER_FORWARD_OPTIONS}")
 
   set (CMAKE_CXX_FLAGS_RELEASE "-Os -fno-exceptions ${FULL_OPTIONS} " CACHE STRING "Default C++ flags for release" FORCE )
