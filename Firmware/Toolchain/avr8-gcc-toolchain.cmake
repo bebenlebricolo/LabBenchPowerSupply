@@ -8,7 +8,7 @@ if(WIN32)
   set (CMAKE_GENERATOR_PLATFORM AVR8)
 else(UNIX)
   set( CMAKE_SYSTEM_NAME "Generic" )
-  set( CMAKE_SYSTEM_VERSION "GENERIC" )
+  set( CMAKE_SYSTEM_VERSION "Generic" )
   set( CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 endif()
   set( CMAKE_SYSTEM_PROCESSOR AVR8 )
@@ -135,7 +135,8 @@ endif( NOT ( (CMAKE_BUILD_TYPE MATCHES Release) OR
   -ffunction-sections \
   -fdata-sections \
   -fno-split-wide-types \
-  -fno-tree-scev-cprop "
+  -fno-tree-scev-cprop \
+  -mrelax "
   )
 
   set(COMPILER_WARNINGS "-Wall \
@@ -147,11 +148,11 @@ endif( NOT ( (CMAKE_BUILD_TYPE MATCHES Release) OR
   -Werror \
   -Wfatal-errors ")
 
-  set(COMPILER_LINKER_FORWARD_OPTIONS "-Wl,--relax,--gc-sections")
+  set(COMPILER_LINKER_FORWARD_OPTIONS "-Wl,--relax -Wl,--gc-sections")
   set(FULL_OPTIONS "${COMPILE_OPTIONS} ${COMPILER_WARNINGS} ${COMPILER_LINKER_FORWARD_OPTIONS}")
 
-  set (CMAKE_CXX_FLAGS_RELEASE "-O3 -fno-exceptions ${FULL_OPTIONS} " CACHE STRING "Default C++ flags for release" FORCE )
-  set (CMAKE_C_FLAGS_RELEASE "-O3 ${FULL_OPTIONS}" CACHE STRING "Default C flags for release" FORCE )
+  set (CMAKE_CXX_FLAGS_RELEASE "-Os -fno-exceptions ${FULL_OPTIONS} " CACHE STRING "Default C++ flags for release" FORCE )
+  set (CMAKE_C_FLAGS_RELEASE "-Os ${FULL_OPTIONS}" CACHE STRING "Default C flags for release" FORCE )
 
   set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -gdwarf-2 -fno-exceptions ${FULL_OPTIONS} " CACHE STRING "Default C++ flags for release with debug info" FORCE )
   set (CMAKE_C_FLAGS_RELWITHDEBINFO "-O3 -g -gdwarf-2 ${FULL_OPTIONS} " CACHE STRING "Default C flags for release with debug info" FORCE )
@@ -159,8 +160,8 @@ endif( NOT ( (CMAKE_BUILD_TYPE MATCHES Release) OR
   set( CMAKE_CXX_FLAGS_MINSIZEREL "-Os -mcall-prologues ${FULL_OPTIONS} " CACHE STRING "Default C++ flags for minimum size release" FORCE )
   set( CMAKE_C_FLAGS_MINSIZEREL "-Os -mcall-prologues ${FULL_OPTIONS} " CACHE STRING "Default C flags for minimum size release" FORCE )
 
-  set (CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 -gdwarf-2 -fno-exceptions ${FULL_OPTIONS} " CACHE STRING "Default C++ flags for debug configuration" FORCE )
-  set (CMAKE_C_FLAGS_DEBUG " -O0 -g3 -gdwarf-2 ${FULL_OPTIONS} " CACHE STRING "Default C flags for debug configuration" FORCE )
+  set (CMAKE_CXX_FLAGS_DEBUG "-Og -g3 -gdwarf-2 -fno-exceptions ${FULL_OPTIONS} " CACHE STRING "Default C++ flags for debug configuration" FORCE )
+  set (CMAKE_C_FLAGS_DEBUG " -Og -g3 -gdwarf-2 ${FULL_OPTIONS} " CACHE STRING "Default C flags for debug configuration" FORCE )
 #endif()
 
 ### Function to add an avr executable
