@@ -98,9 +98,6 @@ static inline void add_to_TWCR(const uint8_t id, uint8_t new_value)
 }
 
 
-//#pragma GCC push_options
-//#pragma GCC optimize ("O0")
-
 /**
  * @brief this function should be used whenever we want to set the TWCR register to a new value
  * @param[in] id        : driver id
@@ -120,8 +117,6 @@ static inline void set_TWCR_register(const uint8_t id, uint8_t new_value)
 {
     *internal_configuration[id].handle._TWCR = (~TWINT_MSK & new_value);
 }
-//#pragma GCC pop_options
-
 
 static inline void remove_from_TWCR(const uint8_t id, uint8_t mask)
 {
@@ -460,7 +455,7 @@ i2c_error_t i2c_get_interrupt_mode(const uint8_t id, bool * const use_interrupts
     return I2C_ERROR_OK;
 }
 
-i2c_error_t i2c_get_status_code(const uint8_t id, uint8_t * const status)
+i2c_error_t i2c_get_status_code(const uint8_t id, volatile uint8_t * const status)
 {
     if (!is_id_valid(id))
     {
@@ -574,8 +569,6 @@ static i2c_error_t write_config(const uint8_t id, const i2c_config_t * const con
     return I2C_ERROR_OK;
 }
 
-#pragma GCC push_options
-#pragma GCC optimize ("O0")
 i2c_error_t i2c_init(const uint8_t id, const i2c_config_t * const config)
 {
     if (!is_id_valid(id))
@@ -610,7 +603,6 @@ i2c_error_t i2c_init(const uint8_t id, const i2c_config_t * const config)
 
     return local_error;
 }
-#pragma GCC pop_options
 
 
 i2c_error_t i2c_deinit(const uint8_t id)
@@ -663,22 +655,12 @@ void i2c_set_state(const uint8_t id, const i2c_state_t state)
 }
 #endif
 
-//#pragma GCC push_options
-//#pragma GCC optimize ("O0")
-
 static i2c_error_t i2c_master_tx_process(const uint8_t id)
 {
     static uint8_t retries = 0;
     i2c_error_t ret = I2C_ERROR_OK;
 
-    uint8_t status;
-    ret = i2c_get_status_code(id, &status);
-    if (I2C_ERROR_OK != ret)
-    {
-        // return here because if we can't read device's registers, we should stop any execution
-        return ret;
-    }
-
+    const volatile uint8_t status = *internal_configuration[id].handle._TWSR & TWS_MSK;
     // Interprete status code:
     switch (status)
     {
@@ -781,8 +763,6 @@ static i2c_error_t i2c_master_tx_process(const uint8_t id)
     clear_twint(id);
     return ret;
 }
-
-//#pragma GCC pop_options
 
 static i2c_error_t i2c_master_rx_process(const uint8_t id)
 {
@@ -1079,12 +1059,10 @@ static i2c_error_t i2c_slave_rx_process(const uint8_t id)
     return ret;
 }
 
-//#pragma GCC push_options
-//#pragma GCC optimize ("O0")
 static i2c_error_t process_helper_single(const uint8_t id)
 {
     i2c_error_t ret = I2C_ERROR_OK;
-    uint8_t status = 0;
+    volatile uint8_t status = 0;
     switch(internal_configuration[id].state)
     {
         /* TWINT is raised while no operation asked : this is the slave mode being activated by I2C bus */
@@ -1139,7 +1117,10 @@ static i2c_error_t process_helper_single(const uint8_t id)
 
         /* Either a Start condition written from i2c_write was sent or a Tx operation is already ongoing */
         case I2C_STATE_MASTER_TRANSMITTING:
-            ret = i2c_master_tx_process(id);
+            if (is_twint_set(id))
+            {
+                ret = i2c_master_tx_process(id);
+            }
             break;
 
         /* Either a Start condition was written from i2c_read or a Rx operation is already ongoing */
@@ -1149,7 +1130,10 @@ static i2c_error_t process_helper_single(const uint8_t id)
 
         /* A Slave receive operation is ongoing */
         case I2C_STATE_SLAVE_TRANSMITTING:
-            ret = i2c_slave_tx_process(id);
+            if (is_twint_set(id))
+            {
+                ret = i2c_slave_tx_process(id);
+            }
             break;
 
         /* A Slave transmit operation is ongoing */
@@ -1173,7 +1157,6 @@ static i2c_error_t process_helper_single(const uint8_t id)
     }
     return ret;
 }
-//#pragma GCC pop_options
 
 /* Iterates over available i2c devices to find which one needs servicing */
 #pragma GCC push_options
@@ -1190,8 +1173,6 @@ static void process_helper(void)
 }
 #pragma GCC pop_options
 
-//#pragma GCC push_options
-//#pragma GCC optimize ("O0")
 i2c_error_t i2c_process(const uint8_t id)
 {
     if (!is_id_valid(id))
@@ -1204,10 +1185,7 @@ i2c_error_t i2c_process(const uint8_t id)
     }
     return process_helper_single(id);
 }
-//#pragma GCC pop_options
 
-//#pragma GCC push_options
-//#pragma GCC optimize ("O0")
 i2c_error_t i2c_write(const uint8_t id, const uint8_t target_address , uint8_t * const buffer, const uint8_t length, const uint8_t retries)
 {
     if (!is_id_valid(id))
@@ -1274,8 +1252,6 @@ i2c_error_t i2c_write(const uint8_t id, const uint8_t target_address , uint8_t *
 
     return I2C_ERROR_OK;
 }
-//#pragma GCC pop_options
-
 
 i2c_error_t i2c_read(const uint8_t id, const uint8_t target_address, uint8_t const * buffer, const uint8_t length, const uint8_t retries)
 {

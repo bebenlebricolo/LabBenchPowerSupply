@@ -351,7 +351,7 @@ i2c_error_t i2c_get_interrupt_mode(const uint8_t id, bool * const use_interrupts
  *      I2C_ERROR_NULL_HANDLE        : Uninitialised handle in config object (could not access to device's registers)
  *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
 */
-i2c_error_t i2c_get_status_code(const uint8_t id, uint8_t * const status_code);
+i2c_error_t i2c_get_status_code(const uint8_t id, volatile uint8_t * const status_code);
 
 
 /* #############################################################################################
