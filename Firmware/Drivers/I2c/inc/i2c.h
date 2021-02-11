@@ -184,7 +184,7 @@ i2c_error_t i2c_get_default_config(i2c_config_t * const config);
  *      I2C_ERROR_NULL_POINTER        : Uninitialised handle in config object (could not access to device's registers)
  *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
 */
-i2c_error_t i2c_set_handle(const uint8_t id, const i2c_handle_t * const handle);
+i2c_error_t i2c_set_handle(const uint8_t id, i2c_handle_t const * const handle);
 
 /**
  * @brief copies internal handle to given output object

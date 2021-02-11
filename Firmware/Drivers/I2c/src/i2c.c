@@ -42,7 +42,7 @@ typedef struct
                                                  internal_configuration structure. It essentially maps the i2c_buffer's fields according to the
                                                  registers and command sets exposed by this device as an I2C command API                        */
 } i2c_internal_config_t;
-static i2c_internal_config_t internal_configuration[I2C_DEVICES_COUNT] = {0};
+static volatile i2c_internal_config_t internal_configuration[I2C_DEVICES_COUNT] = {0};
 
 typedef struct
 {
@@ -124,6 +124,13 @@ static inline void remove_from_TWCR(const uint8_t id, uint8_t mask)
     *internal_configuration[id].handle._TWCR = old_TWCR & (~mask);
 }
 
+/**
+ * @brief Copies the content of a static volatile handle a regular one
+*/
+static void i2c_handle_vcopy(i2c_handle_t * dest, volatile i2c_handle_t const * const src);
+static void i2c_handle_copyv(volatile i2c_handle_t * dest, i2c_handle_t const * const src);
+
+
 
 /* handlers used to process in/out data when TWI peripheral needs servicing */
 static i2c_error_t i2c_master_tx_process(const uint8_t id);
@@ -201,7 +208,7 @@ i2c_error_t i2c_get_default_config(i2c_config_t * const config)
     return I2C_ERROR_OK;
 }
 
-i2c_error_t i2c_set_handle(const uint8_t id, const i2c_handle_t * const handle)
+i2c_error_t i2c_set_handle(const uint8_t id, i2c_handle_t const * const handle)
 {
     if (!is_id_valid(id))
     {
@@ -211,7 +218,8 @@ i2c_error_t i2c_set_handle(const uint8_t id, const i2c_handle_t * const handle)
     {
         return I2C_ERROR_NULL_POINTER;
     }
-    memcpy(&internal_configuration[id].handle, handle, sizeof(i2c_handle_t));
+	i2c_handle_copyv(&internal_configuration[id].handle, handle);
+
     return I2C_ERROR_OK;
 }
 
@@ -226,7 +234,7 @@ i2c_error_t i2c_get_handle(const uint8_t id, i2c_handle_t * const handle)
         return I2C_ERROR_NULL_POINTER;
     }
 
-    memcpy(handle, &internal_configuration[id].handle, sizeof(i2c_handle_t));
+	i2c_handle_vcopy(handle, &internal_configuration[id].handle);
     return I2C_ERROR_OK;
 }
 
@@ -241,7 +249,7 @@ i2c_error_t i2c_set_slave_address(const uint8_t id, const uint8_t address)
         return I2C_ERROR_NULL_HANDLE;
     }
 
-    i2c_handle_t * handle = &internal_configuration[id].handle;
+    volatile i2c_handle_t * handle = &internal_configuration[id].handle;
     *(handle->_TWAR) = (*(handle->_TWAR) & TWA_MSK) | (address << 1U);
 
     return I2C_ERROR_OK;
@@ -277,7 +285,7 @@ i2c_error_t i2c_set_slave_address_mask(const uint8_t id, const uint8_t address_m
         return I2C_ERROR_NULL_HANDLE;
     }
 
-    i2c_handle_t * handle = &internal_configuration[id].handle;
+    volatile i2c_handle_t * handle = &internal_configuration[id].handle;
     *(handle->_TWAMR) = (*(handle->_TWAMR) & TWAMR_MSK) | (address_mask << 1U);
 
     return I2C_ERROR_OK;
@@ -630,8 +638,6 @@ i2c_error_t i2c_deinit(const uint8_t id)
     return local_error;
 }
 
-#pragma GCC push_options
-#pragma GCC optimize ("O0")
 i2c_error_t i2c_get_state(const uint8_t id, i2c_state_t * const state)
 {
     if (!is_id_valid(id))
@@ -646,7 +652,6 @@ i2c_error_t i2c_get_state(const uint8_t id, i2c_state_t * const state)
     *state = internal_configuration[id].state;
     return I2C_ERROR_OK;
 }
-#pragma GCC pop_options
 
 #ifdef UNIT_TESTING
 void i2c_set_state(const uint8_t id, const i2c_state_t state)
@@ -1309,4 +1314,35 @@ i2c_error_t i2c_read(const uint8_t id, const uint8_t target_address, uint8_t con
 ISR(TWI_vect)
 {
     process_helper();
+}
+
+
+void i2c_handle_vcopy(i2c_handle_t * dest, volatile i2c_handle_t const * const src)
+{
+    if (NULL == dest || NULL == src)
+    {
+        return;
+    }
+
+    dest->_TWAMR = src->_TWAMR;
+    dest->_TWAR = src->_TWAR;
+    dest->_TWBR = src->_TWBR;
+    dest->_TWCR = src->_TWCR;
+    dest->_TWDR = src->_TWDR;
+    dest->_TWSR = src->_TWSR;
+}
+
+void i2c_handle_copyv(volatile i2c_handle_t * dest, i2c_handle_t const * const src)
+{
+    if (NULL == dest || NULL == src)
+    {
+        return;
+    }
+
+    dest->_TWAMR = src->_TWAMR;
+    dest->_TWAR = src->_TWAR;
+    dest->_TWBR = src->_TWBR;
+    dest->_TWCR = src->_TWCR;
+    dest->_TWDR = src->_TWDR;
+    dest->_TWSR = src->_TWSR;
 }
