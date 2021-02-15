@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "i2c_reg.h"
+#include "config.h"
 
 #define I2C_CMD_WRITE_BIT 0U
 #define I2C_CMD_READ_BIT  1U
@@ -18,6 +19,42 @@
 #ifdef __cplusplus
 extern "C"
 {
+#endif
+
+// Available compilation defines to help reduce driver size :
+// I2C_IMPLEM_FULL_DRIVER   /**< Implements the whole driver                    */
+// I2C_IMPLEM_MASTER_FULL   /**< Implements only master handlers (rx + tx)      */
+// I2C_IMPLEM_MASTER_TX     /**< Implements only master tx handler              */
+// I2C_IMPLEM_MASTER_RX     /**< Implements only master rx handler              */
+
+// I2C_IMPLEM_SLAVE_FULL    /**< Implements only slave handlers (rx + tx)      */
+// I2C_IMPLEM_SLAVE_TX      /**< Implements only slave tx handler              */
+// I2C_IMPLEM_SLAVE_RX      /**< Implements only slave rx handler              */
+
+// Checks if no implementation is selected and in case not, defaults to full implementation
+#if !defined(I2C_IMPLEM_FULL_DRIVER)  && !defined(I2C_IMPLEM_MASTER_TX) && !defined(I2C_IMPLEM_MASTER_RX) && !defined(I2C_IMPLEM_SLAVE_TX) && !defined(I2C_IMPLEM_SLAVE_RX) && !defined(I2C_IMPLEM_SLAVE_FULL) && !defined(I2C_IMPLEM_MASTER_FULL)
+#pragma message("No implementation for the I2C driver was specified, defaults to Full implementation (see i2c.h file)")
+#define I2C_IMPLEM_FULL_DRIVER
+#endif
+
+// Sets all implementation preprocessor flags
+#ifdef I2C_IMPLEM_FULL_DRIVER
+#define I2C_IMPLEM_MASTER_TX
+#define I2C_IMPLEM_MASTER_RX
+#define I2C_IMPLEM_SLAVE_TX
+#define I2C_IMPLEM_SLAVE_RX
+#endif
+
+// Sets all master implementations preprocessor flags
+#ifdef I2C_IMPLEM_MASTER_FULL
+#define I2C_IMPLEM_MASTER_TX
+#define I2C_IMPLEM_MASTER_RX
+#endif
+
+// Sets all slave implementations preprocessor flags
+#ifdef I2C_IMPLEM_SLAVE_FULL
+#define I2C_IMPLEM_SLAVE_TX
+#define I2C_IMPLEM_SLAVE_RX
 #endif
 
 
@@ -56,6 +93,7 @@ typedef struct
 typedef enum
 {
     I2C_ERROR_OK,                       /**< Operation is successful                                                  */
+    I2C_ERROR_IMPLEM_DISABLED,          /**< This error is returned whenever application code tries to call a disabled function   */
     I2C_ERROR_NULL_POINTER,             /**< One or more input pointer is set to NULL                                 */
     I2C_ERROR_NULL_HANDLE,              /**< Given handle is not initialised with real addresses                      */
     I2C_ERROR_DEVICE_NOT_FOUND,         /**< Given device id is out of range                                          */

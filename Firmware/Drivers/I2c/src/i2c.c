@@ -25,6 +25,13 @@
    or 1 for "dumb" devices such as IO Expanders with no Op Code */
 #define MINIMUM_REQUEST_SIZE (1U)
 
+#ifndef I2C_IMPLEM_FULL_DRIVER
+static i2c_error_t i2c_disabled_process(const uint8_t id)
+{
+    (void) id;
+    return I2C_ERROR_IMPLEM_DISABLED;
+}
+#endif
 
 typedef struct
 {
@@ -711,6 +718,11 @@ void i2c_set_state(const uint8_t id, const i2c_state_t state)
 #endif
 
 static i2c_error_t i2c_master_tx_process(const uint8_t id)
+#ifndef I2C_IMPLEM_MASTER_TX
+{
+   return i2c_disabled_process(id);
+}
+#else
 {
     static uint8_t retries = 0;
     i2c_error_t ret = I2C_ERROR_OK;
@@ -818,8 +830,15 @@ static i2c_error_t i2c_master_tx_process(const uint8_t id)
     clear_twint(id);
     return ret;
 }
+#endif
+
 
 static i2c_error_t i2c_master_rx_process(const uint8_t id)
+#ifndef I2C_IMPLEM_MASTER_RX
+{
+   return i2c_disabled_process(id);
+}
+#else
 {
     static uint8_t retries = 0;
     i2c_error_t ret = I2C_ERROR_OK;
@@ -938,8 +957,14 @@ static i2c_error_t i2c_master_rx_process(const uint8_t id)
     clear_twint(id);
     return ret;
 }
+#endif
 
 static i2c_error_t i2c_slave_tx_process(const uint8_t id)
+#ifndef I2C_IMPLEM_SLAVE_TX
+{
+   return i2c_disabled_process(id);
+}
+#else
 {
     static uint8_t retries = 0;
     i2c_error_t ret = I2C_ERROR_OK;
@@ -1054,8 +1079,14 @@ static i2c_error_t i2c_slave_tx_process(const uint8_t id)
     clear_twint(id);
     return ret;
 }
+#endif
 
 static i2c_error_t i2c_slave_rx_process(const uint8_t id)
+#ifndef I2C_IMPLEM_SLAVE_RX
+{
+   return i2c_disabled_process(id);
+}
+#else
 {
     static uint8_t retries = 0;
     static uint8_t processed_bytes = 0;
@@ -1180,6 +1211,7 @@ static i2c_error_t i2c_slave_rx_process(const uint8_t id)
     clear_twint(id);
     return ret;
 }
+#endif
 
 static i2c_error_t process_helper_single(const uint8_t id)
 {
