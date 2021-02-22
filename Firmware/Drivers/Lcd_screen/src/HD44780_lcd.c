@@ -794,6 +794,8 @@ void init_4_bits_selection_handler(void)
 bool handle_byte_sending(void)
 {
     bool byte_sent = false;
+
+    // We start to send the higher bits first
     if( true == command_sequencer.sequence.lower_bits)
     {
         i2c_buffer = (i2c_buffer & 0x0F) | ((data_byte & 0x0F) << 4U);
@@ -806,8 +808,12 @@ bool handle_byte_sending(void)
     bool write_completed = write_buffer();
     if (write_completed)
     {
+        // Whenever a write is completed and we were in lower bits sending mode,
+        // it means that the transaction is finished, full octet has been sent to slave
+        // reset internal state machine for next calls.
         if (true == command_sequencer.sequence.lower_bits)
         {
+            // Reset internal variables
             command_sequencer.sequence.lower_bits = false;
             command_sequencer.sequence.first_pass = true;
             byte_sent = true;
