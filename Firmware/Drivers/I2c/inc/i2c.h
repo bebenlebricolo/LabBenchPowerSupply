@@ -63,6 +63,7 @@ typedef enum
     I2C_ERROR_REQUEST_TOO_LONG,   /**< The given request (i2c_read or i2c_write) is too long for this driver    */
     I2C_ERROR_ALREADY_PROCESSING, /**< Not really an error : indicates driver is busy and get_state() might be  */
                                     /* called to know which state the I2C driver is running on                  */
+    I2C_ERROR_BUS_ERROR_HARDWARE, /**< A bus error was encountered and I2C hardware recovered from it           */
 } i2c_error_t;
 
 /**

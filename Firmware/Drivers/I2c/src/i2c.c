@@ -1068,16 +1068,30 @@ static i2c_error_t process_helper_single(const uint8_t id)
 {
     i2c_error_t ret = I2C_ERROR_OK;
     volatile uint8_t status = 0;
+    ret = i2c_get_status_code(id, &status);
+    if (I2C_ERROR_OK != ret)
+    {
+        // TODO : check if this code is about an error status (misc statuses)
+    }
+
+    // Forces I2C driver to restart the last communication
+    if (status == (uint8_t) I2C_MISC_BUS_ERROR_ILLEGAL_START_STOP)
+    {
+        internal_configuration[id].state = I2C_STATE_READY;
+        reset_i2c_command_handling_buffers(id);
+
+        // Release from BUS error state
+        *internal_configuration[id].handle._TWCR |= TWSTO_MSK | TWINT_MSK;
+
+        // Tell to the upper layer a bus error occured and some fixes need to be made
+        // For instance, rebooting the screen controller is not a bad idea in such cases !
+        return I2C_ERROR_BUS_ERROR_HARDWARE;
+    }
+
     switch(internal_configuration[id].state)
     {
         /* TWINT is raised while no operation asked : this is the slave mode being activated by I2C bus */
         case I2C_STATE_READY:
-            ret = i2c_get_status_code(id, &status);
-            if (I2C_ERROR_OK != ret)
-            {
-                // TODO : check if this code is about an error status (misc statuses)
-                break;
-            }
 
             /* Wait and proceed current transfer, TWINT is low (=0) */
             if (status == (uint8_t) I2C_MISC_NO_RELEVANT_STATE)
@@ -1221,7 +1235,9 @@ i2c_error_t i2c_write(const uint8_t id, const uint8_t target_address , uint8_t *
     // Check if device is already processing
     // Or I2C is not in its idling state (248) and twint is not set
     if (I2C_STATE_READY != internal_configuration[id].state
-    || ((status_code != (uint8_t)I2C_MISC_NO_RELEVANT_STATE)  && !is_twint_set(id)))
+    || ((status_code != (uint8_t)I2C_MISC_NO_RELEVANT_STATE)
+        && !is_twint_set(id)
+        && status_code != (uint8_t) I2C_MISC_BUS_ERROR_ILLEGAL_START_STOP))
     {
         return I2C_ERROR_ALREADY_PROCESSING;
     }
