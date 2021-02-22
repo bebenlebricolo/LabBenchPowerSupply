@@ -288,16 +288,59 @@ void set_backlight_flag_in_i2c_buffer(void);
 hd44780_lcd_error_t is_ready_to_accept_instruction(void);
 
 /* Data handlers */
+
+/**
+ * @brief writes the function set instruction into "data_byte"
+*/
 void handle_function_set(void);
+
+/**
+ * @brief writes the display controls instruction into "data_byte"
+*/
 void handle_display_controls(void);
+
+/**
+ * @brief writes the entry mode set instruction into "data_byte"
+*/
 void handle_entry_mode(void);
+
+/**
+ * @brief handles a full byte sending request over I2C
+ * It basically splits the byte in twi halves (cuts in the middle with 4 high order bits and 4 low order bits)
+ * Then it also handles the pulse pin switching high and low between each I2C request
+ * Basically, when we send one byte, we actually do :
+ * byte_low = byte & 0x0f
+ * byte_high = byte & 0xf0 >> 4
+ *
+ * | I2C write 0   |   | I2C write 1   |         | I2C write 2  |     | I2C write 3   |
+ * [byte high + Ena]---[byte high - Ena]---------[byte low + Ena]-----[byte low - Ena]
+*/
 bool handle_byte_sending(void);
+
+/**
+ * @brief handles the end of command sequencer (when the internal state machine reaches the end of the command stack)
+*/
 void handle_end_of_internal_command(bool byte_sent);
+
+/**
+ * @brief Converts errors returned by i2C driver
+*/
 hd44780_lcd_error_t convert_i2c_write_error(const i2c_error_t error);
 
-
+/**
+ * @brief Handles bootup sequence for LCD screen (particular initialization steps has
+ * to be observed)
+*/
 void bootup_sequence_handler(uint8_t time_to_wait, bool end_with_wait);
+
+/**
+ * @brief handles buffer sending over I2C communication
+*/
 bool write_buffer(void);
+
+/**
+ * @brief Idle command with nothing to do
+*/
 void process_command_idling(void);
 
 #ifdef UNIT_TESTING
