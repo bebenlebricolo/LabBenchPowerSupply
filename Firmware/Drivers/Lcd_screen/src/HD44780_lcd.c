@@ -722,7 +722,7 @@ bool write_buffer(void)
                 // Raise "Enable" pin high first
                 i2c_buffer |= PCF8574_PULSE_START_MSK;
 
-                i2c_err = i2c_write(internal_configuration.indexes.i2c, internal_configuration.i2c_address,&i2c_buffer, 1U, 3U);
+                i2c_err = i2c_write(internal_configuration.indexes.i2c, internal_configuration.i2c_address, &i2c_buffer, 1U, 3U);
                 if (I2C_ERROR_OK != i2c_err)
                 {
                     hd44780_lcd_error_t error = convert_i2c_write_error(i2c_err);

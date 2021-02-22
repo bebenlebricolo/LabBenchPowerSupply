@@ -45,11 +45,11 @@ extern "C"
 
 #define HD44780_LCD_DEFAULT_I2C_RETRIES_COUNT (3U)
 
-#ifdef HD44780_LCD_USE_MICROSECONDS_TIMER
-    #define HD44780_LCD_ENABLE_PULSE_DURATION_WAIT (37U)    /**< 37 microseconds, absolute minimum to wait for an instruction to complete */
-#else
-    #define HD44780_LCD_ENABLE_PULSE_DURATION_WAIT (1U)     /**< 1 millisecond wait, minimum resolution                                   */
-#endif
+// The following symbol is used to slow down a bit I2C requests.
+// If enable pin is cycled too fast (less than 1ms), LCD screen does not work properly.
+// However, forcing to wait for 1 more ms fixes all this kind of timing issues without having to add more complex code
+// It just slows the screen down a bit.
+#define HD44780_LCD_ENABLE_PULSE_DURATION_WAIT  (2U)    /**< 2 millisecond wait, to help the lcd screen update correctly                                                    */
 #define HD44780_LCD_BOOTUP_TIME_MS              (40U)   /**< We have to wait more than 40 ms in the case (worst case) where LCD screen is powered with 2.7 Volts            */
 #define HD44780_LCD_FUNCTION_SET_FIRST_WAIT_MS  (5U)    /**< Should be more than 4.1ms, 5ms is fine                                                                         */
 #define HD44780_LCD_FUNCTION_SET_SECOND_WAIT_MS (1U)    /**< Normally, 100 µs are sufficient, but this is only for initialisation so 1 ms resolution will do it just fine   */
