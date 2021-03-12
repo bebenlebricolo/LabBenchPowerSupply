@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.12)
 
 project(Tests C CXX)
 
@@ -22,6 +22,11 @@ set(CMAKE_C_FLAGS_RELEASE "-O3 -Wall -Wextra")
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 add_subdirectory( ${CMAKE_SOURCE_DIR}/../Drivers/Adc/Tests
     ${CMAKE_BINARY_DIR}/Tests/Adc
+)
+
+# Memory utils library
+add_subdirectory( ${CMAKE_SOURCE_DIR}/../Utils
+    ${CMAKE_BINARY_DIR}/Tests/Utils
 )
 
 # Timer drivers

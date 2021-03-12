@@ -13,6 +13,7 @@ target_include_directories(i2c_driver PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../inc
     ${CMAKE_CURRENT_SOURCE_DIR}/Stub
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../../Utils/inc
     ${AVR_INCLUDES}
 )
 
@@ -39,9 +40,10 @@ target_include_directories(i2c_driver_tests PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../inc
     ${CMAKE_CURRENT_SOURCE_DIR}/Stub
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/Utils/inc
     ${GTEST_INCLUDE_DIRS}
 )
-target_link_libraries(i2c_driver_tests i2c_driver ${GTEST_LIBRARIES} pthread)
+target_link_libraries(i2c_driver_tests i2c_driver memutils ${GTEST_LIBRARIES} pthread)
 
 set_target_properties(i2c_driver_tests
     PROPERTIES

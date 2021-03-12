@@ -3,6 +3,8 @@
 #include <stddef.h>
 #include <string.h>
 
+#include "memutils.h"
+
 static i2c_fake_slave_application_data_exposed_data_t exposed_data = {0};
 
 
@@ -27,7 +29,7 @@ i2c_slave_handler_error_t i2c_fake_slave_command_handler(volatile i2c_command_ha
             break;
 
         case I2C_FAKE_SLAVE_APPLICATION_DATA_CMD_BYTE_ARRAY:
-            memcpy(buffer_data->data, exposed_data.byte_array, I2C_FAKE_SLAVE_APPLICATION_DATA_MAX_BYTE_ARRAY_LENGTH);
+            volatile_memcpy(buffer_data->data, exposed_data.byte_array, I2C_FAKE_SLAVE_APPLICATION_DATA_MAX_BYTE_ARRAY_LENGTH);
             buffer_data->length = I2C_FAKE_SLAVE_APPLICATION_DATA_MAX_BYTE_ARRAY_LENGTH;
             break;
 
@@ -48,7 +50,7 @@ i2c_slave_handler_error_t i2c_fake_slave_command_handler(volatile i2c_command_ha
 
         case I2C_FAKE_SLAVE_APPLICATION_DATA_CMD_UNDEFINED:
         default:
-            memset(buffer_data->data, 0, I2C_MAX_BUFFER_SIZE);
+            volatile_memset(buffer_data->data, 0, I2C_MAX_BUFFER_SIZE);
             buffer_data->length = 0;
             ret = I2C_SLAVE_HANDLER_ERROR_UNKNOWN_COMMAND;
             break;

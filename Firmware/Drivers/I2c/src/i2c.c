@@ -4,6 +4,8 @@
 #include <stddef.h>
 #include <string.h>
 
+#include "memutils.h"
+
 #define I2C_MAX_ADDRESS 127U
 
 #ifndef I2C_DEVICES_COUNT
@@ -131,7 +133,6 @@ static void i2c_handle_vcopy(i2c_handle_t * dest, volatile i2c_handle_t const * 
 static void i2c_handle_copyv(volatile i2c_handle_t * dest, i2c_handle_t const * const src);
 
 
-
 /* handlers used to process in/out data when TWI peripheral needs servicing */
 static i2c_error_t i2c_master_tx_process(const uint8_t id);
 static i2c_error_t i2c_master_rx_process(const uint8_t id);
@@ -178,8 +179,8 @@ void i2c_driver_reset_memory(void)
 {
     for (uint8_t i = 0; i < I2C_DEVICES_COUNT ; i++)
     {
-        memset(&internal_configuration[i], 0, sizeof(i2c_internal_config_t));
-        memset(&internal_buffer[i], 0, sizeof(i2c_internal_buffer_t));
+        volatile_memset(&internal_configuration[i], 0, sizeof(i2c_internal_config_t));
+        volatile_memset(&internal_buffer[i], 0, sizeof(i2c_internal_buffer_t));
     }
 }
 
@@ -218,7 +219,7 @@ i2c_error_t i2c_set_handle(const uint8_t id, i2c_handle_t const * const handle)
     {
         return I2C_ERROR_NULL_POINTER;
     }
-	i2c_handle_copyv(&internal_configuration[id].handle, handle);
+    i2c_handle_copyv(&internal_configuration[id].handle, handle);
 
     return I2C_ERROR_OK;
 }
@@ -234,7 +235,7 @@ i2c_error_t i2c_get_handle(const uint8_t id, i2c_handle_t * const handle)
         return I2C_ERROR_NULL_POINTER;
     }
 
-	i2c_handle_vcopy(handle, &internal_configuration[id].handle);
+    i2c_handle_vcopy(handle, &internal_configuration[id].handle);
     return I2C_ERROR_OK;
 }
 

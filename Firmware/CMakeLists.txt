@@ -23,6 +23,7 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
 endif()
 
 # Adding sources
+add_subdirectory(${CMAKE_SOURCE_DIR}/Utils)
 add_subdirectory(${CMAKE_SOURCE_DIR}/Drivers)
 add_subdirectory(${CMAKE_SOURCE_DIR}/Modules)
 add_subdirectory(${CMAKE_SOURCE_DIR}/App)
