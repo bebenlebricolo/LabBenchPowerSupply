@@ -524,6 +524,8 @@ static void handle_master_addressing_slave(void)
     interface.start_sent = false;
     states.previous = states.current;
 
+    // If opcode needs to be sent, first we have to write it on the I2C bus as
+    // a master TX transmission
     if (true == master_data.write_op)
     {
         interface.data = (master_data.target_address << 1U) | I2C_CMD_WRITE_BIT;

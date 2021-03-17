@@ -27,7 +27,7 @@ uint8_t * i2c_get_master_data_buffer(const uint8_t id);
  * @brief this is used in a unit testing context and is meaningful when checking if
  * the command handler has effectively been registered correctly
 */
-i2c_command_handler_t i2c_slave_get_command_handler(const uint8_t id);
+i2c_slave_data_handler_t i2c_slave_get_command_handler(const uint8_t id);
 
 /**
  * @brief this is only needed while performing unit tests, and allows

@@ -11,7 +11,7 @@
 class I2cBusSimulator
 {
 public:
-    I2cBusSimulator() = default;
+    I2cBusSimulator();
 
     // Main processing interface of the I2C bus
     void process(const uint8_t id);
@@ -24,7 +24,7 @@ public:
      * @return uint8_t byte
      *      0 if simulator is in Idle state or no master was detected
      *      X otherwise
-     * */ 
+     * */
     uint8_t get_current_byte_on_bus();
 
 private:
@@ -62,7 +62,8 @@ private:
     std::vector<uint8_t> potential_masters_indexes;
     std::vector<uint8_t> slaves_indexes;
     TransactionMode mode = TransactionMode::None;
-    struct 
+
+    struct
     {
         StateMachine previous;
         StateMachine current;

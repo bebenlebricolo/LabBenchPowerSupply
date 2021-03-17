@@ -36,7 +36,11 @@
         "string_view": "c",
         "initializer_list": "c",
         "ranges": "c",
-        "utility": "c"
+        "utility": "c",
+        "string": "c",
+        "cstdint": "cpp",
+        "tuple": "cpp",
+        "cstddef": "c"
     },
     "editor.tokenColorCustomizations": {
         "textMateRules": [

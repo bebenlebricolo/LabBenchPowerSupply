@@ -41,10 +41,10 @@ protected:
     }
 };
 
-i2c_slave_handler_error_t stubbed_command_handler(volatile i2c_command_handling_buffers_t * buffer, uint8_t byte)
+i2c_slave_handler_error_t stubbed_command_handler(uint8_t * byte, const i2c_request_t request)
 {
     (void) byte;
-    (void) buffer;
+    (void) request;
     return I2C_SLAVE_HANDLER_ERROR_OK;
 }
 
@@ -99,8 +99,8 @@ TEST(i2c_driver_tests, guard_null_pointer)
         ASSERT_EQ(ret, I2C_ERROR_NULL_POINTER);
     }
     {
-        i2c_command_handler_t command = NULL;
-        auto ret = i2c_slave_set_command_handler(0U, command);
+        i2c_slave_data_handler_t command = NULL;
+        auto ret = i2c_slave_set_data_handler(0U, command);
         ASSERT_EQ(ret, I2C_ERROR_NULL_POINTER);
     }
     {
@@ -313,9 +313,9 @@ TEST(i2c_driver_tests, guard_out_of_range)
         ASSERT_EQ(ret , I2C_ERROR_DEVICE_NOT_FOUND);
     }
     {
-        i2c_command_handler_t handler = stubbed_command_handler;
+        i2c_slave_data_handler_t handler = stubbed_command_handler;
 
-        auto ret = i2c_slave_set_command_handler(id, handler);
+        auto ret = i2c_slave_set_data_handler(id, handler);
         ASSERT_EQ(ret , I2C_ERROR_DEVICE_NOT_FOUND);
     }
     {
@@ -482,8 +482,8 @@ TEST(i2c_driver_tests, test_api_accessors_get_set)
 
     /* I2C command handler set api */
     {
-        i2c_command_handler_t handler = stubbed_command_handler;
-        ret = i2c_slave_set_command_handler(0U, handler);
+        i2c_slave_data_handler_t handler = stubbed_command_handler;
+        ret = i2c_slave_set_data_handler(0U, handler);
         ASSERT_EQ(ret, I2C_ERROR_OK);
         auto registered_handler = i2c_slave_get_command_handler(0U);
         ASSERT_EQ(registered_handler, stubbed_command_handler);
@@ -920,12 +920,9 @@ TEST_F(I2cTestFixture, test_twi_as_slave_receiver_only_single_word)
     buffer[0] = I2C_FAKE_SLAVE_APPLICATION_DATA_CMD_ENABLED;
     buffer[1] = (uint8_t) true;
 
-    // This buffer is used by the slave driver and is used as an interface for I2C driver
-    constexpr uint8_t slave_buffer_size = 16U;
-    uint8_t slave_buffer_data[slave_buffer_size] = {0};
-
     // fake device with address 0x23
     i2c_fake_device_init(0x23, false);
+    i2c_fake_slave_application_init();
 
     // Registers a fake device called twi hardware stub, which is linked with I2C driver
     simulator.register_device(twi_hardware_stub_get_interface, twi_hardware_stub_process);
@@ -937,11 +934,10 @@ TEST_F(I2cTestFixture, test_twi_as_slave_receiver_only_single_word)
     ASSERT_EQ(I2C_ERROR_OK, ret);
     ASSERT_EQ(I2C_STATE_READY, state);
 
-    ret = i2c_slave_set_command_handler(0U, i2c_fake_slave_command_handler);
+    // Give the i2c driver the command handlers it needs for the slave implementation
+    ret = i2c_slave_set_data_handler(0U, i2c_fake_slave_command_handler);
     ASSERT_EQ(I2C_ERROR_OK, ret);
-
-    // Give slave data buffer to our driver
-    ret = i2c_slave_set_data_interface(0U, slave_buffer_data, slave_buffer_size);
+    ret = i2c_slave_set_transmission_over_callback(0U, i2c_fake_slave_transmission_over_callback);
     ASSERT_EQ(I2C_ERROR_OK, ret);
 
     auto* exposed_data = i2c_fake_slave_application_data_get_exposed_data();
@@ -952,26 +948,13 @@ TEST_F(I2cTestFixture, test_twi_as_slave_receiver_only_single_word)
     ASSERT_EQ(I2C_FAKE_DEVICE_ERROR_OK, fake_dev_ret);
 
     // Run the simulation !
-    uint8_t loop_count = 0;
     do
     {
         simulator.process(0U);
         ret = i2c_get_state(0U, &state);
         EXPECT_EQ(I2C_ERROR_OK, ret);
 
-        // Takes some iterations for I2C slave driver to consume its address, command byte, etc
-        if (loop_count > 4U)
-        {
-            EXPECT_TRUE(i2c_is_slave_buffer_locked(0));
-        }
-        loop_count++;
     } while(state != I2C_STATE_READY || twi_hardware_stub_is_busy(0U));
-
-    // Decode data from interface, should match
-    exposed_data->enabled = (bool) slave_buffer_data[0];
-
-    // Should be unlocked right now
-    ASSERT_FALSE(i2c_is_slave_buffer_locked(0));
 
     ASSERT_EQ(exposed_data->enabled, true);
     i2c_fake_slave_application_data_clear();
@@ -983,14 +966,10 @@ TEST_F(I2cTestFixture, test_twi_as_slave_receiver_only_multiple_bytes)
     uint8_t buffer[10] = {0};
     buffer[0] = I2C_FAKE_SLAVE_APPLICATION_DATA_CMD_BYTE_ARRAY;
 
-
-    // This buffer is used by the slave driver and is used as an interface for I2C driver
-    constexpr uint8_t slave_buffer_size = 16U;
-    uint8_t slave_buffer_data[slave_buffer_size] = {0};
-
+    // Prepare message payload for i2c_fake_device
     snprintf((char*) (buffer + 1), 9, "Yollow !");
-    // fake device with address 0x23
     i2c_fake_device_init(0x23, false);
+    i2c_fake_slave_application_init();
 
     // Registers a fake device called twi hardware stub, which is linked with I2C driver
     simulator.register_device(twi_hardware_stub_get_interface, twi_hardware_stub_process);
@@ -1003,53 +982,36 @@ TEST_F(I2cTestFixture, test_twi_as_slave_receiver_only_multiple_bytes)
     ASSERT_EQ(I2C_ERROR_OK, ret);
     ASSERT_EQ(I2C_STATE_READY, state);
 
-    ret = i2c_slave_set_command_handler(0U, i2c_fake_slave_command_handler);
+    // Sets the command handler for our I2C slave device
+    // This is how we "connect" our I2C slave device to its application code
+    // I2C interface virtual register (slave_buffer_data) will be memory mapped in
+    // response to the incoming command
+    ret = i2c_slave_set_data_handler(0U, i2c_fake_slave_command_handler);
+    ASSERT_EQ(I2C_ERROR_OK, ret);
+    ret = i2c_slave_set_transmission_over_callback(0U, i2c_fake_slave_transmission_over_callback);
     ASSERT_EQ(I2C_ERROR_OK, ret);
 
-    // Give slave data buffer to our driver
-    ret = i2c_slave_set_data_interface(0U, slave_buffer_data, slave_buffer_size);
-    ASSERT_EQ(I2C_ERROR_OK, ret);
+    // Tell the fake device to act as a master on I2C bus and write to our TWI device
+    auto fake_dev_ret = i2c_fake_device_write(config.slave_address, buffer, 10, 0);
+    ASSERT_EQ(I2C_FAKE_DEVICE_ERROR_OK, fake_dev_ret);
 
-    // Check data is correctly set to 0
+    // At the moment, our slave I2C device has just be initialized and
+    // no data should be written in the application exposed data yet.
+    // So both slave_buffer and exposed_data->byte_array should be blank
     i2c_fake_slave_application_data_exposed_data_t* exposed_data = i2c_fake_slave_application_data_get_exposed_data();
     for (const auto byte : exposed_data->byte_array)
     {
         EXPECT_EQ(0, byte);
     }
 
-    // Tell the fake device to act as a master on I2C bus and write to our TWI device
-    auto fake_dev_ret = i2c_fake_device_write(config.slave_address, buffer, 10, 0);
-    ASSERT_EQ(I2C_FAKE_DEVICE_ERROR_OK, fake_dev_ret);
-
-// FIXME : something messes with the stack in this section (stack smashed error)
-#if 0
-
     // Run the simulation !
-    uint8_t loop_count = 0;
     do
     {
         simulator.process(0U);
         ret = i2c_get_state(0U, &state);
         EXPECT_EQ(I2C_ERROR_OK, ret);
 
-        // Takes some iterations for I2C slave driver to consume its address, command byte, etc
-        if (loop_count > 2U && loop_count < 10U )
-        {
-            EXPECT_TRUE(i2c_is_slave_buffer_locked(0));
-        }
-        loop_count++;
     } while(state != I2C_STATE_READY || twi_hardware_stub_is_busy(0U));
-
-
-    // Should be unlocked right now
-    ASSERT_FALSE(i2c_is_slave_buffer_locked(0));
-
-    // Decode data from i2c slave buffer
-    for (uint8_t i = 0 ; i < 10 ; i++)
-    {
-        exposed_data->byte_array[i] = slave_buffer_data[i];
-    }
-
 
     ASSERT_STREQ((char *)(exposed_data->byte_array), "Yollow !");
 
@@ -1063,32 +1025,17 @@ TEST_F(I2cTestFixture, test_twi_as_slave_receiver_only_multiple_bytes)
     ASSERT_EQ(I2C_FAKE_DEVICE_ERROR_OK, fake_dev_ret);
 
     // Run the simulation !
-    loop_count = 0;
     do
     {
         simulator.process(0U);
         ret = i2c_get_state(0U, &state);
         EXPECT_EQ(I2C_ERROR_OK, ret);
 
-        // Takes some iterations for I2C slave driver to consume its address, command byte, etc
-        if (loop_count > 2U && loop_count < 4U)
-        {
-            EXPECT_TRUE(i2c_is_slave_buffer_locked(0));
-        }
-        loop_count++;
     } while(state != I2C_STATE_READY || twi_hardware_stub_is_busy(0U));
-
-    // Should be unlocked right now
-    ASSERT_FALSE(i2c_is_slave_buffer_locked(0));
-
-    // Decode data froms slave buffer
-    exposed_data->fan_speed = (i2c_fake_slave_application_data_fan_speed_t) slave_buffer_data[0];
 
     ASSERT_EQ(exposed_data->fan_speed, I2C_FAKE_SLAVE_APPLICATION_DATA_FAN_SPEED_50);
 
     i2c_fake_slave_application_data_clear();
-#endif
-
 }
 
 TEST_F(I2cTestFixture, test_twi_as_slave_transmitter)
@@ -1099,6 +1046,7 @@ TEST_F(I2cTestFixture, test_twi_as_slave_transmitter)
 
     // fake device with address 0x23
     i2c_fake_device_init(0x23, false);
+    i2c_fake_slave_application_init();
 
     // Registers a fake device called twi hardware stub, which is linked with I2C driver
     simulator.register_device(twi_hardware_stub_get_interface, twi_hardware_stub_process);
@@ -1110,7 +1058,10 @@ TEST_F(I2cTestFixture, test_twi_as_slave_transmitter)
     ASSERT_EQ(I2C_ERROR_OK, ret);
     ASSERT_EQ(I2C_STATE_READY, state);
 
-    ret = i2c_slave_set_command_handler(0U, i2c_fake_slave_command_handler);
+    // Give the i2c driver the command handlers it needs for the slave implementation
+    ret = i2c_slave_set_data_handler(0U, i2c_fake_slave_command_handler);
+    ASSERT_EQ(I2C_ERROR_OK, ret);
+    ret = i2c_slave_set_transmission_over_callback(0U, i2c_fake_slave_transmission_over_callback);
     ASSERT_EQ(I2C_ERROR_OK, ret);
 
     // Initialises the data which will be read by fake device
@@ -1118,33 +1069,17 @@ TEST_F(I2cTestFixture, test_twi_as_slave_transmitter)
     const char msg[] = "Testing multi-bytes array";
     snprintf((char *) (exposed_data->byte_array), I2C_FAKE_SLAVE_APPLICATION_DATA_MAX_BYTE_ARRAY_LENGTH, msg);
 
-    // Give slave data buffer to our driver
-    //ret = i2c_slave_set_data_interface(0U, slave_buffer_data, slave_buffer_size);
-    // Note : this time exposed_data->byte_array is already a uint8_t array, so we can use it straight away
-    ret = i2c_slave_set_data_interface(0U, exposed_data->byte_array, I2C_FAKE_SLAVE_APPLICATION_DATA_MAX_BYTE_ARRAY_LENGTH);
-    ASSERT_EQ(I2C_ERROR_OK, ret);
-
     // Tell the fake device to act as a master on I2C bus and write to our TWI device
     auto fake_dev_ret = i2c_fake_device_read(config.slave_address, buffer, I2C_FAKE_SLAVE_APPLICATION_DATA_MAX_BYTE_ARRAY_LENGTH, 0);
     ASSERT_EQ(I2C_FAKE_DEVICE_ERROR_OK, fake_dev_ret);
 
     // Run the simulation !
-    uint8_t loop_count = 0;
     do
     {
         simulator.process(0U);
         ret = i2c_get_state(0U, &state);
         EXPECT_EQ(I2C_ERROR_OK, ret);
-
-        if (loop_count > 4U && loop_count < (I2C_FAKE_SLAVE_APPLICATION_DATA_MAX_BYTE_ARRAY_LENGTH))
-        {
-            EXPECT_TRUE(i2c_is_slave_buffer_locked(0));
-        }
-        loop_count++;
     } while(state != I2C_STATE_READY || twi_hardware_stub_is_busy(0U));
-
-    // Should be unlocked right now
-    ASSERT_FALSE(i2c_is_slave_buffer_locked(0));
 
     ASSERT_STREQ((char *)(buffer + 1), msg);
     i2c_fake_slave_application_data_clear();
@@ -1156,12 +1091,9 @@ TEST_F(I2cTestFixture, test_twi_as_slave_transmitter_all_in_one)
     uint8_t buffer[I2C_FAKE_SLAVE_APPLICATION_DATA_MAX_BYTE_ARRAY_LENGTH] = {0};
     buffer[0] = I2C_FAKE_SLAVE_APPLICATION_DATA_CMD_BYTE_ARRAY;
 
-    // This buffer is used by the slave driver and is used as an interface for I2C driver
-    constexpr uint8_t slave_buffer_size = 30U;
-    uint8_t slave_buffer_data[slave_buffer_size] = {0};
-
     // fake device with address 0x23
     i2c_fake_device_init(0x23, false);
+    i2c_fake_slave_application_init();
 
     // Registers a fake device called twi hardware stub, which is linked with I2C driver
     simulator.register_device(twi_hardware_stub_get_interface, twi_hardware_stub_process);
@@ -1173,18 +1105,16 @@ TEST_F(I2cTestFixture, test_twi_as_slave_transmitter_all_in_one)
     ASSERT_EQ(I2C_ERROR_OK, ret);
     ASSERT_EQ(I2C_STATE_READY, state);
 
-    ret = i2c_slave_set_command_handler(0U, i2c_fake_slave_command_handler);
+    // Give the i2c driver the command handlers it needs for the slave implementation
+    ret = i2c_slave_set_data_handler(0U, i2c_fake_slave_command_handler);
     ASSERT_EQ(I2C_ERROR_OK, ret);
-
-    // Give slave data buffer to our driver
-    ret = i2c_slave_set_data_interface(0U, slave_buffer_data, slave_buffer_size);
+    ret = i2c_slave_set_transmission_over_callback(0U, i2c_fake_slave_transmission_over_callback);
     ASSERT_EQ(I2C_ERROR_OK, ret);
 
     // Initialises the data which will be read by fake device
     auto* exposed_data = i2c_fake_slave_application_data_get_exposed_data();
     const char msg[] = "Testing multi-bytes array";
     snprintf((char *) (exposed_data->byte_array), I2C_FAKE_SLAVE_APPLICATION_DATA_MAX_BYTE_ARRAY_LENGTH, msg);
-    memcpy(slave_buffer_data, (exposed_data->byte_array), I2C_FAKE_SLAVE_APPLICATION_DATA_MAX_BYTE_ARRAY_LENGTH);
 
     // Tell the fake device to act as a master on I2C bus and write to our TWI device
     auto fake_dev_ret = i2c_fake_device_read(config.slave_address, buffer, I2C_FAKE_SLAVE_APPLICATION_DATA_MAX_BYTE_ARRAY_LENGTH, 0);
@@ -1219,12 +1149,10 @@ TEST_F(I2cTestFixture, test_twi_as_slave_transmitter_all_in_one)
     } while(state != I2C_STATE_READY || twi_hardware_stub_is_busy(0U));
 
     // Decode data from buffer
-    exposed_data->fan_speed = (i2c_fake_slave_application_data_fan_speed_t) slave_buffer_data[0];
     ASSERT_EQ(exposed_data->fan_speed, I2C_FAKE_SLAVE_APPLICATION_DATA_FAN_SPEED_75);
 
     // Reset fan speed to another value
     exposed_data->fan_speed = I2C_FAKE_SLAVE_APPLICATION_DATA_FAN_SPEED_100;
-    slave_buffer_data[0] = (uint8_t) exposed_data->fan_speed;
 
     // Read back the Fan speed
     buffer[1] = 0;
@@ -1277,6 +1205,7 @@ TEST_F(I2cTestFixture, test_twi_master_receives_nack_while_writing)
 
     // fake device with address 0x23
     i2c_fake_device_init(0x23, false);
+    i2c_fake_slave_application_init();
 
     // Registers a fake device called twi hardware stub, which is linked with I2C driver
     simulator.register_device(twi_hardware_stub_get_interface, twi_hardware_stub_process);
