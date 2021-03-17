@@ -57,12 +57,27 @@ typedef struct
     uint8_t index;                              /**< Increment used in Rx/Tx mode to iterate though the internal buffer */
     uint8_t retries;                            /**< Stores the maximum available retries                               */
     i2c_command_handling_buffers_t i2c_buffer;  /**< I2C buffer used to handle in/out data coming from I2C bus          */
-} i2c_internal_buffer_t;
-static i2c_internal_buffer_t internal_buffer[I2C_DEVICES_COUNT] = {0};
+} i2c_master_buffer_t;
+static i2c_master_buffer_t master_buffer[I2C_DEVICES_COUNT] = {0};
 
-static inline volatile uint8_t * get_current_internal_buffer_byte(const uint8_t id)
+typedef struct
 {
-    return &internal_buffer[id].i2c_buffer.data[internal_buffer[id].index];
+    uint8_t command;                            /**< Contains target address + read/write bit                           */
+    uint8_t index;                              /**< Increment used in Rx/Tx mode to iterate though the internal buffer */
+    uint8_t retries;                            /**< Stores the maximum available retries                               */
+    i2c_command_handling_buffers_t i2c_buffer;  /**< I2C buffer used to handle in/out data coming from I2C bus          */
+} i2c_slave_buffer_t;
+// Allocate another buffer used for all data handling of I2C slave driver part
+static i2c_slave_buffer_t slave_buffer[I2C_DEVICES_COUNT] = {0};
+
+static inline volatile uint8_t * get_current_master_buffer_byte(const uint8_t id)
+{
+    return &master_buffer[id].i2c_buffer.data[master_buffer[id].index];
+}
+
+static inline volatile uint8_t * get_current_slave_buffer_byte(const uint8_t id)
+{
+    return &slave_buffer[id].i2c_buffer.data[slave_buffer[id].index];
 }
 
 static inline void clear_twint(const uint8_t id)
@@ -74,10 +89,20 @@ static inline void clear_twint(const uint8_t id)
     #endif
 }
 
-static inline void reset_i2c_command_handling_buffers(const uint8_t id)
+static inline void reset_i2c_master_buffer(const uint8_t id)
 {
-    internal_buffer[id].i2c_buffer.data = NULL;
-    internal_buffer[id].i2c_buffer.length = 0;
+    master_buffer[id].i2c_buffer.data = NULL;
+    master_buffer[id].i2c_buffer.length = 0;
+    master_buffer[id].i2c_buffer.locked = false;
+}
+
+static inline void reset_i2c_slave_buffer(const uint8_t id)
+{
+    // We could not reset data buffer because otherwise we'll have to set it manually each time
+    // the slave is run.
+    // A single data buffer shall be provided for the whole length of I2C slave operation
+    slave_buffer[id].i2c_buffer.locked = false;
+    slave_buffer[id].index = 0;
 }
 
 /**
@@ -184,13 +209,13 @@ void i2c_driver_reset_memory(void)
     for (uint8_t i = 0; i < I2C_DEVICES_COUNT ; i++)
     {
         volatile_memset(&internal_configuration[i], 0, sizeof(i2c_internal_config_t));
-        volatile_memset(&internal_buffer[i], 0, sizeof(i2c_internal_buffer_t));
+        volatile_memset(&master_buffer[i], 0, sizeof(i2c_master_buffer_t));
     }
 }
 
-uint8_t * i2c_get_internal_data_buffer(const uint8_t id)
+uint8_t * i2c_get_master_data_buffer(const uint8_t id)
 {
-    return internal_buffer[id].i2c_buffer.data;
+    return master_buffer[id].i2c_buffer.data;
 }
 
 #endif
@@ -542,6 +567,25 @@ i2c_error_t i2c_slave_set_command_handler(const uint8_t id, i2c_command_handler_
     return I2C_ERROR_OK;
 }
 
+i2c_error_t i2c_slave_set_data_interface(const uint8_t id, uint8_t * data, const uint8_t length)
+{
+    if (!is_id_valid(id))
+    {
+        return I2C_ERROR_DEVICE_NOT_FOUND;
+    }
+    if (NULL == data)
+    {
+        return I2C_ERROR_NULL_POINTER;
+    }
+
+    slave_buffer[id].i2c_buffer.data = data;
+    slave_buffer[id].i2c_buffer.length = length;
+    slave_buffer[id].i2c_buffer.locked = false;
+
+    return I2C_ERROR_OK;
+}
+
+
 #ifdef UNIT_TESTING
 i2c_command_handler_t i2c_slave_get_command_handler(const uint8_t id)
 {
@@ -678,12 +722,12 @@ static i2c_error_t i2c_master_tx_process(const uint8_t id)
         case MAS_TX_REPEATED_START:
             // Transmition was successfully started
             // Send slave address + write flag to start writing
-            *internal_configuration[id].handle._TWDR = internal_buffer[id].command;
+            *internal_configuration[id].handle._TWDR = master_buffer[id].command;
             break;
 
         case MAS_TX_SLAVE_WRITE_ACK:
             // Slave replied ACK to its address in write mode, proceed further and send next byte
-            *internal_configuration[id].handle._TWDR = *get_current_internal_buffer_byte(id);
+            *internal_configuration[id].handle._TWDR = *get_current_master_buffer_byte(id);
 
             // Clear TWSTA to prevent repeated start action
             set_TWCR_register(id, *internal_configuration[id].handle._TWCR & ~TWSTA_MSK);
@@ -695,14 +739,14 @@ static i2c_error_t i2c_master_tx_process(const uint8_t id)
         case MAS_TX_SLAVE_WRITE_NACK:
             // Slave did not reply correctly to its address, or some issue were encountered on I2C line
             // Resend Slave + write command
-            *internal_configuration[id].handle._TWDR = internal_buffer[id].command;
+            *internal_configuration[id].handle._TWDR = master_buffer[id].command;
             retries++;
             break;
 
         case MAS_TX_DATA_TRANSMITTED_ACK:
             // If we are facing an i2c read operation, only first byte has to be sent (contains the target's operation code to locate the right register)
             // Note: we need to increment index for all control flows because the first byte has been consumed and shall not be used for the i2c read operation
-            internal_buffer[id].index++;
+            master_buffer[id].index++;
             if (I2C_REQUEST_READ == internal_configuration[id].request_type)
             {
                 /* Overwrite the command buffer with (Slave address + i2c read bit)
@@ -712,7 +756,7 @@ static i2c_error_t i2c_master_tx_process(const uint8_t id)
                    and keeps the line busy until read operation completes, or fails.
                    Hence, the result is a shorter command [Start, payload, Start, payload, Stop] with the guarantee that the master
                    keeps the I2C bus priority for the whole communication duration */
-                internal_buffer[id].command = (internal_buffer[id].target_address << 1U) | I2C_CMD_READ_BIT;
+                master_buffer[id].command = (master_buffer[id].target_address << 1U) | I2C_CMD_READ_BIT;
                 set_TWCR_register(id, *internal_configuration[id].handle._TWCR | TWSTA_MSK);
 
                 //*internal_configuration[id].handle._TWCR = (*internal_configuration[id].handle._TWCR & ~TWINT_MSK) | TWSTA_MSK;
@@ -721,10 +765,10 @@ static i2c_error_t i2c_master_tx_process(const uint8_t id)
             }
             else
             {
-                if (internal_buffer[id].i2c_buffer.length != internal_buffer[id].index)
+                if (master_buffer[id].i2c_buffer.length != master_buffer[id].index)
                 {
                     // Send next byte of data
-                    *internal_configuration[id].handle._TWDR = *get_current_internal_buffer_byte(id) ;
+                    *internal_configuration[id].handle._TWDR = *get_current_master_buffer_byte(id) ;
                 }
                 else
                 {
@@ -740,14 +784,14 @@ static i2c_error_t i2c_master_tx_process(const uint8_t id)
 
         case MAS_TX_DATA_TRANSMITTED_NACK:
             // Resend last byte of data
-            *internal_configuration[id].handle._TWDR = *get_current_internal_buffer_byte(id) ;
+            *internal_configuration[id].handle._TWDR = *get_current_master_buffer_byte(id) ;
             retries++;
             break;
 
         case MAS_TX_ARBITRATION_LOST:
         default:
             // Restore peripheral to its original state
-            reset_i2c_command_handling_buffers(id);
+            reset_i2c_master_buffer(id);
             internal_configuration[id].state = I2C_STATE_READY;
             retries = 0;
             break;
@@ -756,10 +800,10 @@ static i2c_error_t i2c_master_tx_process(const uint8_t id)
     /* If maximum retries count was hit, reset peripheral back to its default state and
        end the transmission by writing a Stop condition
        Note : if maximum available retries is set to 0, it means we don't want to use the retry feature at all */
-    if ((0 != internal_buffer[id].retries)
-        && (internal_buffer[id].retries < retries))
+    if ((0 != master_buffer[id].retries)
+        && (master_buffer[id].retries < retries))
     {
-        reset_i2c_command_handling_buffers(id);
+        reset_i2c_master_buffer(id);
         internal_configuration[id].state = I2C_STATE_READY;
         internal_configuration[id].request_type = I2C_REQUEST_IDLE;
         set_TWCR_register(id, (*internal_configuration[id].handle._TWCR | TWSTO_MSK) & ~(TWSTA_MSK | TWEA_MSK));
@@ -795,7 +839,7 @@ static i2c_error_t i2c_master_rx_process(const uint8_t id)
         case MAS_RX_REPEATED_START:
             // Transmition was successfully started
             // Send slave address + read flag to start writing
-            *internal_configuration[id].handle._TWDR = internal_buffer[id].command;
+            *internal_configuration[id].handle._TWDR = master_buffer[id].command;
             break;
 
         case MAS_RX_SLAVE_READ_ACK:
@@ -813,10 +857,10 @@ static i2c_error_t i2c_master_rx_process(const uint8_t id)
 
         case MAS_RX_DATA_RECEIVED_ACK:
             /* Read received byte and store it within the buffer */
-            *get_current_internal_buffer_byte(id) = *internal_configuration[id].handle._TWDR;
-            internal_buffer[id].index++;
+            *get_current_master_buffer_byte(id) = *internal_configuration[id].handle._TWDR;
+            master_buffer[id].index++;
 
-            if (internal_buffer[id].i2c_buffer.length != internal_buffer[id].index)
+            if (master_buffer[id].i2c_buffer.length != master_buffer[id].index)
             {
                 /* Send an acknowledge bit 'ACK' to indicate we are ready to receive next byte */
                 *internal_configuration[id].handle._TWCR = (*internal_configuration[id].handle._TWCR & ~TWINT_MSK) | TWEA_MSK;
@@ -836,7 +880,7 @@ static i2c_error_t i2c_master_rx_process(const uint8_t id)
             break;
 
         case MAS_RX_DATA_RECEIVED_NACK:
-            if (internal_buffer[id].i2c_buffer.length == internal_buffer[id].index)
+            if (master_buffer[id].i2c_buffer.length == master_buffer[id].index)
             {
                 *internal_configuration[id].handle._TWCR = (*internal_configuration[id].handle._TWCR & ~TWINT_MSK) | TWSTO_MSK;
                 internal_configuration[id].state = I2C_STATE_MASTER_RX_FINISHED;
@@ -846,7 +890,7 @@ static i2c_error_t i2c_master_rx_process(const uint8_t id)
                 /* Reset the internal_buffer index to its starting location
                    but bear in mind that at the starting point, opcode has already been sent. That is why we need
                    to reset the internal index to 1 instead of 0 */
-                internal_buffer[id].index = 1U;
+                master_buffer[id].index = 1U;
 
                 *internal_configuration[id].handle._TWCR = (*internal_configuration[id].handle._TWCR & ~TWINT_MSK) | TWEA_MSK;
                 retries++;
@@ -856,7 +900,7 @@ static i2c_error_t i2c_master_rx_process(const uint8_t id)
         case MAS_RX_ARBITRATION_LOST_NACK:
         default:
             // Restore peripheral to its original state
-            reset_i2c_command_handling_buffers(id);
+            reset_i2c_master_buffer(id);
             internal_configuration[id].state = I2C_STATE_READY;
             retries = 0;
             break;
@@ -864,10 +908,10 @@ static i2c_error_t i2c_master_rx_process(const uint8_t id)
 
     // If maximum retries count was hit, reset peripheral back to its default state and
     // end the transmission by writing a Stop condition
-    if ((0 != internal_buffer[id].retries)
-        && (internal_buffer[id].retries < retries))
+    if ((0 != master_buffer[id].retries)
+        && (master_buffer[id].retries < retries))
     {
-        reset_i2c_command_handling_buffers(id);
+        reset_i2c_master_buffer(id);
         internal_configuration[id].state = I2C_STATE_READY;
         internal_configuration[id].request_type = I2C_REQUEST_IDLE;
         *internal_configuration[id].handle._TWCR = (*internal_configuration[id].handle._TWCR & ~TWINT_MSK) | TWSTO_MSK;
@@ -899,11 +943,14 @@ static i2c_error_t i2c_slave_tx_process(const uint8_t id)
         case SLA_TX_OWN_ADDR_SLAVE_READ_ACK:
         case SLA_TX_ARBITRATION_LOST_OWN_ADDR_RECEIVED_ACK:
             // A previous write command was issued and i2c handling buffers shall have been initialised
-            if ((NULL != internal_buffer[id].i2c_buffer.data)
-            &&  (internal_buffer[id].index < internal_buffer[id].i2c_buffer.length))
+            if ((NULL != slave_buffer[id].i2c_buffer.data)
+            &&  (slave_buffer[id].index < slave_buffer[id].i2c_buffer.length))
             {
+                // Lock buffer in order to tell to the caller data is being used
+                slave_buffer[id].i2c_buffer.locked = true;
+
                 // Read data bytes from buffer
-                *internal_configuration[id].handle._TWDR = *get_current_internal_buffer_byte(id);
+                *internal_configuration[id].handle._TWDR = *get_current_slave_buffer_byte(id);
                 *internal_configuration[id].handle._TWCR = (*internal_configuration[id].handle._TWCR & ~TWINT_MSK) | TWEA_MSK;
             }
             else
@@ -917,10 +964,10 @@ static i2c_error_t i2c_slave_tx_process(const uint8_t id)
             // Previous data read from master was successful (received 'ACK'), now we assume that
             // our buffer has been correctly initialised by i2c read command handler and we can proceed
             // Note : if i2c command handler sets the buffer to point to a wrong place, this will either : 1) crash or 2) read from unwanted memory locations
-            internal_buffer[id].index++;
-            if (internal_buffer[id].i2c_buffer.length != internal_buffer[id].index)
+            slave_buffer[id].index++;
+            if (slave_buffer[id].i2c_buffer.length != slave_buffer[id].index)
             {
-                *internal_configuration[id].handle._TWDR = *get_current_internal_buffer_byte(id);
+                *internal_configuration[id].handle._TWDR = *get_current_slave_buffer_byte(id);
                 *internal_configuration[id].handle._TWCR = (*internal_configuration[id].handle._TWCR & ~TWINT_MSK) | TWEA_MSK;
             }
             else
@@ -937,8 +984,7 @@ static i2c_error_t i2c_slave_tx_process(const uint8_t id)
         case SLA_TX_DATA_TRANSMITTED_NACK:
         case SLA_TX_LAST_DATA_TRANSMITTED_ACK:
         default:
-            internal_buffer[id].index = 0;
-            reset_i2c_command_handling_buffers(id);
+            reset_i2c_slave_buffer(id);
 
             /* Re-enable this device to be addressed as a Slave, but switch to the non-addressed mode (a subsequent Start + Slave address will
                be needed to reinitiate a transmission) */
@@ -951,10 +997,12 @@ static i2c_error_t i2c_slave_tx_process(const uint8_t id)
 
     // If maximum retries count was hit, reset peripheral back to its default state and
     // end the transmission by writing a Stop condition
-    if ((0 != internal_buffer[id].retries)
-        && (internal_buffer[id].retries < retries))
+    if ((0 != slave_buffer[id].retries)
+        && (slave_buffer[id].retries < retries))
     {
         internal_configuration[id].state = I2C_STATE_READY;
+        reset_i2c_slave_buffer(id);
+
         // Force TWI to stop any transmission (hard reset by toggling it off and back on)
         *internal_configuration[id].handle._TWCR &= ~TWIE_MSK;
 
@@ -989,8 +1037,11 @@ static i2c_error_t i2c_slave_rx_process(const uint8_t id)
         case SLA_RX_ARBITRATION_LOST_OWN_ADDR_RECEIVED_ACK :
         case SLA_RX_GENERAL_CALL_RECEIVED_ACK :
         case SLA_RX_ARBITRATION_LOST_GENERAL_CALL_RECEIVED_ACK :
+            // Lock buffer in order to tell to the caller data is being used
+            slave_buffer[id].i2c_buffer.locked = true;
+
             /* Receiving I2C command, consumes it */
-            err = internal_configuration[id].command_handler(&internal_buffer[id].i2c_buffer, *internal_configuration[id].handle._TWDR);
+            err = internal_configuration[id].command_handler(&slave_buffer[id].i2c_buffer, *internal_configuration[id].handle._TWDR);
             if (I2C_SLAVE_HANDLER_ERROR_OK == err)
             {
                 /* Command handler has initialised data structures and buffer pointers */
@@ -1010,11 +1061,11 @@ static i2c_error_t i2c_slave_rx_process(const uint8_t id)
         case SLA_RX_GENERAL_CALL_ADDRESSED_DATA_RECEIVED_ACK :
             // First byte of data contains the command code
             /* Write is accepted because we are still well inside the targeted buffer boundaries */
-            if (internal_buffer[id].i2c_buffer.length != internal_buffer[id].index)
+            if (slave_buffer[id].i2c_buffer.length != slave_buffer[id].index)
             {
-                *get_current_internal_buffer_byte(id) = *internal_configuration[id].handle._TWDR;
+                *get_current_slave_buffer_byte(id) = *internal_configuration[id].handle._TWDR;
                 *internal_configuration[id].handle._TWCR = (*internal_configuration[id].handle._TWCR & ~TWINT_MSK) | TWEA_MSK;
-                internal_buffer[id].index++;
+                slave_buffer[id].index++;
                 ++processed_bytes;
             }
             else
@@ -1028,10 +1079,14 @@ static i2c_error_t i2c_slave_rx_process(const uint8_t id)
 
         /* When written in multi-mode I2C style, we may get a repeated start in the middle of a transmission */
         case SLA_RX_START_STOP_COND_RECEIVED_WHILE_OPERATING:
+            // Unlock buffer because we can either be at the start of a new request from master (start again) or a real stop
+            // condition. So unlock the buffer now and eventually relock it afterwards.
+            slave_buffer[id].i2c_buffer.locked = false;
+
             /* Only one byte processed : we have just consumed the opcode, ready to switch to the not addressed Slave mode
                And allow this slave to recognize its own address (or general call, if enabled) */
             *internal_configuration[id].handle._TWCR = (*internal_configuration[id].handle._TWCR & ~TWINT_MSK) | TWEA_MSK;
-            internal_buffer[id].index = 0;
+            slave_buffer[id].index = 0;
             internal_configuration[id].state = I2C_STATE_READY;
             break;
 
@@ -1043,8 +1098,7 @@ static i2c_error_t i2c_slave_rx_process(const uint8_t id)
         case SLA_RX_GENERAL_CALL_ADDRESSED_DATA_LOST_NACK :
         default:
             *internal_configuration[id].handle._TWCR = (*internal_configuration[id].handle._TWCR & ~TWINT_MSK) | TWEA_MSK;
-            internal_buffer[id].index = 0;
-            reset_i2c_command_handling_buffers(id);
+            reset_i2c_slave_buffer(id);
             internal_configuration[id].state = I2C_STATE_READY;
             retries = 0;
             break;
@@ -1052,11 +1106,11 @@ static i2c_error_t i2c_slave_rx_process(const uint8_t id)
 
     // If maximum retries count was hit, reset peripheral back to its default state and
     // end the transmission by writing a Stop condition
-    if ((0 != internal_buffer[id].retries)
-        && (internal_buffer[id].retries < retries))
+    if ((0 != slave_buffer[id].retries)
+        && (slave_buffer[id].retries < retries))
     {
         internal_configuration[id].state = I2C_STATE_READY;
-        reset_i2c_command_handling_buffers(id);
+        reset_i2c_slave_buffer(id);
         // Force TWI to stop any transmission (hard reset by toggling it off and back on)
         *internal_configuration[id].handle._TWCR &= ~TWIE_MSK;
         *internal_configuration[id].handle._TWCR = (*internal_configuration[id].handle._TWCR & ~TWINT_MSK) | TWIE_MSK;
@@ -1082,7 +1136,8 @@ static i2c_error_t process_helper_single(const uint8_t id)
     if (status == (uint8_t) I2C_MISC_BUS_ERROR_ILLEGAL_START_STOP)
     {
         internal_configuration[id].state = I2C_STATE_READY;
-        reset_i2c_command_handling_buffers(id);
+        reset_i2c_master_buffer(id);
+        reset_i2c_slave_buffer(id);
 
         // Release from BUS error state
         *internal_configuration[id].handle._TWCR |= TWSTO_MSK | TWINT_MSK;
@@ -1129,6 +1184,9 @@ static i2c_error_t process_helper_single(const uint8_t id)
             {
                 internal_configuration[id].request_type = I2C_REQUEST_IDLE;
                 internal_configuration[id].state = I2C_STATE_READY;
+
+                // Soft-unlock data buffer
+                master_buffer[id].i2c_buffer.locked = false;
             }
             break;
 
@@ -1136,6 +1194,9 @@ static i2c_error_t process_helper_single(const uint8_t id)
         case I2C_STATE_MASTER_RX_FINISHED:
             internal_configuration[id].request_type = I2C_REQUEST_IDLE;
             internal_configuration[id].state = I2C_STATE_READY;
+
+            // Soft-unlock data buffer
+            master_buffer[id].i2c_buffer.locked = false;
             break;
 
         /* Either a Start condition written from i2c_write was sent or a Tx operation is already ongoing */
@@ -1176,6 +1237,10 @@ static i2c_error_t process_helper_single(const uint8_t id)
         default:
             /* Do nothing otherwise */
             ret = I2C_ERROR_WRONG_STATE;
+
+            // Soft-unlock data buffer
+            master_buffer[id].i2c_buffer.locked = false;
+            slave_buffer[id].i2c_buffer.locked = false;
             break;
     }
     return ret;
@@ -1259,14 +1324,15 @@ i2c_error_t i2c_write(const uint8_t id, const uint8_t target_address , uint8_t *
         return I2C_ERROR_REQUEST_TOO_LONG;
     }
 
-    /* Initialises internal buffer with supplied data */
-    uint8_t copy_len = (length < I2C_MAX_BUFFER_SIZE) ? length : I2C_MAX_BUFFER_SIZE;
-    memcpy(internal_buffer[id].i2c_buffer.data, buffer, copy_len);
-    internal_buffer[id].i2c_buffer.length = length;
-    internal_buffer[id].index = 0;
-    internal_buffer[id].retries = retries;
-    internal_buffer[id].target_address = target_address;
-    internal_buffer[id].command = (target_address << 1U) | I2C_CMD_WRITE_BIT;
+    // Don't forget to lock the buffer to inform the end user it is still being used and shall not be modified
+    master_buffer[id].i2c_buffer.data = buffer;
+    master_buffer[id].i2c_buffer.locked = true;
+    master_buffer[id].i2c_buffer.length = length;
+
+    master_buffer[id].index = 0;
+    master_buffer[id].retries = retries;
+    master_buffer[id].target_address = target_address;
+    master_buffer[id].command = (target_address << 1U) | I2C_CMD_WRITE_BIT;
 
     /* Switch internal state to master TX state and send a start condition on I2C bus */
     internal_configuration[id].state = I2C_STATE_MASTER_TRANSMITTING;
@@ -1310,16 +1376,17 @@ i2c_error_t i2c_read(const uint8_t id, const uint8_t target_address, uint8_t * c
     }
 
     /* Initialises internal buffer with supplied data */
-    // give access to i2c internal buffer in read-only mode
-    internal_buffer[id].i2c_buffer.data = buffer;
-    internal_buffer[id].i2c_buffer.length = length;
-    internal_buffer[id].index = 0;
-    internal_buffer[id].retries = retries;
-    internal_buffer[id].target_address = target_address;
+    master_buffer[id].i2c_buffer.data = buffer;
+    master_buffer[id].i2c_buffer.locked = true;
+    master_buffer[id].i2c_buffer.length = length;
+
+    master_buffer[id].index = 0;
+    master_buffer[id].retries = retries;
+    master_buffer[id].target_address = target_address;
 
     // First we need to write an operation code to our slave, so first send its address in write mode
     // Then once addressing is done and opcode is sent, switch to read mode !
-    internal_buffer[id].command = (target_address << 1U) | I2C_CMD_WRITE_BIT;
+    master_buffer[id].command = (target_address << 1U) | I2C_CMD_WRITE_BIT;
 
     /* Switch internal state to master TX state and send a start condition on I2C bus */
     internal_configuration[id].state = I2C_STATE_MASTER_TRANSMITTING;
@@ -1330,12 +1397,20 @@ i2c_error_t i2c_read(const uint8_t id, const uint8_t target_address, uint8_t * c
     return I2C_ERROR_OK;
 }
 
+bool i2c_is_master_buffer_locked(const uint8_t id)
+{
+    return master_buffer[id].i2c_buffer.locked;
+}
+
+bool i2c_is_slave_buffer_locked(const uint8_t id)
+{
+    return slave_buffer[id].i2c_buffer.locked;
+}
 
 ISR(TWI_vect)
 {
     process_helper();
 }
-
 
 void i2c_handle_vcopy(i2c_handle_t * dest, volatile i2c_handle_t const * const src)
 {

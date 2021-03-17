@@ -103,7 +103,8 @@ typedef enum
 typedef struct
 {
     uint8_t* data;  /**< pointer to targeted buffer. NULL if command is invalid or after first initialisation */
-    uint8_t length;                     /**< length of the selected buffer, to prevent writing/reading past the end of the buffer */
+    uint8_t length; /**< length of the selected buffer, to prevent writing/reading past the end of the buffer */
+    bool locked;    /**< This boolean lock tells if this buffer is still in use or not                        */
 } i2c_command_handling_buffers_t;
 
 /**
@@ -381,6 +382,52 @@ i2c_error_t i2c_slave_set_command_handler(const uint8_t id, i2c_command_handler_
 
 
 /**
+ * @brief Sets the data interface (array of bytes) that will be used by the I2C driver when operated as a slave.
+ * @param[in]   id      : id of the driver instance used to handle slave device
+ * @param[in]   data    : flat uint8_t array used as an I2C data interface (see explanations below)
+ * @param[in]   length  : length of allocated data array of the "data" parameter
+ * @return i2c_error_t :
+ *      I2C_ERROR_OK                 : Operation succeeded
+ *      I2C_ERROR_NULL_POINTER       : Uninitialised pointer parameter
+ *      I2C_ERROR_NULL_HANDLE        : Uninitialised handle in config object
+ *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
+ * @details
+ * This array of data is cached in the same way master buffer data and will be locked as soon as the slave driver needs
+ * access to it.
+ * This array of data shall then be used as if it was a flat register, with data encoded within those virtual registers.
+ * E.g. :
+ *  My device is a multiple channels temperature sensor and exposes several modeled like this :
+ *     # define TEMP_CHANNELS 8U
+ *     typedef uint16_t temp_t;
+ *     typedef struct
+ *     {
+ *       temp_t temps[TEMP_CHANNELS]; // Packs each temperature channel data into a single array
+ *       struct
+ *       {
+ *         uint8_t sampling_rate;       // Encodes the sample rate used to process temperature acquisition
+ *         uint8_t enabled;             // Encodes which channel is enabled (lsb is first channel, msb is last channel, 1 means activated)
+ *       } config;                      // configuration of this device, accessible throught I2C requests
+ *     } temperatures_t;
+ *
+ *  Now, I might have several commands bytes such as :
+ *  typedef enum
+ *  {
+ *     COMMAND_READ_TEMP_SINGLE,      // Allows to read a single 16 bit temperature channel
+ *     COMMAND_READ_TEMP_ALL,         // Allows to read all channels at once
+ *     COMMAND_SWITCH_CHANNEL_ON_OFF, // Allows to enable or disable a specifi channel
+ *     COMMAND_SET_SAMPLING_RATE,     // Allows to modify the sampling rate for all channels
+ *  } commands_t;
+ *
+ * In this example, we can already tell that the maximum required data interface length is TEMP_CHANNELS * 16 bits (COMMAND_READ_TEMP_ALL)
+ * So we'll need to allocate at least 8 * 16 bits (or 8 * 2 bytes) for this, so data array might look like something like this :
+ * uint8_t data[TEMP_CHANNELS * sizeof(temp_t)];
+ *
+ * Then we can pass this newly allocated data buffer to the I2C driver :
+ * i2c_error_t err = i2c_slave_set_data_interface( 0U, data, TEMP_CHANNELS * sizeof(temp_t));
+*/
+i2c_error_t i2c_slave_set_data_interface(const uint8_t id, uint8_t * data, const uint8_t length);
+
+/**
  * @brief initialises targeted instance of I2C driver with provided configuration object.
  * Note that handle field of the config object has to be initialised set before this function is called to prevent
  * getting an error about unitialised handle.
@@ -486,6 +533,26 @@ i2c_error_t i2c_write(const uint8_t id, const uint8_t target_address , uint8_t *
  *      I2C_ERROR_ALREADY_PROCESSING  : Selected instance is already processing (either in master or slave mode). @see i2c_get_state()
 */
 i2c_error_t i2c_read(const uint8_t id, const uint8_t target_address, uint8_t * const buffer, const uint8_t length, const uint8_t retries);
+
+/**
+ * @brief this function tells whether the master buffer passed in i2c_read and i2c_write is still used by the driver or not
+ * In case it is still used, it means caller shall not modify the given buffer, otherwise it might compromise the whole
+ * I2C driver current operation.
+ * @return
+ *      true    : buffer is currently used and is soft-locked by the driver. Do not modify it.
+ *      false   : driver's operations completed and data is now ready to be used
+*/
+bool i2c_is_master_buffer_locked(const uint8_t id);
+
+/**
+ * @brief this function tells whether the slave buffer passed in i2c_slave_set_data_interface is still used by the driver or not
+ * In case it is still used, it means caller shall not modify the given buffer, otherwise it might compromise the whole
+ * I2C driver current operation.
+ * @return
+ *      true    : buffer is currently used and is soft-locked by the driver. Do not modify it.
+ *      false   : driver's operations completed and data is now ready to be used
+*/
+bool i2c_is_slave_buffer_locked(const uint8_t id);
 
 #ifdef __cplusplus
 }

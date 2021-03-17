@@ -99,7 +99,7 @@ static void handle_slave_transmitting_data(void);
 // Master handlers
 static void handle_master_addressing_slave(void);
 static void handle_master_transmitting_data(void);
-static void handle_master_receiving_data(void); 
+static void handle_master_receiving_data(void);
 
 
 i2c_exposed_data_t * i2c_fake_device_get_exposed_data(void)
@@ -137,7 +137,6 @@ void i2c_fake_device_set_mode(const i2c_fake_device_operating_modes_t mode)
     exposed_data.mode = mode;
 }
 
-// Not implemented yet
 i2c_fake_device_error_t i2c_fake_device_write(const uint8_t address, uint8_t * buffer, const uint8_t length, const uint8_t retries)
 {
     if (MODE_IDLE != states.current)
@@ -153,11 +152,10 @@ i2c_fake_device_error_t i2c_fake_device_write(const uint8_t address, uint8_t * b
     master_data.retries = retries;
     master_data.request = I2C_FAKE_DEVICE_REQUEST_TYPE_WRITE;
     master_data.write_op = true;
-    
+
     return I2C_FAKE_DEVICE_ERROR_OK;
 }
 
-// Not implemented yet
 i2c_fake_device_error_t i2c_fake_device_read(const uint8_t address, uint8_t * buffer, const uint8_t length, const uint8_t retries)
 {
     if (MODE_IDLE != states.current)
@@ -173,7 +171,7 @@ i2c_fake_device_error_t i2c_fake_device_read(const uint8_t address, uint8_t * bu
     master_data.retries = retries;
     master_data.request = I2C_FAKE_DEVICE_REQUEST_TYPE_READ;
     master_data.write_op = true;
-    
+
     return I2C_FAKE_DEVICE_ERROR_OK;
 }
 
@@ -185,11 +183,11 @@ void i2c_fake_device_process(const uint8_t id)
         case MODE_IDLE:
             handle_idle();
             break;
-        
+
         case MODE_SLAVE_WAIT_FOR_MASTER_ADDRESSING:
             handle_slave_wait_for_master_addressing();
             break;
-        
+
         case MODE_MASTER_TO_SLAVE_ADDRESSING:
             handle_master_addressing_slave();
             break;
@@ -197,19 +195,19 @@ void i2c_fake_device_process(const uint8_t id)
         case MODE_SLAVE_TRANSMITTER:
             handle_slave_transmitting_data();
             break;
-        
+
         case MODE_SLAVE_RECEIVER:
             handle_slave_receiving_data();
             break;
-        
+
         case MODE_MASTER_TRANSMITTER:
             handle_master_transmitting_data();
             break;
-        
+
         case MODE_MASTER_RECEIVER:
             handle_master_receiving_data();
             break;
-        
+
         default:
             data_access.buffer = &wrong_access_requested;
 
@@ -265,7 +263,7 @@ static inline bool interprete_command(const uint8_t command)
 
         case I2C_FAKE_DEVICE_CMD_UNKNOWN:
         default:
-            // Will force device to loop on fake data instead of overflowing 
+            // Will force device to loop on fake data instead of overflowing
             reset_data_access();
             data_access.bad_access = true;
             succeeded = false;
@@ -308,16 +306,16 @@ static void handle_idle(void)
             states.current = MODE_MASTER_TO_SLAVE_ADDRESSING;
         }
     }
-    
-    // else, loop back in idle mode ... 
+
+    // else, loop back in idle mode ...
 }
 
 static void handle_slave_wait_for_master_addressing(void)
 {
     // Check incoming address
-    // if address matches my own address, 
+    // if address matches my own address,
     //   post an 'ACK' on interface
-    //   if command write : 
+    //   if command write :
     //      switch to MODE_SLAVE_RECEIVER
     //   else command read
     //      switch to MODE_SLAVE_TRANSMITTER
@@ -340,7 +338,7 @@ static void handle_slave_wait_for_master_addressing(void)
         }
     }
     // General call
-    else 
+    else
     {
         if(0x00 == ((interface.data & 0xFE) >> 1U))
         {
@@ -373,7 +371,7 @@ static void handle_slave_receiving_data(void)
         states.current = MODE_SLAVE_WAIT_FOR_MASTER_ADDRESSING;
         return;
     }
-    
+
     // Stop detected, stop further processing
     if (interface.stop_sent)
     {
@@ -388,7 +386,7 @@ static void handle_slave_receiving_data(void)
     if (MODE_SLAVE_WAIT_FOR_MASTER_ADDRESSING == states.previous)
     {
         bool succeeded = interprete_command(interface.data);
-        
+
         // Command was valid !
         if (true == succeeded)
         {
@@ -413,7 +411,7 @@ static void handle_slave_receiving_data(void)
             force_nack = false;
         }
 
-        
+
         if(false == force_nack)
         {
             // Guard previous bad access (out-of-bounds for instance)
@@ -433,11 +431,11 @@ static void handle_slave_receiving_data(void)
                     data_access.bad_access = true;
                     reset_data_access();
                 }
-                
+
             }
             // If goes here, assume transmission went ok
             // NACK case is handled by manually setting the nack state via force_
-            interface.ack_sent = true;            
+            interface.ack_sent = true;
         }
     }
     slave_clear_flags_from_interface();
@@ -475,7 +473,7 @@ static void handle_slave_transmitting_data(void)
         states.current = MODE_SLAVE_WAIT_FOR_MASTER_ADDRESSING;
         return;
     }
-    
+
     // Stop detected, stop further processing
     if (interface.stop_sent)
     {
@@ -495,7 +493,7 @@ static void handle_slave_transmitting_data(void)
             data_access.index++;
         }
     }
-    
+
     // Guard against wrong reads !
     if (true == data_access.bad_access)
     {
@@ -542,7 +540,7 @@ static void handle_master_transmitting_data(void)
 {
     static uint8_t retries = 0;
     master_clear_flags_from_interface();
-    
+
     // Handle previously sent byte acknowledgment
     if (MODE_MASTER_TO_SLAVE_ADDRESSING == states.previous)
     {
@@ -605,9 +603,9 @@ static void handle_master_transmitting_data(void)
 static void handle_master_receiving_data(void)
 {
     master_clear_flags_from_interface();
-    
+
     // We just switched to this mode : this means the last byte
-    // in interface.data still contains the address + read bit. Master needs to consume the 
+    // in interface.data still contains the address + read bit. Master needs to consume the
     // Acknowledgment first, then it might start to effectively read data
     if (states.previous != states.current)
     {

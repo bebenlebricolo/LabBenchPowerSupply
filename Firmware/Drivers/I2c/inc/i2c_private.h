@@ -20,7 +20,7 @@ void i2c_driver_reset_memory(void);
  * @brief retrieves internal buffer
  * @param   id : I2C driver's id
 */
-uint8_t * i2c_get_internal_data_buffer(const uint8_t id);
+uint8_t * i2c_get_master_data_buffer(const uint8_t id);
 
 
 /**
