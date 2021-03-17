@@ -18,6 +18,7 @@
     #include <avr/interrupt.h>
 #else
     #include "test_isr_stub.h"
+    #include "memutils.h"
 #endif
 
 /* Minimum I2C request size is 2 to account for : 1 op code + 1 read/write data for configurablde devices
@@ -75,7 +76,7 @@ static inline void clear_twint(const uint8_t id)
 
 static inline void reset_i2c_command_handling_buffers(const uint8_t id)
 {
-    memset(internal_buffer[id].i2c_buffer.data, 0, I2C_MAX_BUFFER_SIZE);
+    internal_buffer[id].i2c_buffer.data = NULL;
     internal_buffer[id].i2c_buffer.length = 0;
 }
 
@@ -825,7 +826,6 @@ static i2c_error_t i2c_master_rx_process(const uint8_t id)
                 /* We finished to read data from I2C bus, exiting gracefully
                    Will proceed with next byte and return a NACK before switching to MAS_RX_DATA_RECEIVED_NACK case
                   (used this time to indicate the end of communication) */
-                // *internal_configuration[id].handle._TWCR &= ~TWEA_MSK;
 
                 /* Note : this is not part of the datasheet, but it seems right to end the communication when everything is fine */
                 *internal_configuration[id].handle._TWCR = (*internal_configuration[id].handle._TWCR & ~TWINT_MSK) | TWSTO_MSK;
@@ -1278,7 +1278,7 @@ i2c_error_t i2c_write(const uint8_t id, const uint8_t target_address , uint8_t *
     return I2C_ERROR_OK;
 }
 
-i2c_error_t i2c_read(const uint8_t id, const uint8_t target_address, uint8_t const * buffer, const uint8_t length, const uint8_t retries)
+i2c_error_t i2c_read(const uint8_t id, const uint8_t target_address, uint8_t * const buffer, const uint8_t length, const uint8_t retries)
 {
     if (!is_id_valid(id))
     {
@@ -1311,7 +1311,7 @@ i2c_error_t i2c_read(const uint8_t id, const uint8_t target_address, uint8_t con
 
     /* Initialises internal buffer with supplied data */
     // give access to i2c internal buffer in read-only mode
-    buffer = internal_buffer[id].i2c_buffer.data;
+    internal_buffer[id].i2c_buffer.data = buffer;
     internal_buffer[id].i2c_buffer.length = length;
     internal_buffer[id].index = 0;
     internal_buffer[id].retries = retries;

@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 #include "i2c.h"
+#include "i2c_private.h"
 #include "i2c_register_stub.h"
 #include "test_isr_stub.h"
 #include "I2cBusSimulator.hpp"
@@ -335,7 +336,7 @@ TEST(i2c_driver_tests, guard_out_of_range)
     }
     {
         uint8_t address = 33;
-        uint8_t buffer;
+        uint8_t buffer = 8;
         uint8_t length = 2;
         auto ret = i2c_read(id, address, &buffer, length, 0);
         ASSERT_EQ(ret , I2C_ERROR_DEVICE_NOT_FOUND);
@@ -647,6 +648,9 @@ TEST_F(I2cTestFixture, test_write_to_wrong_address)
 TEST_F(I2cTestFixture, test_read_message_from_fake_device)
 {
     I2cBusSimulator simulator;
+
+    // Allocate memory for the command byte (first byte of array)
+    // and allocate memory for the payload (message length)
     uint8_t buffer[I2C_FAKE_DEVICE_MSG_LEN + 1] = {0};
     buffer[0] = I2C_FAKE_DEVICE_CMD_MESSAGE;
 
@@ -662,9 +666,15 @@ TEST_F(I2cTestFixture, test_read_message_from_fake_device)
     ASSERT_EQ(I2C_ERROR_OK, ret);
     ASSERT_EQ(I2C_STATE_READY, state);
 
+    // Read message will be written inside buffer (which is the actual output of that function)
     ret = i2c_read(0U, 0x23, buffer, I2C_FAKE_DEVICE_MSG_LEN + 1, 0);
     ASSERT_EQ(I2C_ERROR_OK, ret);
-    ASSERT_EQ(i2c_get_internal_data_buffer(0U), buffer);
+
+    uint8_t * i2c_internal_buffer = i2c_get_internal_data_buffer(0U);
+    for (uint8_t i =0 ; i < I2C_MAX_BUFFER_SIZE ; i++)
+    {
+        ASSERT_EQ(buffer[i], i2c_internal_buffer[i]);
+    }
 
     // Run the simulation !
     uint8_t loops = 40U;

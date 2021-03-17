@@ -9,7 +9,7 @@ extern "C"
 #include <stdint.h>
 #include "i2c_device_interface.h"
 
-#define I2C_FAKE_DEVICE_MSG_LEN 30U
+#define I2C_FAKE_DEVICE_MSG_LEN 29U
 
 
 /* Device operating modes */

@@ -10,7 +10,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/Tests/build/bin/Drivers/I2c/i2c_driver_tests",
-            "args": ["--gtest_filter=i2c_driver_tests.test_initialisation_deinitialisation"],
+            "args": ["--gtest_filter=I2cTestFixture.test_read_message_from_fake_device"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

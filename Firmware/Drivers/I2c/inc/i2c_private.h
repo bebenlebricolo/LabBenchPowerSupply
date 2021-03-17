@@ -1,11 +1,13 @@
 #ifndef I2C_PRIVATE_HEADER
 #define I2C_PRIVATE_HEADER
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "i2c.h"
 
 #ifdef UNIT_TESTING
-
-#include "memutils.h"
 
 /**
  * @brief clears the driver's internal memory and resets everything to 0 (memset used)
@@ -35,6 +37,10 @@ i2c_command_handler_t i2c_slave_get_command_handler(const uint8_t id);
 */
 void i2c_set_state(const uint8_t id, const i2c_state_t state);
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* I2C_PRIVATE_HEADER */
