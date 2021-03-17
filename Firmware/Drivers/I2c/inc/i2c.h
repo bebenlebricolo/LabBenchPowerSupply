@@ -155,18 +155,6 @@ typedef i2c_slave_handler_error_t (*i2c_command_handler_t)(volatile i2c_command_
    ######################################## Configuration API ##################################
    ############################################################################################# */
 
-#ifdef UNIT_TESTING
-/**
- * @brief clears the driver's internal memory and resets everything to 0 (memset used)
- * as depicted with the above conditionnal compilation #define, this is only needed while
- * performing unit testing.
-*/
-void i2c_driver_reset_memory(void);
-
-uint8_t * i2c_get_internal_data_buffer(const uint8_t id);
-
-#endif
-
 /**
  * @brief gets a default configuration for I2C driver, with non initialised handle (you have to manually input right register addresses)
  * @param[out]  config  : default configuration output
@@ -391,13 +379,6 @@ i2c_error_t i2c_disable(const uint8_t id);
 */
 i2c_error_t i2c_slave_set_command_handler(const uint8_t id, i2c_command_handler_t command_handler);
 
-#ifdef UNIT_TESTING
-/**
- * @brief this is used in a unit testing context and is meaningful when checking if
- * the command handler has effectively been registered correctly
-*/
-i2c_command_handler_t i2c_slave_get_command_handler(const uint8_t id);
-#endif
 
 /**
  * @brief initialises targeted instance of I2C driver with provided configuration object.
@@ -434,16 +415,6 @@ i2c_error_t i2c_deinit(const uint8_t id);
  *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
 */
 i2c_error_t i2c_get_state(const uint8_t id, i2c_state_t * const state);
-
-#ifdef UNIT_TESTING
-/**
- * @brief this is only needed while performing unit tests, and allows
- * to manually set the internal state machine current state.
- * This is essentially meaningful when checking whether get/set api is accessing the
- * right data
-*/
-void i2c_set_state(const uint8_t id, const i2c_state_t state);
-#endif
 
 /**
  * @brief this function shall be used when non-interrupt mode is used

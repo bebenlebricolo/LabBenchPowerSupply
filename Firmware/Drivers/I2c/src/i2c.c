@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <string.h>
 
-#include "memutils.h"
+#include "i2c_private.h"
 
 #define I2C_MAX_ADDRESS 127U
 
@@ -25,11 +25,14 @@
 #define MINIMUM_REQUEST_SIZE (1U)
 
 
+/**
+ * @brief records the kind of request is ongoing in the internal state machine
+*/
 typedef enum
 {
-    I2C_REQUEST_WRITE,
-    I2C_REQUEST_READ,
-    I2C_REQUEST_IDLE,
+    I2C_REQUEST_WRITE,  /**< Write request ongoing                */
+    I2C_REQUEST_READ,   /**< Read request ongoing                 */
+    I2C_REQUEST_IDLE,   /**< No request ongoing, driver is idling */
 } i2c_request_t;
 
 
