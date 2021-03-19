@@ -55,7 +55,7 @@ typedef struct
 } i2c_exposed_data_t;
 
 /* Interface */
-void i2c_fake_device_init(const uint8_t address, const bool general_call_enabled);
+void i2c_fake_device_init(const uint8_t address, const bool general_call_enabled, const bool needs_opcode);
 void i2c_fake_device_clear(void);
 
 /**

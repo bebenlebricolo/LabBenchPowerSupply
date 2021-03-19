@@ -1351,7 +1351,7 @@ i2c_error_t i2c_write(const uint8_t id, const uint8_t target_address , uint8_t *
     return I2C_ERROR_OK;
 }
 
-i2c_error_t i2c_read(const uint8_t id, const uint8_t target_address, uint8_t * const buffer, const uint8_t length, const uint8_t retries)
+i2c_error_t i2c_read(const uint8_t id, const uint8_t target_address, uint8_t * const buffer, const uint8_t length, const bool has_opcode, const uint8_t retries)
 {
     if (!is_id_valid(id))
     {
@@ -1391,12 +1391,25 @@ i2c_error_t i2c_read(const uint8_t id, const uint8_t target_address, uint8_t * c
     master_buffer[id].retries = retries;
     master_buffer[id].target_address = target_address;
 
-    // First we need to write an operation code to our slave, so first send its address in write mode
-    // Then once addressing is done and opcode is sent, switch to read mode !
-    master_buffer[id].command = (target_address << 1U) | I2C_CMD_WRITE_BIT;
+    // Send opcode to slave device using a regular I2C master TX transmission
+    if (true == has_opcode)
+    {
+        // First we need to write an operation code to our slave, so first send its address in write mode
+        // Then once addressing is done and opcode is sent, switch to read mode !
+        master_buffer[id].command = (target_address << 1U) | I2C_CMD_WRITE_BIT;
 
-    /* Switch internal state to master TX state and send a start condition on I2C bus */
-    internal_configuration[id].state = I2C_STATE_MASTER_TRANSMITTING;
+        /* Switch internal state to master TX state and send a start condition on I2C bus */
+        internal_configuration[id].state = I2C_STATE_MASTER_TRANSMITTING;
+    }
+    else
+    {
+        // First we need to write an operation code to our slave, so first send its address in write mode
+        // Then once addressing is done and opcode is sent, switch to read mode !
+        master_buffer[id].command = (target_address << 1U) | I2C_CMD_READ_BIT;
+
+        /* Switch internal state to master TX state and send a start condition on I2C bus */
+        internal_configuration[id].state = I2C_STATE_MASTER_RECEIVING;
+    }
     internal_configuration[id].request_type = I2C_REQUEST_READ;
     *internal_configuration[id].handle._TWCR = (*internal_configuration[id].handle._TWCR & ~TWINT_MSK) | TWSTA_MSK;
     clear_twint(id);

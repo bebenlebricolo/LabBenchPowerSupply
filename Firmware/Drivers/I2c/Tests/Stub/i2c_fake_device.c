@@ -67,6 +67,7 @@ static bool force_nack = false;     /**< Used by slave data receiving routine to
 // When a wrong command is sent, device will loop on this fake byte until the end of the master
 // operation
 static uint8_t wrong_access_requested = 0;
+static bool needs_opcode = false;
 
 // State machine handling structure
 static struct
@@ -122,14 +123,16 @@ void i2c_fake_device_clear(void)
 void i2c_fake_device_force_nack(void)
 {
     force_nack = true;
+    needs_opcode = false;
 }
 
-void i2c_fake_device_init(const uint8_t address, const bool general_call_enabled)
+void i2c_fake_device_init(const uint8_t address, const bool general_call_enabled, const bool has_opcode)
 {
     i2c_fake_device_clear();
     reset_data_access();
     interface.address = address;
     interface.general_call_enabled = general_call_enabled;
+    needs_opcode = has_opcode;
 }
 
 void i2c_fake_device_set_mode(const i2c_fake_device_operating_modes_t mode)
@@ -491,6 +494,16 @@ static void handle_slave_transmitting_data(void)
         if (true == interface.ack_sent)
         {
             data_access.index++;
+        }
+    }
+    else if (MODE_SLAVE_WAIT_FOR_MASTER_ADDRESSING == states.previous)
+    {
+        if (false == needs_opcode)
+        {
+            data_access.buffer = (uint8_t*) &exposed_data.mode;
+            data_access.length = 1U;
+            data_access.index = 0;
+            data_access.bad_access = false;
         }
     }
 

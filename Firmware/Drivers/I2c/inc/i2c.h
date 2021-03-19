@@ -497,7 +497,12 @@ i2c_error_t i2c_process(const uint8_t id);
 i2c_error_t i2c_write(const uint8_t id, const uint8_t target_address , uint8_t * const buffer, const uint8_t length, const uint8_t retries);
 
 /**
- * @brief reads data to I2C bus
+ * @brief Reads data from the targeted slave device with or without opcode writing beforehand.
+ * @details for some devices, an opcode is required to be sent first in order for the targeted slave to
+ * write the appropriate data to exposed buffer.
+ * When this feature is not required (for small devices such as PCF8574 io expander), no opcode is required and
+ * data could be read directly from the output buffer.
+ *
  * @param[in]   id              : selected I2C driver instance to be configured
  * @param[in]   target_address  : targeted slave address on I2C bus (address is not checked at runtime, must not bit greater than 127)
  * @param[out]  buffer          : pointer to a buffer of bytes holding the actual payload to be sent over I2C bus
@@ -505,6 +510,10 @@ i2c_error_t i2c_write(const uint8_t id, const uint8_t target_address , uint8_t *
  *                                read data from ; so it is actually an i2c write action (single byte) followed by a subsequent read starting
  *                                from pointed slave register's address)
  * @param[in]   length          : total length of given buffer
+ * @param[in]   has_opcode      : tells if the i2c driver shall send an opcode in write mode first and then read data back or not
+ *                                  - true  : first byte of given buffer should contain the opcode which will be sent to the target
+ *                                            before a read operation is performed
+ *                                  - false : no opcode is required and i2c driver will directly init rx transmission (used for small devices)
  * @param[in]   retries         : number of available tries before giving up
  * @return i2c_error_t :
  *      I2C_ERROR_OK                  : Operation succeeded
@@ -515,7 +524,7 @@ i2c_error_t i2c_write(const uint8_t id, const uint8_t target_address , uint8_t *
  *      I2C_ERROR_REQUEST_TOO_SHORT   : Given request's length is too short (shall be >= 2)
  *      I2C_ERROR_ALREADY_PROCESSING  : Selected instance is already processing (either in master or slave mode). @see i2c_get_state()
 */
-i2c_error_t i2c_read(const uint8_t id, const uint8_t target_address, uint8_t * const buffer, const uint8_t length, const uint8_t retries);
+i2c_error_t i2c_read(const uint8_t id, const uint8_t target_address, uint8_t * const buffer, const uint8_t length, const bool has_opcode, const uint8_t retries);
 
 /**
  * @brief this function tells whether the master buffer passed in i2c_read and i2c_write is still used by the driver or not

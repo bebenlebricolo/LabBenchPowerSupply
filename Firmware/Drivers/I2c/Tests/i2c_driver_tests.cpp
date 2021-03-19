@@ -120,7 +120,7 @@ TEST(i2c_driver_tests, guard_null_pointer)
     }
     {
         uint8_t * const buffer = NULL;
-        auto ret = i2c_read(0U, 0x00, buffer, 10, 0);
+        auto ret = i2c_read(0U, 0x00, buffer, 10, false, 0);
         ASSERT_EQ(ret, I2C_ERROR_NULL_POINTER);
     }
 }
@@ -338,7 +338,7 @@ TEST(i2c_driver_tests, guard_out_of_range)
         uint8_t address = 33;
         uint8_t buffer = 8;
         uint8_t length = 2;
-        auto ret = i2c_read(id, address, &buffer, length, 0);
+        auto ret = i2c_read(id, address, &buffer, length, false, 0);
         ASSERT_EQ(ret , I2C_ERROR_DEVICE_NOT_FOUND);
         ret = i2c_write(id, address, &buffer, length, 0);
         ASSERT_EQ(ret , I2C_ERROR_DEVICE_NOT_FOUND);
@@ -366,7 +366,7 @@ TEST(i2c_driver_tests, guard_uninitialised_device)
         ret = i2c_write(0U, address, &buffer, length, 0U);
         ASSERT_EQ(ret, I2C_ERROR_NOT_INITIALISED);
 
-        ret = i2c_read(0U, address, &buffer, length, 0U);
+        ret = i2c_read(0U, address, &buffer, length, false, 0U);
         ASSERT_EQ(ret, I2C_ERROR_NOT_INITIALISED);
     }
 }
@@ -580,7 +580,7 @@ TEST_F(I2cTestFixture, test_write_hello_to_device)
     uint8_t buffer[10] = {I2C_FAKE_DEVICE_CMD_MESSAGE,'H','e','l','l','o','w','w','!',0};
 
     // fake device with address 0x23
-    i2c_fake_device_init(0x23, false);
+    i2c_fake_device_init(0x23, false, true);
     // Registers a fake device called twi hardware stub, which is linked with I2C driver
     simulator.register_device(twi_hardware_stub_get_interface, twi_hardware_stub_process);
     simulator.register_device(i2c_fake_device_get_interface, i2c_fake_device_process);
@@ -611,7 +611,7 @@ TEST_F(I2cTestFixture, test_write_temperature_1_to_device)
     uint8_t buffer[2] = {I2C_FAKE_DEVICE_CMD_TEMPERATURE_1, 125};
 
     // fake device with address 0x23
-    i2c_fake_device_init(0x23, false);
+    i2c_fake_device_init(0x23, false, true);
     // Registers a fake device called twi hardware stub, which is linked with I2C driver
     simulator.register_device(twi_hardware_stub_get_interface, twi_hardware_stub_process);
     simulator.register_device(i2c_fake_device_get_interface, i2c_fake_device_process);
@@ -646,7 +646,7 @@ TEST_F(I2cTestFixture, test_write_to_wrong_address)
     uint8_t buffer[2] = {I2C_FAKE_DEVICE_CMD_TEMPERATURE_1, 125};
 
     // fake device with address 0x23
-    i2c_fake_device_init(0x23, false);
+    i2c_fake_device_init(0x23, false, true);
     // Registers a fake device called twi hardware stub, which is linked with I2C driver
     simulator.register_device(twi_hardware_stub_get_interface, twi_hardware_stub_process);
     simulator.register_device(i2c_fake_device_get_interface, i2c_fake_device_process);
@@ -685,7 +685,7 @@ TEST_F(I2cTestFixture, test_read_message_from_fake_device)
     buffer[0] = I2C_FAKE_DEVICE_CMD_MESSAGE;
 
     // fake device with address 0x23
-    i2c_fake_device_init(0x23, false);
+    i2c_fake_device_init(0x23, false, true);
 
     // Registers a fake device called twi hardware stub, which is linked with I2C driver
     simulator.register_device(twi_hardware_stub_get_interface, twi_hardware_stub_process);
@@ -697,7 +697,7 @@ TEST_F(I2cTestFixture, test_read_message_from_fake_device)
     ASSERT_EQ(I2C_STATE_READY, state);
 
     // Read message will be written inside buffer (which is the actual output of that function)
-    ret = i2c_read(0U, 0x23, buffer, I2C_FAKE_DEVICE_MSG_LEN + 1, 0);
+    ret = i2c_read(0U, 0x23, buffer, I2C_FAKE_DEVICE_MSG_LEN + 1, true, 0);
     ASSERT_EQ(I2C_ERROR_OK, ret);
 
     // Buffer shall be locked right now
@@ -730,6 +730,56 @@ TEST_F(I2cTestFixture, test_read_message_from_fake_device)
 
 }
 
+TEST_F(I2cTestFixture, test_read_no_opcode_from_fake_device)
+{
+    I2cBusSimulator simulator;
+
+    // Allocate memory for the command byte (first byte of array)
+    // and allocate memory for the payload (message length)
+    uint8_t buffer = {0};
+
+    // fake device with address 0x23
+    i2c_fake_device_init(0x23, false, false);
+    i2c_fake_device_set_mode(I2C_FAKE_DEVICE_OPERATING_MODE_TEMP_2_ONLY);
+
+    // Registers a fake device called twi hardware stub, which is linked with I2C driver
+    simulator.register_device(twi_hardware_stub_get_interface, twi_hardware_stub_process);
+    simulator.register_device(i2c_fake_device_get_interface, i2c_fake_device_process);
+
+    i2c_state_t state;
+    auto ret = i2c_get_state(0U, &state);
+    ASSERT_EQ(I2C_ERROR_OK, ret);
+    ASSERT_EQ(I2C_STATE_READY, state);
+
+    // Read message will be written inside buffer (which is the actual output of that function)
+    ret = i2c_read(0U, 0x23, &buffer, 1, false, 0);
+    ASSERT_EQ(I2C_ERROR_OK, ret);
+
+    // Buffer shall be locked right now
+    ASSERT_TRUE(i2c_is_master_buffer_locked(0));
+
+    uint8_t * i2c_internal_buffer = i2c_get_master_data_buffer(0U);
+    ASSERT_EQ(i2c_internal_buffer[0], buffer);
+
+    // Run the simulation !
+    uint8_t loops = 40U;
+    for (uint8_t i = 0 ;  i < loops ; i++)
+    {
+        simulator.process(0U);
+    }
+
+    // Buffer shall not be locked anymore
+    ASSERT_FALSE(i2c_is_master_buffer_locked(0));
+
+    // Retrieve data exposed on I2c interface by this fake device
+    auto* exposed_data = i2c_fake_device_get_exposed_data();
+
+    // Verify the transaction completes
+    ASSERT_EQ((uint8_t)exposed_data->mode, buffer);
+    ASSERT_EQ(I2C_FAKE_DEVICE_OPERATING_MODE_TEMP_2_ONLY, (i2c_fake_device_operating_modes_t) buffer);
+
+}
+
 TEST_F(I2cTestFixture, test_write_read_message_from_fake_device)
 {
     I2cBusSimulator simulator;
@@ -737,7 +787,7 @@ TEST_F(I2cTestFixture, test_write_read_message_from_fake_device)
     buffer[0] = I2C_FAKE_DEVICE_CMD_MESSAGE;
 
     // fake device with address 0x23
-    i2c_fake_device_init(0x23, false);
+    i2c_fake_device_init(0x23, false, true);
 
     // Registers a fake device called twi hardware stub, which is linked with I2C driver
     simulator.register_device(twi_hardware_stub_get_interface, twi_hardware_stub_process);
@@ -749,7 +799,7 @@ TEST_F(I2cTestFixture, test_write_read_message_from_fake_device)
     ASSERT_EQ(I2C_ERROR_OK, ret);
     ASSERT_EQ(I2C_STATE_READY, state);
 
-    ret = i2c_read(0U, 0x23, buffer, I2C_FAKE_DEVICE_MSG_LEN + 1, 0);
+    ret = i2c_read(0U, 0x23, buffer, I2C_FAKE_DEVICE_MSG_LEN + 1, true, 0);
     ASSERT_EQ(I2C_ERROR_OK, ret);
     ASSERT_EQ(i2c_get_master_data_buffer(0U), buffer);
 
@@ -810,7 +860,7 @@ TEST_F(I2cTestFixture, test_write_read_message_from_fake_device)
 
     // Read back data from fake device and compare it to Hello World string
     memset(buffer + 1, 0, I2C_FAKE_DEVICE_MSG_LEN);
-    ret = i2c_read(0U, 0x23, buffer, I2C_FAKE_DEVICE_MSG_LEN + 1, 0);
+    ret = i2c_read(0U, 0x23, buffer, I2C_FAKE_DEVICE_MSG_LEN + 1, true, 0);
 
     // Buffer shall be locked right now
     ASSERT_TRUE(i2c_is_master_buffer_locked(0));
@@ -845,7 +895,7 @@ TEST_F(I2cTestFixture, test_write_fake_device_working_mode)
     buffer[1] = I2C_FAKE_DEVICE_OPERATING_MODE_FREE_WHEEL;
 
     // fake device with address 0x23
-    i2c_fake_device_init(0x23, false);
+    i2c_fake_device_init(0x23, false, true);
 
     // Registers a fake device called twi hardware stub, which is linked with I2C driver
     simulator.register_device(twi_hardware_stub_get_interface, twi_hardware_stub_process);
@@ -888,7 +938,7 @@ TEST_F(I2cTestFixture, test_write_fake_device_working_mode)
 
     // Reset buffer and write a new message to fake device
     buffer[1] = 0;
-    ret = i2c_read(0U, 0x23, buffer, 2U, 0);
+    ret = i2c_read(0U, 0x23, buffer, 2U, true, 0);
 
     // Buffer shall be locked right now
     ASSERT_TRUE(i2c_is_master_buffer_locked(0));
@@ -921,7 +971,7 @@ TEST_F(I2cTestFixture, test_twi_as_slave_receiver_only_single_word)
     buffer[1] = (uint8_t) true;
 
     // fake device with address 0x23
-    i2c_fake_device_init(0x23, false);
+    i2c_fake_device_init(0x23, false, true);
     i2c_fake_slave_application_init();
 
     // Registers a fake device called twi hardware stub, which is linked with I2C driver
@@ -968,7 +1018,7 @@ TEST_F(I2cTestFixture, test_twi_as_slave_receiver_only_multiple_bytes)
 
     // Prepare message payload for i2c_fake_device
     snprintf((char*) (buffer + 1), 9, "Yollow !");
-    i2c_fake_device_init(0x23, false);
+    i2c_fake_device_init(0x23, false, true);
     i2c_fake_slave_application_init();
 
     // Registers a fake device called twi hardware stub, which is linked with I2C driver
@@ -1045,7 +1095,7 @@ TEST_F(I2cTestFixture, test_twi_as_slave_transmitter)
     buffer[0] = I2C_FAKE_SLAVE_APPLICATION_DATA_CMD_BYTE_ARRAY;
 
     // fake device with address 0x23
-    i2c_fake_device_init(0x23, false);
+    i2c_fake_device_init(0x23, false, true);
     i2c_fake_slave_application_init();
 
     // Registers a fake device called twi hardware stub, which is linked with I2C driver
@@ -1092,7 +1142,7 @@ TEST_F(I2cTestFixture, test_twi_as_slave_transmitter_all_in_one)
     buffer[0] = I2C_FAKE_SLAVE_APPLICATION_DATA_CMD_BYTE_ARRAY;
 
     // fake device with address 0x23
-    i2c_fake_device_init(0x23, false);
+    i2c_fake_device_init(0x23, false, true);
     i2c_fake_slave_application_init();
 
     // Registers a fake device called twi hardware stub, which is linked with I2C driver
@@ -1204,7 +1254,7 @@ TEST_F(I2cTestFixture, test_twi_master_receives_nack_while_writing)
     snprintf((char *) (buffer + 1), I2C_FAKE_DEVICE_MSG_LEN, "New message to be written");
 
     // fake device with address 0x23
-    i2c_fake_device_init(0x23, false);
+    i2c_fake_device_init(0x23, false, true);
     i2c_fake_slave_application_init();
 
     // Registers a fake device called twi hardware stub, which is linked with I2C driver
