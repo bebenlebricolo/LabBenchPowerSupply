@@ -147,7 +147,7 @@ endif( NOT ( (CMAKE_BUILD_TYPE MATCHES Release) OR
   -Werror \
   -Wfatal-errors ")
 
-  set(COMPILER_LINKER_FORWARD_OPTIONS "-Wl,--gc-sections")
+  set(COMPILER_LINKER_FORWARD_OPTIONS "-Wl,--gc-sections -Wl,--relax")
   set(FULL_OPTIONS "${COMPILE_OPTIONS} ${COMPILER_WARNINGS} ${COMPILER_LINKER_FORWARD_OPTIONS}")
 
   set (CMAKE_CXX_FLAGS_RELEASE "-Os -fno-exceptions ${FULL_OPTIONS} " CACHE STRING "Default C++ flags for release" FORCE )
