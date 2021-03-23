@@ -168,6 +168,28 @@
             "cStandard": "c11",
             "cppStandard": "c++17",
             "intelliSenseMode": "gcc-x86"
+        },
+        {
+            "name": "LabBenchPowerSupply I2C End to end tests firmwares",
+            "includePath": [
+                "${workspaceFolder}/Drivers/I2c/inc",
+                "${workspaceFolder}/E2ETests/I2C_firmwares/master_firmware/inc",
+                "${workspaceFolder}/E2ETests/I2C_firmwares/slave_firmware/inc",
+                "${workspaceFolder}/**",
+
+                "/usr/include",
+                "/usr/include/c++/**/",
+                "/usr/include/gtest",
+                "/usr/avr/include",
+                "/usr/lib/gcc/avr/10.2.0/include"
+            ],
+            "defines": [
+                "__AVR_ATmega328__",
+            ],
+            "compilerPath": "/usr/bin/avr-gcc",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "gcc-x86"
         }
     ],
     "version": 4
