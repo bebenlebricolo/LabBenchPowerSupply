@@ -88,7 +88,7 @@ public:
     void stub_timings()
     {
         timebase_stub_clear();
-        uint16_t stubbed_durations[6U] = {40, 1, 5, 1, 2, 1};
+        uint16_t stubbed_durations[6U] = {40, 2, 5, 2, 2, 2};
         uint16_t stubbed_ticks[12U] = {0,4,12,35,50,76,82,112,123,145,165,175};
         timebase_stub_set_durations(stubbed_durations, 6U);
         timebase_stub_set_times(stubbed_ticks, 12U);
@@ -569,10 +569,10 @@ TEST_F(LcdScreenTestFixtureOk, test_move_cursor_to_coord)
 {
     const uint8_t expected_sent_data[4U] =
     {
-        0xbc,   // 55(10) -> 0x37 (16) ; cmd code : 0x8 + 0x3 -> 0xb
-        0xb8,
-        0x7c,
-        0x78
+        0xcc,
+        0xc8,
+        0xfc,
+        0xf8
     };
 
     auto error = hd44780_lcd_init(&config);
@@ -739,9 +739,9 @@ TEST_F(LcdScreenTestFixtureWithI2cErrors, test_command_home_max_error_hit)
     ASSERT_TRUE(command_sequencer_is_reset());
 
     i2c_error_collection = {
-        I2C_ERROR_ALREADY_PROCESSING,
-        I2C_ERROR_ALREADY_PROCESSING,
-        I2C_ERROR_ALREADY_PROCESSING,
+        I2C_ERROR_INVALID_ADDRESS,
+        I2C_ERROR_INVALID_ADDRESS,
+        I2C_ERROR_INVALID_ADDRESS,
     };
 
     error = hd44780_lcd_home();
@@ -781,34 +781,6 @@ TEST_F(LcdScreenTestFixtureWithI2cErrors, test_command_home_ok)
     process_command();
     error = hd44780_lcd_get_last_error();
     ASSERT_EQ(error, HD44780_LCD_ERROR_OK);
-
-    ASSERT_EQ(command_sequencer->process_command, process_command_idling);
-    ASSERT_TRUE(command_sequencer_is_reset());
-}
-
-TEST_F(LcdScreenTestFixtureWithI2cErrors, test_command_clear_max_errors_hit)
-{
-    auto error = hd44780_lcd_init(&config);
-    ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
-
-    stub_timings();
-    // Initialise driver and screen
-    process_command();
-    ASSERT_TRUE(command_sequencer_is_reset());
-
-    i2c_error_collection = {
-        I2C_ERROR_DEVICE_NOT_FOUND,
-        I2C_ERROR_ALREADY_PROCESSING,
-    };
-
-    error = hd44780_lcd_clear();
-    ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
-    ASSERT_EQ(command_sequencer->process_command, internal_command_clear);
-    ASSERT_TRUE(command_sequencer_is_reset());
-
-    process_command();
-    error = hd44780_lcd_get_last_error();
-    ASSERT_EQ(error, HD44780_LCD_ERROR_MAX_ERROR_COUNT_HIT);
 
     ASSERT_EQ(command_sequencer->process_command, process_command_idling);
     ASSERT_TRUE(command_sequencer_is_reset());
