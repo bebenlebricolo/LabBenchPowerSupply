@@ -1,5 +1,6 @@
 add_executable(slave_firmware
     ${CMAKE_CURRENT_SOURCE_DIR}/src/main.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/i2c_slave_handler.c
 )
 
 target_include_directories(slave_firmware PUBLIC

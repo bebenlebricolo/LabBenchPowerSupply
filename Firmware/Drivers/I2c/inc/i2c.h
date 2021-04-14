@@ -72,12 +72,13 @@ typedef enum
 */
 typedef enum
 {
-    I2C_SLAVE_HANDLER_ERROR_OK,                     /**< Operation is successful                                            */
-    I2C_SLAVE_HANDLER_ERROR_UNKNOWN_COMMAND,        /**< Command written into TWI data register cannot be resolved          */
-    I2C_SLAVE_HANDLER_ERROR_BUFFER_NULLPTR,         /**< Given buffer is set to NULL (uninitialized)                        */
-    I2C_SLAVE_HANDLER_ERROR_BUFFER_OVERFLOW_GUARD,  /**< Prevents to read or write past the length of slave virtual buffer  */
+    I2C_SLAVE_HANDLER_ERROR_OK,                     /**< Operation is successful                                                     */
+    I2C_SLAVE_HANDLER_ERROR_INVALID_PAYLOAD,        /**< Currently processed data payload cannot be interpreted by slave application */
+    I2C_SLAVE_HANDLER_ERROR_UNKNOWN_COMMAND,        /**< Command written into TWI data register cannot be resolved                   */
+    I2C_SLAVE_HANDLER_ERROR_BUFFER_NULLPTR,         /**< Given buffer is set to NULL (uninitialized)                                 */
+    I2C_SLAVE_HANDLER_ERROR_BUFFER_OVERFLOW_GUARD,  /**< Prevents to read or write past the length of slave virtual buffer           */
     I2C_SLAVE_HANDLER_ERROR_NO_HANDLER_SPECIFIED,   /**< Generic error thrown by i2c driver in case slave data handlers still
-                                                         point to default ones                                              */
+                                                         point to default ones                                                       */
 } i2c_slave_handler_error_t;
 
 typedef enum
@@ -128,9 +129,13 @@ typedef enum
  * by a master on the bus.
  * Its role is to parse the incoming uint8_t byte (which is the value stored in TWI Data Register) and to initialise the
  * i2c_command_handling_buffers_t with pointers to internal data.
- * @param[in]   uint8_t -> byte                         : this is the data found in TWDR (to be parsed)
- * @param[out]  i2c_command_handling_buffers_t->buffer  : the buffer which needs initialisation.
-
+ * ----------------------------------------------------------------------------
+ * When a read operation (master reads from this slave), current_byte is considered as an output.
+ * When a write operation (master writes to this slave), current_byte is considered as an input.
+ * The request parameter informs about the nature of the current i2c transaction (read or write requests)
+ * @param[in/out]   current_byte : interface byte used by the I2C driver
+ * @param[in]       request      : nature of the I2C transaction currently taking place
+ *
  * Example given :
  *  Let's think about an I2C slave device which monitors temperature in a complex system and exposes its internal reading
  *  as such : 2 analog values (temperature), and 2 boolean values (2 thermostats for instance, which represents thermo-mechanical switches).
@@ -165,8 +170,24 @@ typedef enum
  *                                        *     buffer->length = 1;
  *                                        *     buffer->lock = &threshold_lock;
 */
-typedef i2c_slave_handler_error_t (*i2c_slave_data_handler_t)(uint8_t * /* current byte */, const i2c_request_t /* request */);
+typedef i2c_slave_handler_error_t (*i2c_slave_data_handler_t)(uint8_t * const /* current byte */, const i2c_request_t /* request */);
 
+/**
+ * @brief transmission over callback provides a way for the slave
+ * device to know that the latest transmission is over.
+ * This is useful to be able to reset internal state machines states.
+ * For instance, slave device will reset its buffer index and counters to 0, waiting for next command to set them properly
+ *
+ * E.g : Let's consider we are working on a slave device.
+ * This slave device is now being addressed by a master on the I2C bus and a valid opcode was sent to this slave.
+ * This opcode commands the slave device to select its THERMAL_MONITOR_THRESHOLD data interface.
+ *
+ * Next I2C transmission is a write transmission from the master device : master device wants to modify the current thermal threshold set in the slave device.
+ * As data is being sent over the bus, new data is posted to slave's i2c buffer and consumed by the i2c driver.
+ * Once the transmission is over (master sends a STOP condition over the I2C bus), this callback is fired so that the slave can
+ * reset its internal pointers and buffer indexes. This prevents errors such as buffer overflow guard as indexes and counters are
+ * all reset to their default values.
+*/
 typedef i2c_slave_handler_error_t (*i2c_slave_transmission_over_callback_t)(void);
 
 /* #############################################################################################

@@ -184,7 +184,7 @@
                 "/usr/lib/gcc/avr/10.2.0/include"
             ],
             "defines": [
-                "__AVR_ATmega328__",
+                "__AVR_ATmega328__"
             ],
             "compilerPath": "/usr/bin/avr-gcc",
             "cStandard": "c11",
