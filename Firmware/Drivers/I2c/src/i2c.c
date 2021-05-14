@@ -1369,7 +1369,12 @@ i2c_error_t i2c_read(const uint8_t id, const uint8_t target_address, uint8_t * c
     {
         return I2C_ERROR_INVALID_ADDRESS;
     }
-    if (I2C_STATE_READY != internal_configuration[id].state || !is_twint_set(id))
+    // Don't check TWINT because when we try to use the driver for the first time,
+    // TWI hardware does not know yet if an operation is ongoing and puts itself in a
+    // waiting mode by default. This implies that TWINT is never set when the device boots up
+    // because TWI hardware is waiting either for a request to be sent by itself as master or to receive data on I2C
+    // bus.
+    if (I2C_STATE_READY != internal_configuration[id].state)
     {
         return I2C_ERROR_ALREADY_PROCESSING;
     }
@@ -1403,8 +1408,7 @@ i2c_error_t i2c_read(const uint8_t id, const uint8_t target_address, uint8_t * c
     }
     else
     {
-        // First we need to write an operation code to our slave, so first send its address in write mode
-        // Then once addressing is done and opcode is sent, switch to read mode !
+        // No opcode requested so we can directly address our slave straight away in read mode
         master_buffer[id].command = (target_address << 1U) | I2C_CMD_READ_BIT;
 
         /* Switch internal state to master TX state and send a start condition on I2C bus */
