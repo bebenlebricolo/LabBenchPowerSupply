@@ -70,7 +70,7 @@ i2c_slave_handler_error_t i2c_slave_transmission_over_callback(void)
 i2c_slave_handler_error_t slave_data_handler_read(uint8_t * const byte)
 {
     i2c_slave_handler_error_t ret = I2C_SLAVE_HANDLER_ERROR_OK;
-    if ( (0 != tracking.processed_bytes)
+    if ( (1 < tracking.processed_bytes)
     &&  ( tracking.virtual_buffer.index >= tracking.virtual_buffer.length))
     {
         return I2C_SLAVE_HANDLER_ERROR_BUFFER_OVERFLOW_GUARD;
@@ -86,9 +86,17 @@ i2c_slave_handler_error_t slave_data_handler_read(uint8_t * const byte)
         tracking.command = I2C_SLAVE_COMMAND_UNDEFINED;
     }
 
+    // Very first byte contains this device's address
+    // Escaping quickly
+    if(0 == tracking.processed_bytes)
+    {
+        tracking.processed_bytes++;
+        return ret;
+    }
+
     // First byte read from master is a command byte for this application
     if ((0 == tracking.virtual_buffer.index)
-    &&  (0 == tracking.processed_bytes))
+    &&  (1 == tracking.processed_bytes))
     {
         tracking.command = (i2c_slave_command_t) *byte;
         switch(tracking.command)
@@ -102,7 +110,7 @@ i2c_slave_handler_error_t slave_data_handler_read(uint8_t * const byte)
             case I2C_SLAVE_COMMAND_MEAS_SPEED:
             case I2C_SLAVE_COMMAND_MEAS_TEMP:
             case I2C_SLAVE_COMMAND_MEAS_POWER:
-                tracking.virtual_buffer.length = 0;
+                tracking.virtual_buffer.length = 1;
                 break;
 
             // Not a valid command bro !

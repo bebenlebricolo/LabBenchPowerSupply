@@ -1,7 +1,7 @@
 cmake_minimum_required( VERSION 3.18)
 # Use AVR GCC toolchain
 set(CMAKE_TOOLCHAIN_FILE ${CMAKE_SOURCE_DIR}/../../../Toolchain/avr8-gcc-toolchain.cmake)
-project(i2c_master_firmware)
+project(i2c_master_firmware C)
 
 # Microcontroller variables
 set(AVR_MCU atmega328p)
@@ -9,7 +9,6 @@ set(AVR_MCU_SPEED 16000000)
 set(CMAKE_EXE_LINKER_FLAGS "-mmcu=${AVR_MCU}")
 
 # Language standards
-set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_C_STANDARD 11)
 
 # Required by avr-gcc toolchains

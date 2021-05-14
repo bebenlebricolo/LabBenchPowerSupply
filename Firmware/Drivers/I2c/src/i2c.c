@@ -212,8 +212,9 @@ i2c_error_t i2c_get_default_config(i2c_config_t * const config)
     config->general_call_enabled = false;
     config->interrupt_enabled = false;
     config->prescaler = 0;
-    config->slave_address = 0;
-    config->slave_address_mask = 0;
+    config->slave.enable = false;
+    config->slave.address = 0;
+    config->slave.address_mask = 0;
 
     return I2C_ERROR_OK;
 }
@@ -247,6 +248,22 @@ i2c_error_t i2c_get_handle(const uint8_t id, i2c_handle_t * const handle)
     i2c_handle_vcopy(handle, &internal_configuration[id].handle);
     return I2C_ERROR_OK;
 }
+
+i2c_error_t i2c_set_slave_mode(const uint8_t id, const bool enabled)
+{
+    if (!is_id_valid(id))
+    {
+        return I2C_ERROR_DEVICE_NOT_FOUND;
+    }
+    if (!is_handle_initialised(id))
+    {
+        return I2C_ERROR_NULL_HANDLE;
+    }
+
+    *(internal_configuration[id].handle._TWCR) |= enabled * TWEA_MSK;
+    return I2C_ERROR_OK;
+}
+
 
 i2c_error_t i2c_set_slave_address(const uint8_t id, const uint8_t address)
 {
@@ -586,11 +603,11 @@ static i2c_error_t write_config(const uint8_t id, const i2c_config_t * const con
 
     /* Slave address */
     *(internal_configuration[id].handle._TWAR) &= ~TWA_MSK;
-    *(internal_configuration[id].handle._TWAR) |= (config->slave_address << 1U);
+    *(internal_configuration[id].handle._TWAR) |= (config->slave.address << 1U);
 
     /* Slave address mask */
     *(internal_configuration[id].handle._TWAMR) &= ~TWAMR_MSK;
-    *(internal_configuration[id].handle._TWAMR) |= (config->slave_address_mask << 1U);
+    *(internal_configuration[id].handle._TWAMR) |= (config->slave.address_mask << 1U);
 
     /* General call enabled flag */
     *(internal_configuration[id].handle._TWAR) &= ~TWGCE_MSK;
@@ -599,6 +616,9 @@ static i2c_error_t write_config(const uint8_t id, const i2c_config_t * const con
     /* Interrupt enabled flag */
     *(internal_configuration[id].handle._TWCR) &= ~TWIE_MSK;
     *(internal_configuration[id].handle._TWCR) |= (uint8_t) config->interrupt_enabled;
+
+    // Enables this device as a slave, or not depending on the enable bit config
+    *(internal_configuration[id].handle._TWCR) |= config->slave.enable * TWEA_MSK;
 
     return I2C_ERROR_OK;
 }
@@ -1041,7 +1061,6 @@ static i2c_error_t i2c_slave_rx_process(const uint8_t id)
         case SLA_RX_GENERAL_CALL_RECEIVED_ACK :
         case SLA_RX_ARBITRATION_LOST_GENERAL_CALL_RECEIVED_ACK :
             // Lock buffer in order to tell to the caller data is being used
-
             /* Receiving I2C data, consumes it (application will know how to process it) */
             slave_received_bytes[id] = *internal_configuration[id].handle._TWDR;
             sla_err = internal_configuration[id].slave.data_handler(&slave_received_bytes[id], I2C_REQUEST_READ);
@@ -1150,7 +1169,7 @@ static i2c_error_t process_helper_single(const uint8_t id)
         // Release from BUS error state
         *internal_configuration[id].handle._TWCR |= TWSTO_MSK | TWINT_MSK;
 
-        // Tell to the upper layer a bus error occured and some fixes need to be made
+        // Tell to the upper layer a bus error occurred and some fixes need to be made
         // For instance, rebooting the screen controller is not a bad idea in such cases !
         return I2C_ERROR_BUS_ERROR_HARDWARE;
     }

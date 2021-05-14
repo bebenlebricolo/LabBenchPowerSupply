@@ -11,7 +11,7 @@
 #include <avr/interrupt.h>
 
 #define I2C_DRIVER_NUMBER        (0U)
-#define I2C_SLAVE_ADDRESS        (0x56)
+#define I2C_SLAVE_ADDRESS        (0x28)
 
 /**
  * @brief Simple enum that wraps driver errors
@@ -84,7 +84,9 @@ static driver_setup_error_t driver_init_i2c(void)
     config.baudrate = 17U;
     config.interrupt_enabled = false;
     config.prescaler = I2C_PRESCALER_4;
-    config.slave_address = I2C_SLAVE_ADDRESS;
+    config.slave.enable = true;
+    config.slave.address = I2C_SLAVE_ADDRESS;
+    config.slave.address_mask = 0;
     config.handle._TWAMR = &TWAMR;
     config.handle._TWAR = &TWAR;
     config.handle._TWBR = &TWBR;
@@ -93,6 +95,7 @@ static driver_setup_error_t driver_init_i2c(void)
     config.handle._TWSR = &TWSR;
 
     err = i2c_init(0U, &config);
+//    TWCR |= TWINT;
 
     // Set the handler for incoming data
     if (I2C_ERROR_OK != err)

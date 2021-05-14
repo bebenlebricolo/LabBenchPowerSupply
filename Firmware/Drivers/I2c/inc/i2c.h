@@ -39,8 +39,12 @@ typedef struct
 {
     uint8_t baudrate;           /**< Baudrate to be fed into bit rate generator register (final baudrate also depends on prescaler)   */
     i2c_prescaler_t prescaler;  /**< TWI clock based on main CPU clock, divided by prescaler                                          */
-    uint8_t slave_address;      /**< Address to which this device will respond                                                        */
-    uint8_t slave_address_mask; /**< Address mask used to drive address recognition module of TWI hardware                            */
+    struct
+    {
+        bool enable;            /**< enables this device as a slave                                                                   */
+        uint8_t address;        /**< Address to which this device will respond                                                        */
+        uint8_t address_mask;   /**< Address mask used to drive address recognition module of TWI hardware                            */
+    } slave;
     bool general_call_enabled;  /**< Activate the response to general call (0x00) or not                                              */
     bool interrupt_enabled;     /**< Use the interrupt-based workflow or not (if not, i2c_process() will have to be called regularly) */
     i2c_handle_t handle;        /**< Handle which will be used to effectively interact with peripheral                                */
@@ -229,6 +233,17 @@ i2c_error_t i2c_get_handle(const uint8_t id, i2c_handle_t * const handle);
 /* #############################################################################################
    ######################################## Single shot registers manipulators #################
    ############################################################################################# */
+
+/**
+ * @brief Enables or disables I2C slave mode
+ * @param[in]   id      : selected I2C driver instance to be configured
+ * @param[in]   enabled : if enabled, this device will listen on I2C bus
+ * @return i2c_error_t :
+ *      I2C_ERROR_OK                 : Operation succeeded
+ *      I2C_ERROR_NULL_HANDLE        : Uninitialised handle in config object (could not access to device's registers)
+ *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
+*/
+i2c_error_t i2c_set_slave_mode(const uint8_t id, const bool enabled);
 
 /**
  * @brief sets the selected device I2C slave address to which it is meant to respond

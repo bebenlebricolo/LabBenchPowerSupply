@@ -47,12 +47,12 @@ typedef enum
 */
 typedef enum
 {
-    I2C_SLAVE_OPERATING_MODE_0 = 0,         /**< 0%     */
-    I2C_SLAVE_OPERATING_MODE_25 = 1,        /**< 25%    */
-    I2C_SLAVE_OPERATING_MODE_50 = 2,        /**< 50%    */
-    I2C_SLAVE_OPERATING_MODE_75 = 3,        /**< 75%    */
-    I2C_SLAVE_OPERATING_MODE_100 = 4,       /**< 100%   */
-    I2C_SLAVE_OPERATING_MODE_UNDEFINED = 5  /**< Invalid value    */
+    I2C_SLAVE_OPERATING_MODE_0 = 0,         /**< 0%             */
+    I2C_SLAVE_OPERATING_MODE_25 = 1,        /**< 25%            */
+    I2C_SLAVE_OPERATING_MODE_50 = 2,        /**< 50%            */
+    I2C_SLAVE_OPERATING_MODE_75 = 3,        /**< 75%            */
+    I2C_SLAVE_OPERATING_MODE_100 = 4,       /**< 100%           */
+    I2C_SLAVE_OPERATING_MODE_UNDEFINED = 5  /**< Invalid value  */
 }i2c_slave_operating_modes_t;
 
 /**

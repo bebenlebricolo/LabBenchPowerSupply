@@ -14,6 +14,7 @@ target_include_directories(slave_firmware PUBLIC
 target_link_libraries(slave_firmware
     i2c_driver
 )
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT slave_firmware)
 
 # Only add those targets if this is used on a Linux environment, as Atmel Studio already handles them itself
 

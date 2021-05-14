@@ -37,11 +37,17 @@
 #define OC2B_PIN_REG    PIND
 
 // User interface buttons
+// Sequencing step button us wirted to Arduino Nano's pin D1 (which is PORTD1 of Atmega328P)
 #define I2C_RUN_STEP_BUTTON_PIN_NUMBER  PORTD2
 #define I2C_RUN_STEP_BUTTON_PORT_REG    PORTD
 #define I2C_RUN_STEP_BUTTON_DDR_REG     DDRD
 #define I2C_RUN_STEP_BUTTON_PIN_REG     PIND
 
+// Reset button network is wired to Arduino Nano's Pin D3 (which is PORTD3 of Atmega328P)
+#define I2C_SEQ_RESET_BUTTON_PIN_NUMBER  PORTD3
+#define I2C_SEQ_RESET_BUTTON_PORT_REG    PORTD
+#define I2C_SEQ_RESET_BUTTON_DDR_REG     DDRD
+#define I2C_SEQ_RESET_BUTTON_PIN_REG     PIND
 
 
 
