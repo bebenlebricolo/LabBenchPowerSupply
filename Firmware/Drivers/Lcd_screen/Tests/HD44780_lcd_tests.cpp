@@ -786,6 +786,35 @@ TEST_F(LcdScreenTestFixtureWithI2cErrors, test_command_home_ok)
     ASSERT_TRUE(command_sequencer_is_reset());
 }
 
+
+TEST_F(LcdScreenTestFixtureWithI2cErrors, test_command_clear_max_errors_hit)
+{
+    auto error = hd44780_lcd_init(&config);
+    ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
+
+    stub_timings();
+    // Initialise driver and screen
+    process_command();
+    ASSERT_TRUE(command_sequencer_is_reset());
+
+    i2c_error_collection = {
+        I2C_ERROR_DEVICE_NOT_FOUND,
+        I2C_ERROR_DEVICE_NOT_FOUND,
+    };
+
+    error = hd44780_lcd_clear();
+    ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
+    ASSERT_EQ(command_sequencer->process_command, internal_command_clear);
+    ASSERT_TRUE(command_sequencer_is_reset());
+
+    process_command();
+    error = hd44780_lcd_get_last_error();
+    ASSERT_EQ(error, HD44780_LCD_ERROR_MAX_ERROR_COUNT_HIT);
+
+    ASSERT_TRUE(command_sequencer->process_command == process_command_idling);
+    ASSERT_TRUE(command_sequencer_is_reset());
+}
+
 int main(int argc, char **argv)
 {
     ::testing::InitGoogleTest(&argc, argv);

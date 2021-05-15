@@ -498,8 +498,13 @@ hd44780_lcd_error_t hd44780_lcd_process(void)
         return HD44780_LCD_ERROR_DEVICE_WRONG_STATE;
     }
 
-    // Reset last error
-    last_error = HD44780_LCD_ERROR_OK;
+    // Reset last error except if last error was about I2C write issues
+    if ((HD44780_LCD_ERROR_I2C_MALFORMED_REQUEST != last_error)
+    &&  (HD44780_LCD_ERROR_I2C_PERIPHERAL_ISSUE != last_error)
+    &&  (HD44780_LCD_ERROR_I2C_BUSY != last_error))
+    {
+        last_error = HD44780_LCD_ERROR_OK;
+    }
 
     // Process stuff !
     command_sequencer.process_command();
@@ -686,6 +691,10 @@ bool write_buffer(void)
         {
             i2c_buffer &= ~PCF8574_PULSE_START_MSK;
             i2c_err = i2c_write(internal_configuration.indexes.i2c, internal_configuration.i2c_address,&i2c_buffer, 1U, 3U);
+
+            // If configuration is off, we might end with an I2C_ERROR_DEVICE_NOT_FOUND for instance occurring repeatedly.
+            // In such cases, we must inform the HD44780 driver that something is off and eventually it should break its process loop and return
+            // a HD44780_LCD_ERROR_MAX_ERROR_COUNT_HIT
             if (I2C_ERROR_OK != i2c_err)
             {
                 hd44780_lcd_error_t error = convert_i2c_write_error(i2c_err);
@@ -693,6 +702,8 @@ bool write_buffer(void)
             }
             else
             {
+                // Reset last error whenever an I2C write completes.
+                last_error = HD44780_LCD_ERROR_OK;
                 write_completed = true;
             }
         }
