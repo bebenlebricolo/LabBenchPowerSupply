@@ -875,6 +875,15 @@ static i2c_error_t i2c_master_rx_process(const uint8_t id)
 
                  // Send a NACK to indicate the end of communication to the Slave TX
                 *internal_configuration[id].handle._TWCR = (*internal_configuration[id].handle._TWCR & ~(TWINT_MSK | TWEA_MSK));
+                clear_twint(id);
+
+                // Then send a stop condition straight away to deassert the line.
+                // Otherwise it'll take another byte exchange for the system to understand the communication is over.
+                // Doing the 2 requests consecutively ensures that we are jumping from the MAS_RX_DATA_RECEIVED_ACK directly to MAS_RX_DATA_RECEIVED_NACK
+                // of TWI hardware which then allows us to break the connection.
+                *internal_configuration[id].handle._TWCR = (*internal_configuration[id].handle._TWCR & ~TWINT_MSK) | TWSTO_MSK;
+                internal_configuration[id].state = I2C_STATE_MASTER_RX_FINISHED;
+
             }
             else
             {
