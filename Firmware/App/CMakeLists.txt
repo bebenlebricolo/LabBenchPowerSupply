@@ -38,6 +38,8 @@ target_link_libraries(firmware
     memutils
 )
 
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT firmware)
+
 # Only add those targets if this is used on a Linux environment, as Atmel Studio already handles them itself
 
 if (CMAKE_HOST_UNIX)

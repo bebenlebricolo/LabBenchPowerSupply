@@ -36,9 +36,13 @@ target_include_directories(HD44780_lcd_driver_tests PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../inc
     ${CMAKE_CURRENT_SOURCE_DIR}/Stub
     ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_include_directories(HD44780_lcd_driver_tests SYSTEM PUBLIC
     ${GTEST_INCLUDE_DIRS}
 )
-target_link_libraries(HD44780_lcd_driver_tests HD44780_lcd_driver ${GTEST_LIBRARIES} pthread)
+
+target_link_libraries(HD44780_lcd_driver_tests HD44780_lcd_driver ${GTEST_LIBRARIES} )
 
 set_target_properties(HD44780_lcd_driver_tests
     PROPERTIES

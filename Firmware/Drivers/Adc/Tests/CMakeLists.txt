@@ -50,9 +50,14 @@ target_include_directories(adc_stack_tests PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../inc
     ${CMAKE_CURRENT_SOURCE_DIR}/../private_inc
     ${CMAKE_CURRENT_SOURCE_DIR}/Stub
+)
+
+target_include_directories(adc_stack_tests SYSTEM PUBLIC
     ${GTEST_INCLUDE_DIRS}
 )
-target_link_libraries(adc_stack_tests adc_stack ${GTEST_LIBRARIES} pthread)
+
+
+target_link_libraries(adc_stack_tests adc_stack ${GTEST_LIBRARIES})
 
 set_target_properties(adc_stack_tests
     PROPERTIES
@@ -73,9 +78,13 @@ target_compile_definitions(adc_driver_tests PRIVATE
 target_include_directories(adc_driver_tests PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../inc
     ${CMAKE_CURRENT_SOURCE_DIR}/Stub
+)
+
+target_include_directories(adc_driver_tests SYSTEM PUBLIC
     ${GTEST_INCLUDE_DIRS}
 )
-target_link_libraries(adc_driver_tests adc_driver ${GTEST_LIBRARIES} pthread)
+
+target_link_libraries(adc_driver_tests adc_driver ${GTEST_LIBRARIES})
 
 set_target_properties(adc_driver_tests
     PROPERTIES

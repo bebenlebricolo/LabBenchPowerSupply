@@ -213,7 +213,8 @@ driver_setup_error_t driver_init_i2c(void)
     config.baudrate = 17U;
     config.interrupt_enabled = false;
     config.prescaler = I2C_PRESCALER_4;
-    config.slave_address = (0x32);
+    config.slave.address = (0x32);
+    config.slave.enable = false;
     config.handle._TWAMR = &TWAMR;
     config.handle._TWAR = &TWAR;
     config.handle._TWBR = &TWBR;

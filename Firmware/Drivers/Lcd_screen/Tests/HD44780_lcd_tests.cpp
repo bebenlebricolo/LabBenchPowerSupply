@@ -213,7 +213,7 @@ TEST(hd44780_lcd_screen_api_tests, test_default_config)
 
     process_commands_sequencer_t * command_sequencer;
     get_process_command_sequencer(&command_sequencer);
-    ASSERT_EQ(command_sequencer->process_command, process_command_idling);
+    ASSERT_TRUE(command_sequencer->process_command == process_command_idling);
     ASSERT_EQ(get_data_byte(), 0);
     ASSERT_EQ(get_i2c_buffer(), 0);
     ASSERT_EQ(hd44780_lcd_get_last_error(), HD44780_LCD_ERROR_OK);
@@ -295,7 +295,7 @@ TEST_F(LcdScreenTestFixtureOk, test_initialisation_command)
 
     process_command();
 
-    ASSERT_EQ(command_sequencer->process_command, process_command_idling);
+    ASSERT_TRUE(command_sequencer->process_command == process_command_idling);
     ASSERT_TRUE(command_sequencer_is_reset());
 
     // Counter check sent data matches the data we want to actually send
@@ -325,11 +325,11 @@ TEST_F(LcdScreenTestFixtureOk, test_clear_command)
 
     error = hd44780_lcd_clear();
     ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
-    ASSERT_EQ(command_sequencer->process_command, internal_command_clear);
+    ASSERT_TRUE(command_sequencer->process_command == internal_command_clear);
     ASSERT_TRUE(command_sequencer_is_reset());
 
     process_command();
-    ASSERT_EQ(command_sequencer->process_command, process_command_idling);
+    ASSERT_TRUE(command_sequencer->process_command == process_command_idling);
     ASSERT_TRUE(command_sequencer_is_reset());
 
     // Counter check sent data matches the data we want to actually send
@@ -360,11 +360,11 @@ TEST_F(LcdScreenTestFixtureOk, test_home_command)
 
     error = hd44780_lcd_home();
     ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
-    ASSERT_EQ(command_sequencer->process_command, internal_command_home);
+    ASSERT_TRUE(command_sequencer->process_command == internal_command_home);
     ASSERT_TRUE(command_sequencer_is_reset());
 
     process_command();
-    ASSERT_EQ(command_sequencer->process_command, process_command_idling);
+    ASSERT_TRUE(command_sequencer->process_command == process_command_idling);
     ASSERT_TRUE(command_sequencer_is_reset());
 
     // Counter check sent data matches the data we want to actually send
@@ -401,11 +401,11 @@ TEST_F(LcdScreenTestFixtureOk, test_display_on_off)
     error = hd44780_lcd_set_display_on_off(display_enabled);
     ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
     ASSERT_EQ(internal_configuration->display.enabled, display_enabled);
-    ASSERT_EQ(command_sequencer->process_command, internal_command_handle_display_controls);
+    ASSERT_TRUE(command_sequencer->process_command == internal_command_handle_display_controls);
     ASSERT_TRUE(command_sequencer_is_reset());
 
     process_command();
-    ASSERT_EQ(command_sequencer->process_command, process_command_idling);
+    ASSERT_TRUE(command_sequencer->process_command == process_command_idling);
     ASSERT_TRUE(command_sequencer_is_reset());
 
     // Counter check sent data matches the data we want to actually send
@@ -442,11 +442,11 @@ TEST_F(LcdScreenTestFixtureOk, test_cursor_visible)
     error = hd44780_lcd_set_cursor_visible(cursor_visible);
     ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
     ASSERT_EQ(internal_configuration->display.cursor_visible, cursor_visible);
-    ASSERT_EQ(command_sequencer->process_command, internal_command_handle_display_controls);
+    ASSERT_TRUE(command_sequencer->process_command == internal_command_handle_display_controls);
     ASSERT_TRUE(command_sequencer_is_reset());
 
     process_command();
-    ASSERT_EQ(command_sequencer->process_command, process_command_idling);
+    ASSERT_TRUE(command_sequencer->process_command == process_command_idling);
     ASSERT_TRUE(command_sequencer_is_reset());
 
     // Counter check sent data matches the data we want to actually send
@@ -483,11 +483,11 @@ TEST_F(LcdScreenTestFixtureOk, test_blinking_cursor)
     error = hd44780_lcd_set_blinking_cursor(blinking_cursor);
     ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
     ASSERT_EQ(internal_configuration->display.cursor_blinking, blinking_cursor);
-    ASSERT_EQ(command_sequencer->process_command, internal_command_handle_display_controls);
+    ASSERT_TRUE(command_sequencer->process_command == internal_command_handle_display_controls);
     ASSERT_TRUE(command_sequencer_is_reset());
 
     process_command();
-    ASSERT_EQ(command_sequencer->process_command, process_command_idling);
+    ASSERT_TRUE(command_sequencer->process_command == process_command_idling);
     ASSERT_TRUE(command_sequencer_is_reset());
 
     // Counter check sent data matches the data we want to actually send
@@ -512,7 +512,7 @@ TEST_F(LcdScreenTestFixtureOk, test_backlight)
     error = hd44780_lcd_set_backlight(backlight_enabled);
     ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
     ASSERT_EQ(internal_configuration->display.backlight, backlight_enabled);
-    ASSERT_EQ(command_sequencer->process_command, internal_command_set_backlight);
+    ASSERT_TRUE(command_sequencer->process_command == internal_command_set_backlight);
     ASSERT_TRUE(command_sequencer_is_reset());
 
     // We initialise those variables here because the set_backlight function needs to preserve
@@ -521,7 +521,7 @@ TEST_F(LcdScreenTestFixtureOk, test_backlight)
     const uint8_t expected_sent_data = (previous_buffer & 0xF7);
 
     process_command();
-    ASSERT_EQ(command_sequencer->process_command, process_command_idling);
+    ASSERT_TRUE(command_sequencer->process_command == process_command_idling);
     ASSERT_TRUE(command_sequencer_is_reset());
 
     // Counter check sent data matches the data we want to actually send
@@ -550,11 +550,11 @@ TEST_F(LcdScreenTestFixtureOk, test_entry_mode)
     error = hd44780_lcd_set_entry_mode(entry_mode);
     ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
     ASSERT_EQ(internal_configuration->display.entry_mode, entry_mode);
-    ASSERT_EQ(command_sequencer->process_command, internal_command_set_entry_mode);
+    ASSERT_TRUE(command_sequencer->process_command == internal_command_set_entry_mode);
     ASSERT_TRUE(command_sequencer_is_reset());
 
     process_command();
-    ASSERT_EQ(command_sequencer->process_command, process_command_idling);
+    ASSERT_TRUE(command_sequencer->process_command == process_command_idling);
     ASSERT_TRUE(command_sequencer_is_reset());
 
     // Counter check sent data matches the data we want to actually send
@@ -587,11 +587,11 @@ TEST_F(LcdScreenTestFixtureOk, test_move_cursor_to_coord)
     uint8_t column = 15;
     error = hd44780_lcd_move_cursor_to_coord(line, column);
     ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
-    ASSERT_EQ(command_sequencer->process_command, internal_command_move_cursor_to_coord);
+    ASSERT_TRUE(command_sequencer->process_command == internal_command_move_cursor_to_coord);
     ASSERT_TRUE(command_sequencer_is_reset());
 
     process_command();
-    ASSERT_EQ(command_sequencer->process_command, process_command_idling);
+    ASSERT_TRUE(command_sequencer->process_command == process_command_idling);
     ASSERT_TRUE(command_sequencer_is_reset());
 
     // Counter check sent data matches the data we want to actually send
@@ -649,14 +649,14 @@ TEST_F(LcdScreenTestFixtureOk, test_move_cursor_relative)
                 }
                 error = hd44780_lcd_move_relative(move_action);
                 ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
-                ASSERT_EQ(command_sequencer->process_command, internal_command_move_relative);
+                ASSERT_TRUE(command_sequencer->process_command == internal_command_move_relative);
                 ASSERT_TRUE(command_sequencer_is_reset());
 
                 state = hd44780_lcd_get_state();
                 ASSERT_EQ(state, HD44780_LCD_STATE_PROCESSING);
 
                 process_command();
-                ASSERT_EQ(command_sequencer->process_command, process_command_idling);
+                ASSERT_TRUE(command_sequencer->process_command == process_command_idling);
                 ASSERT_TRUE(command_sequencer_is_reset());
 
                 // Counter check sent data matches the data we want to actually send
@@ -672,7 +672,7 @@ TEST_F(LcdScreenTestFixtureOk, test_move_cursor_relative)
             default:
                 error = hd44780_lcd_move_relative(move_action);
                 ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
-                ASSERT_EQ(command_sequencer->process_command, internal_command_move_relative);
+                ASSERT_TRUE(command_sequencer->process_command == internal_command_move_relative);
                 ASSERT_TRUE(command_sequencer_is_reset());
 
                 // Nothing should be sent
@@ -680,7 +680,7 @@ TEST_F(LcdScreenTestFixtureOk, test_move_cursor_relative)
                 ASSERT_EQ(state, HD44780_LCD_STATE_PROCESSING);
 
                 process_command();
-                ASSERT_EQ(command_sequencer->process_command, process_command_idling);
+                ASSERT_TRUE(command_sequencer->process_command == process_command_idling);
                 ASSERT_TRUE(command_sequencer_is_reset());
 
                 // Counter check sent data matches the data we want to actually send
@@ -709,7 +709,7 @@ TEST_F(LcdScreenTestFixtureOk, test_print_text)
     uint8_t text_length = strlen(text);
     error = hd44780_lcd_print(text_length , text);
     ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
-    ASSERT_EQ(command_sequencer->process_command, internal_command_print);
+    ASSERT_TRUE(command_sequencer->process_command == internal_command_print);
     ASSERT_TRUE(command_sequencer_is_reset());
 
     ASSERT_EQ(command_sequencer->parameters.message.buffer, text);
@@ -717,7 +717,7 @@ TEST_F(LcdScreenTestFixtureOk, test_print_text)
     ASSERT_EQ(command_sequencer->parameters.message.index, 0U);
 
     process_command();
-    ASSERT_EQ(command_sequencer->process_command, process_command_idling);
+    ASSERT_TRUE(command_sequencer->process_command == process_command_idling);
     ASSERT_TRUE(command_sequencer_is_reset());
 
     // Counter check sent data matches the data we want to actually send
@@ -746,14 +746,14 @@ TEST_F(LcdScreenTestFixtureWithI2cErrors, test_command_home_max_error_hit)
 
     error = hd44780_lcd_home();
     ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
-    ASSERT_EQ(command_sequencer->process_command, internal_command_home);
+    ASSERT_TRUE(command_sequencer->process_command == internal_command_home);
     ASSERT_TRUE(command_sequencer_is_reset());
 
     process_command();
     error = hd44780_lcd_get_last_error();
     ASSERT_EQ(error, HD44780_LCD_ERROR_MAX_ERROR_COUNT_HIT);
 
-    ASSERT_EQ(command_sequencer->process_command, process_command_idling);
+    ASSERT_TRUE(command_sequencer->process_command == process_command_idling);
     ASSERT_TRUE(command_sequencer_is_reset());
 
 }
@@ -775,14 +775,14 @@ TEST_F(LcdScreenTestFixtureWithI2cErrors, test_command_home_ok)
 
     error = hd44780_lcd_home();
     ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
-    ASSERT_EQ(command_sequencer->process_command, internal_command_home);
+    ASSERT_TRUE(command_sequencer->process_command == internal_command_home);
     ASSERT_TRUE(command_sequencer_is_reset());
 
     process_command();
     error = hd44780_lcd_get_last_error();
     ASSERT_EQ(error, HD44780_LCD_ERROR_OK);
 
-    ASSERT_EQ(command_sequencer->process_command, process_command_idling);
+    ASSERT_TRUE(command_sequencer->process_command == process_command_idling);
     ASSERT_TRUE(command_sequencer_is_reset());
 }
 

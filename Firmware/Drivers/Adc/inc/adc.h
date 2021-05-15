@@ -140,15 +140,6 @@ adc_error_t adc_handle_copy(adc_handle_t * const dest, const adc_handle_t * cons
 */
 adc_error_t adc_handle_reset(adc_handle_t * const handle);
 
-/**
- * @brief returns a default handle, set to target avr registers
- * @param[in]   handle : pointer to handle object
- * @return
- *      PERIPHERAL_ERROR_OK             : operation succeeded
- *      PERIPHERAL_ERROR_NULL_POINTER   : null pointer guarded
-*/
-adc_error_t adc_handle_get_default(adc_handle_t * const handle);
-
 /* ############################################################################################
    ################################## Function declarations ###################################
    ############################################################################################ */

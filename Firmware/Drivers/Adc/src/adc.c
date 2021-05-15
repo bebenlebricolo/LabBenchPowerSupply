@@ -3,7 +3,7 @@
 #include "adc_stack.h"
 
 #include <string.h>
-#include <avr/io.h>
+#include <stdbool.h>
 
 /* 10 bits adc, full range */
 #define ADC_MAX_VALUE       1024U
@@ -89,7 +89,6 @@ adc_error_t adc_config_hal_get_default(adc_config_hal_t * config)
         config->trigger_sources = ADC_TRIGGER_FREE_RUNNING;
         config->running_mode = ADC_RUNNING_MODE_SINGLE_SHOT;
         config->using_interrupt = false;
-        adc_handle_get_default(&config->handle);
     }
     return ret;
 }
@@ -126,25 +125,6 @@ adc_error_t adc_handle_reset(adc_handle_t * const handle)
     }
     return ret;
 }
-
-adc_error_t adc_handle_get_default(adc_handle_t * const handle)
-{
-    adc_error_t ret = ADC_ERROR_OK;
-    if (NULL == handle)
-    {
-        ret = ADC_ERROR_NULL_POINTER;
-    }
-    else
-    {
-        handle->mux_reg = &ADMUX;
-        handle->adcsra_reg = &ADCSRA;
-        handle->adcsrb_reg = &ADCSRB;
-        handle->readings.adchigh_reg = &ADCH ;
-        handle->readings.adclow_reg = &ADCL ;
-    }
-    return ret;
-}
-
 
 adc_error_t adc_base_init(adc_config_hal_t * const config)
 {

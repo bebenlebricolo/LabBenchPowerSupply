@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.3)
 
 # see CMAKE_SYSTEM_NAME for cross compiling and Cmake system version
-if(WIN32)
+if(WIN32 AND NOT CMAKE_GENERATOR STREQUAL "Unix Makefiles")
   set( CMAKE_SYSTEM_NAME "BareMetal" )
   set( CMAKE_SYSTEM_VERSION "Generic" )
   set( CMAKE_SYSTEM_VENDOR_NAME "Atmel" )
   set (CMAKE_GENERATOR_PLATFORM AVR8)
-else(UNIX)
+else()
   set( CMAKE_SYSTEM_NAME "Generic" )
   set( CMAKE_SYSTEM_VERSION "Generic" )
   set( CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)

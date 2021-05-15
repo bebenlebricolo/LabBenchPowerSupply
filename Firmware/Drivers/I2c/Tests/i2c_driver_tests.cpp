@@ -25,7 +25,7 @@ protected:
         config.general_call_enabled = false;
         config.interrupt_enabled = true;
         config.prescaler = I2C_PRESCALER_16;
-        config.slave_address = 0x35;
+        config.slave.address = 0x35;
 
         i2c_register_stub_init_handle(0U, &config.handle);
         twi_hardware_stub_clear();
@@ -179,12 +179,12 @@ TEST(i2c_driver_tests, guard_null_handle)
         stub->twbr_reg = old_baudrate;
         auto ret = i2c_set_baudrate(0, baudrate);
         ASSERT_EQ(ret, I2C_ERROR_NULL_HANDLE);
-        ASSERT_EQ(stub->twbr_reg, old_baudrate);
+        ASSERT_EQ((uint8_t)(stub->twbr_reg), old_baudrate);
 
         ret = i2c_get_baudrate(0U, &baudrate);
         ASSERT_EQ(ret, I2C_ERROR_NULL_HANDLE);
         ASSERT_EQ(baudrate, 123);
-        ASSERT_EQ(stub->twbr_reg, old_baudrate);
+        ASSERT_EQ((uint8_t)(stub->twbr_reg), old_baudrate);
     }
     {
         bool gcenabled = true;
@@ -192,12 +192,12 @@ TEST(i2c_driver_tests, guard_null_handle)
         auto ret = i2c_set_general_call_enabled(0U, gcenabled);
         ASSERT_EQ(ret, I2C_ERROR_NULL_HANDLE);
         ASSERT_EQ(gcenabled, true);
-        ASSERT_EQ(stub->twar_reg & TWGCE_MSK, 0U);
+        ASSERT_EQ((uint8_t)(stub->twar_reg & TWGCE_MSK), 0U);
 
         ret = i2c_get_general_call_enabled(0, &gcenabled);
         ASSERT_EQ(ret, I2C_ERROR_NULL_HANDLE);
         ASSERT_EQ(gcenabled, true);
-        ASSERT_EQ(stub->twar_reg & TWGCE_MSK, 0U);
+        ASSERT_EQ((uint8_t)(stub->twar_reg & TWGCE_MSK), 0U);
     }
     {
         bool use_interrupt = true;
@@ -205,7 +205,7 @@ TEST(i2c_driver_tests, guard_null_handle)
         auto ret = i2c_set_interrupt_mode(0U, use_interrupt);
         ASSERT_EQ(ret, I2C_ERROR_NULL_HANDLE);
         ASSERT_EQ(true, use_interrupt);
-        ASSERT_EQ(stub->twcr_reg & TWIE_MSK, 0U);
+        ASSERT_EQ((uint8_t)(stub->twcr_reg & TWIE_MSK), 0U);
 
         ret = i2c_get_interrupt_mode(0U, &use_interrupt);
         ASSERT_EQ(ret, I2C_ERROR_NULL_HANDLE);
@@ -486,7 +486,7 @@ TEST(i2c_driver_tests, test_api_accessors_get_set)
         ret = i2c_slave_set_data_handler(0U, handler);
         ASSERT_EQ(ret, I2C_ERROR_OK);
         auto registered_handler = i2c_slave_get_command_handler(0U);
-        ASSERT_EQ(registered_handler, stubbed_command_handler);
+        ASSERT_TRUE(registered_handler == stubbed_command_handler);
     }
 
     /* I2C get state api */
@@ -510,8 +510,8 @@ static void check_config_against_registers(const uint8_t id, const i2c_config_t 
     ASSERT_EQ(stub->twar_reg & TWGCE_MSK, (config->general_call_enabled ? 1U : 0U));
     ASSERT_EQ(stub->twcr_reg & TWIE_MSK, (config->interrupt_enabled ? 1U : 0U));
     ASSERT_EQ(stub->twsr_reg & TWPS_MSK, config->prescaler);
-    ASSERT_EQ(stub->twar_reg & TWA_MSK, (config->slave_address << 1U));
-    ASSERT_EQ(stub->twamr_reg & TWAMR_MSK, (config->slave_address_mask << 1U));
+    ASSERT_EQ(stub->twar_reg & TWA_MSK, (config->slave.address << 1U));
+    ASSERT_EQ(stub->twamr_reg & TWAMR_MSK, (config->slave.address_mask << 1U));
 }
 
 TEST(i2c_driver_tests, test_initialisation_deinitialisation)
@@ -525,8 +525,8 @@ TEST(i2c_driver_tests, test_initialisation_deinitialisation)
     config.general_call_enabled = true;
     config.interrupt_enabled = true;
     config.prescaler = I2C_PRESCALER_4;
-    config.slave_address = 0x23;
-    config.slave_address_mask = 0x07;
+    config.slave.address = 0x23;
+    config.slave.address_mask = 0x07;
 
     i2c_register_stub_t * stub = &i2c_register_stub[0U];
 
@@ -994,7 +994,7 @@ TEST_F(I2cTestFixture, test_twi_as_slave_receiver_only_single_word)
     ASSERT_EQ(exposed_data->enabled, false);
 
     // Tell the fake device to act as a master on I2C bus and write to our TWI device
-    auto fake_dev_ret = i2c_fake_device_write(config.slave_address, buffer, 2U, 0);
+    auto fake_dev_ret = i2c_fake_device_write(config.slave.address, buffer, 2U, 0);
     ASSERT_EQ(I2C_FAKE_DEVICE_ERROR_OK, fake_dev_ret);
 
     // Run the simulation !
@@ -1042,7 +1042,7 @@ TEST_F(I2cTestFixture, test_twi_as_slave_receiver_only_multiple_bytes)
     ASSERT_EQ(I2C_ERROR_OK, ret);
 
     // Tell the fake device to act as a master on I2C bus and write to our TWI device
-    auto fake_dev_ret = i2c_fake_device_write(config.slave_address, buffer, 10, 0);
+    auto fake_dev_ret = i2c_fake_device_write(config.slave.address, buffer, 10, 0);
     ASSERT_EQ(I2C_FAKE_DEVICE_ERROR_OK, fake_dev_ret);
 
     // At the moment, our slave I2C device has just be initialized and
@@ -1071,7 +1071,7 @@ TEST_F(I2cTestFixture, test_twi_as_slave_receiver_only_multiple_bytes)
     buffer[1] = I2C_FAKE_SLAVE_APPLICATION_DATA_FAN_SPEED_50;
 
     // Tell the fake device to act as a master on I2C bus and write to our TWI device
-    fake_dev_ret = i2c_fake_device_write(config.slave_address, buffer, 2U, 0);
+    fake_dev_ret = i2c_fake_device_write(config.slave.address, buffer, 2U, 0);
     ASSERT_EQ(I2C_FAKE_DEVICE_ERROR_OK, fake_dev_ret);
 
     // Run the simulation !
@@ -1120,7 +1120,7 @@ TEST_F(I2cTestFixture, test_twi_as_slave_transmitter)
     snprintf((char *) (exposed_data->byte_array), I2C_FAKE_SLAVE_APPLICATION_DATA_MAX_BYTE_ARRAY_LENGTH, msg);
 
     // Tell the fake device to act as a master on I2C bus and write to our TWI device
-    auto fake_dev_ret = i2c_fake_device_read(config.slave_address, buffer, I2C_FAKE_SLAVE_APPLICATION_DATA_MAX_BYTE_ARRAY_LENGTH, 0);
+    auto fake_dev_ret = i2c_fake_device_read(config.slave.address, buffer, I2C_FAKE_SLAVE_APPLICATION_DATA_MAX_BYTE_ARRAY_LENGTH, 0);
     ASSERT_EQ(I2C_FAKE_DEVICE_ERROR_OK, fake_dev_ret);
 
     // Run the simulation !
@@ -1167,7 +1167,7 @@ TEST_F(I2cTestFixture, test_twi_as_slave_transmitter_all_in_one)
     snprintf((char *) (exposed_data->byte_array), I2C_FAKE_SLAVE_APPLICATION_DATA_MAX_BYTE_ARRAY_LENGTH, msg);
 
     // Tell the fake device to act as a master on I2C bus and write to our TWI device
-    auto fake_dev_ret = i2c_fake_device_read(config.slave_address, buffer, I2C_FAKE_SLAVE_APPLICATION_DATA_MAX_BYTE_ARRAY_LENGTH, 0);
+    auto fake_dev_ret = i2c_fake_device_read(config.slave.address, buffer, I2C_FAKE_SLAVE_APPLICATION_DATA_MAX_BYTE_ARRAY_LENGTH, 0);
     ASSERT_EQ(I2C_FAKE_DEVICE_ERROR_OK, fake_dev_ret);
 
     // Run the simulation !
@@ -1187,7 +1187,7 @@ TEST_F(I2cTestFixture, test_twi_as_slave_transmitter_all_in_one)
     buffer[1] = I2C_FAKE_SLAVE_APPLICATION_DATA_FAN_SPEED_75;
 
     // Tell the fake device to act as a master on I2C bus and write to our TWI device
-    fake_dev_ret = i2c_fake_device_write(config.slave_address, buffer, 2U, 0);
+    fake_dev_ret = i2c_fake_device_write(config.slave.address, buffer, 2U, 0);
     ASSERT_EQ(I2C_FAKE_DEVICE_ERROR_OK, fake_dev_ret);
 
     // Run the simulation !
@@ -1206,7 +1206,7 @@ TEST_F(I2cTestFixture, test_twi_as_slave_transmitter_all_in_one)
 
     // Read back the Fan speed
     buffer[1] = 0;
-    fake_dev_ret = i2c_fake_device_read(config.slave_address, buffer, 2U, 0);
+    fake_dev_ret = i2c_fake_device_read(config.slave.address, buffer, 2U, 0);
     ASSERT_EQ(I2C_FAKE_DEVICE_ERROR_OK, fake_dev_ret);
 
     // Run the simulation !

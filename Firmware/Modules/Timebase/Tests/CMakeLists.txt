@@ -37,12 +37,16 @@ target_include_directories(timebase_module_tests PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../../../Drivers/Timers/Timer_8_bit/inc
     ${CMAKE_CURRENT_SOURCE_DIR}/../../../Drivers/Timers/Timer_8_bit_async/inc
     ${CMAKE_CURRENT_SOURCE_DIR}/../../../Drivers/Timers/Timer_16_bit/inc
+)
+
+target_include_directories(timebase_module_tests SYSTEM PUBLIC
     ${GTEST_INCLUDE_DIRS}
 )
+
 target_link_libraries(timebase_module_tests
     timebase_module
     ${GTEST_LIBRARIES}
-    pthread
+
 )
 
 set_target_properties(timebase_module_tests
