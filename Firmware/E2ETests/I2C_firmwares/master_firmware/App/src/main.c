@@ -147,7 +147,7 @@ static driver_setup_error_t driver_init_i2c(void)
     config.baudrate = 17U;
     config.interrupt_enabled = false;
     config.prescaler = I2C_PRESCALER_4;
-    config.slave_address = (0x32);
+    config.slave.address = (0x32);
     config.handle._TWAMR = &TWAMR;
     config.handle._TWAR = &TWAR;
     config.handle._TWBR = &TWBR;
@@ -167,6 +167,7 @@ static i2c_error_t i2c_slave_read_temps()
 {
     i2c_error_t ret = I2C_ERROR_OK;
     i2c_buffer.data[0] = I2C_SLAVE_COMMAND_MEAS_TEMP;
+    // opcode + read (1 byte)
     i2c_buffer.size = 2U;
     ret = i2c_read(I2C_DRIVER_NUMBER, I2C_TARGET_SLAVE_ADDRESS, i2c_buffer.data, i2c_buffer.size, true, I2C_MASTER_WRITE_RETRIES);
     return ret;
@@ -185,7 +186,7 @@ static i2c_error_t i2c_slave_read_power(void)
 {
     i2c_error_t ret = I2C_ERROR_OK;
     i2c_buffer.data[0] = I2C_SLAVE_COMMAND_MEAS_POWER;
-    i2c_buffer.size = 2U;
+    i2c_buffer.size = 3U;
     ret = i2c_read(I2C_DRIVER_NUMBER, I2C_TARGET_SLAVE_ADDRESS, i2c_buffer.data, i2c_buffer.size, true, I2C_MASTER_WRITE_RETRIES);
     return ret;
 }

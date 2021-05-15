@@ -70,7 +70,7 @@ i2c_slave_handler_error_t i2c_slave_transmission_over_callback(void)
 i2c_slave_handler_error_t slave_data_handler_read(uint8_t * const byte)
 {
     i2c_slave_handler_error_t ret = I2C_SLAVE_HANDLER_ERROR_OK;
-    if ( (1 < tracking.processed_bytes)
+    if ( (0 < tracking.processed_bytes)
     &&  ( tracking.virtual_buffer.index >= tracking.virtual_buffer.length))
     {
         return I2C_SLAVE_HANDLER_ERROR_BUFFER_OVERFLOW_GUARD;
@@ -86,17 +86,9 @@ i2c_slave_handler_error_t slave_data_handler_read(uint8_t * const byte)
         tracking.command = I2C_SLAVE_COMMAND_UNDEFINED;
     }
 
-    // Very first byte contains this device's address
-    // Escaping quickly
-    if(0 == tracking.processed_bytes)
-    {
-        tracking.processed_bytes++;
-        return ret;
-    }
-
     // First byte read from master is a command byte for this application
     if ((0 == tracking.virtual_buffer.index)
-    &&  (1 == tracking.processed_bytes))
+    &&  (0 == tracking.processed_bytes))
     {
         tracking.command = (i2c_slave_command_t) *byte;
         switch(tracking.command)
@@ -106,11 +98,13 @@ i2c_slave_handler_error_t slave_data_handler_read(uint8_t * const byte)
                 tracking.virtual_buffer.length = 1;
                 break;
 
-            // Those commands do not support read operations
             case I2C_SLAVE_COMMAND_MEAS_SPEED:
             case I2C_SLAVE_COMMAND_MEAS_TEMP:
-            case I2C_SLAVE_COMMAND_MEAS_POWER:
                 tracking.virtual_buffer.length = 1;
+                break;
+
+            case I2C_SLAVE_COMMAND_MEAS_POWER:
+                tracking.virtual_buffer.length = 2;
                 break;
 
             // Not a valid command bro !
@@ -210,7 +204,7 @@ i2c_slave_handler_error_t slave_data_handler_write(uint8_t * byte)
             break;
 
         // Measured power is encoded on a 16-bits wide unsigned integer.
-        // So we'll need to send the lower bits first (0-7) and send the higer order bits in
+        // So we'll need to send the lower bits first (0-7) and send the higher order bits in
         // next send (8-15)
         case I2C_SLAVE_COMMAND_MEAS_POWER:
             *byte = ((uint8_t*)(&i2c_slave_exposed_data.power))[tracking.virtual_buffer.index];
@@ -250,8 +244,12 @@ i2c_slave_handler_error_t slave_data_handler_write(uint8_t * byte)
     if (I2C_SLAVE_HANDLER_ERROR_OK == ret)
     {
         tracking.virtual_buffer.index++;
+        if (tracking.virtual_buffer.index == tracking.virtual_buffer.length)
+        {
+            ret = I2C_SLAVE_HANDLER_ERROR_OK_LAST_BYTE;
+        }
     }
-    return I2C_SLAVE_HANDLER_ERROR_OK;;
+    return ret;
 }
 
 
@@ -259,7 +257,7 @@ i2c_slave_operating_modes_t i2c_slave_operating_modes_from_byte(const uint8_t by
 {
     i2c_slave_operating_modes_t outmode = I2C_SLAVE_OPERATING_MODE_UNDEFINED;
 
-    // Only peform a direct cast when byte is within acceptable range otherwise return the undefined state to
+    // Only perform a direct cast when byte is within acceptable range otherwise return the undefined state to
     // inform about an invalid conversion
     if (byte <= I2C_SLAVE_OPERATING_MODE_100)
     {

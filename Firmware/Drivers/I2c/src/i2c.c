@@ -833,25 +833,31 @@ static i2c_error_t i2c_master_rx_process(const uint8_t id)
         return ret;
     }
 
+    // Escape early, nothing is there yet for the driver to handle
+    if (I2C_MISC_NO_RELEVANT_STATE == status )
+    {
+        return ret;
+    }
+
     // Interprete status code:
     switch (status)
     {
         case MAS_RX_START_TRANSMITTED:
         case MAS_RX_REPEATED_START:
-            // Transmition was successfully started
+            // Transmission was successfully started
             // Send slave address + read flag to start writing
             *internal_configuration[id].handle._TWDR = master_buffer[id].command;
             break;
 
         case MAS_RX_SLAVE_READ_ACK:
             /* The slave being read from recognized its address and is ready to transmit data over the bus
-               Send an acknowledge bit 'ACK' to tell that we are ready to accept data */
-            *internal_configuration[id].handle._TWCR = (*internal_configuration[id].handle._TWCR & ~TWINT_MSK) | TWEA_MSK;
+             * Send an acknowledge bit 'ACK' to tell that we are ready to accept data                       */
+            *internal_configuration[id].handle._TWCR = (*internal_configuration[id].handle._TWCR & ~(TWINT_MSK | TWSTA_MSK)) | TWEA_MSK;
             retries = 0;
             break;
 
         case MAS_RX_SLAVE_READ_NACK:
-            /* Slave did not reply correcly to its address, or some issue were encountered on I2C line
+            /* Slave did not reply correctly to its address, or some issue were encountered on I2C line
                TWI hardware will resend a Start condition automatically, which will switch back to the MAS_RX_REPEATED_START case above */
             retries++;
             break;
@@ -861,20 +867,19 @@ static i2c_error_t i2c_master_rx_process(const uint8_t id)
             *get_current_master_buffer_byte(id) = *internal_configuration[id].handle._TWDR;
             master_buffer[id].index++;
 
-            if (master_buffer[id].i2c_buffer.length != master_buffer[id].index)
-            {
-                /* Send an acknowledge bit 'ACK' to indicate we are ready to receive next byte */
-                *internal_configuration[id].handle._TWCR = (*internal_configuration[id].handle._TWCR & ~TWINT_MSK) | TWEA_MSK;
-            }
-            else
+            if (master_buffer[id].i2c_buffer.length == master_buffer[id].index)
             {
                 /* We finished to read data from I2C bus, exiting gracefully
                    Will proceed with next byte and return a NACK before switching to MAS_RX_DATA_RECEIVED_NACK case
                   (used this time to indicate the end of communication) */
 
-                /* Note : this is not part of the datasheet, but it seems right to end the communication when everything is fine */
-                *internal_configuration[id].handle._TWCR = (*internal_configuration[id].handle._TWCR & ~TWINT_MSK) | TWSTO_MSK;
-                internal_configuration[id].state = I2C_STATE_MASTER_RX_FINISHED;
+                 // Send a NACK to indicate the end of communication to the Slave TX
+                *internal_configuration[id].handle._TWCR = (*internal_configuration[id].handle._TWCR & ~(TWINT_MSK | TWEA_MSK));
+            }
+            else
+            {
+                /* Send an acknowledge bit 'ACK' to indicate we are ready to receive next byte */
+                *internal_configuration[id].handle._TWCR = (*internal_configuration[id].handle._TWCR & ~(TWINT_MSK)) | (TWEA_MSK);
             }
 
             retries = 0;
@@ -960,6 +965,11 @@ static i2c_error_t i2c_slave_tx_process(const uint8_t id)
                 *internal_configuration[id].handle._TWDR = slave_received_bytes[id];
                 *internal_configuration[id].handle._TWCR = (*internal_configuration[id].handle._TWCR & ~TWINT_MSK) | TWEA_MSK;
             }
+            else if (I2C_SLAVE_HANDLER_ERROR_OK_LAST_BYTE  == sla_err)
+            {
+                *internal_configuration[id].handle._TWDR = slave_received_bytes[id];
+                *internal_configuration[id].handle._TWCR = (*internal_configuration[id].handle._TWCR & ~(TWINT_MSK | TWEA_MSK));
+            }
             else
             {
                 // Send back an "error" code in the form of a NACK
@@ -978,12 +988,17 @@ static i2c_error_t i2c_slave_tx_process(const uint8_t id)
                 *internal_configuration[id].handle._TWDR = slave_received_bytes[id];
                 *internal_configuration[id].handle._TWCR = (*internal_configuration[id].handle._TWCR & ~TWINT_MSK) | TWEA_MSK;
             }
+            else if (I2C_SLAVE_HANDLER_ERROR_OK_LAST_BYTE  == sla_err)
+            {
+                *internal_configuration[id].handle._TWDR = slave_received_bytes[id];
+                *internal_configuration[id].handle._TWCR = (*internal_configuration[id].handle._TWCR & ~(TWINT_MSK | TWEA_MSK));
+            }
             else
             {
                 // Forbidden access : master tries to read past the end of the allocated buffer
                 // Slave shall send back a NACK command and switch to the next statement (DATA transmitted and NACK received)
                 *internal_configuration[id].handle._TWDR = 0;
-                *internal_configuration[id].handle._TWCR &= ~TWEA_MSK;
+                *internal_configuration[id].handle._TWCR = (*internal_configuration[id].handle._TWCR & ~(TWINT_MSK | TWEA_MSK));
                 retries++;
             }
             break;
@@ -1060,6 +1075,12 @@ static i2c_error_t i2c_slave_rx_process(const uint8_t id)
         case SLA_RX_ARBITRATION_LOST_OWN_ADDR_RECEIVED_ACK :
         case SLA_RX_GENERAL_CALL_RECEIVED_ACK :
         case SLA_RX_ARBITRATION_LOST_GENERAL_CALL_RECEIVED_ACK :
+            if (processed_bytes == 0)
+            {
+                // Drop this byte as it only contains Slave device's address in TWDR
+                processed_bytes++;
+                break;
+            }
             // Lock buffer in order to tell to the caller data is being used
             /* Receiving I2C data, consumes it (application will know how to process it) */
             slave_received_bytes[id] = *internal_configuration[id].handle._TWDR;
@@ -1067,7 +1088,6 @@ static i2c_error_t i2c_slave_rx_process(const uint8_t id)
             if (I2C_SLAVE_HANDLER_ERROR_OK == sla_err)
             {
                 /* Command handler has initialised data structures and buffer pointers */
-
                 *internal_configuration[id].handle._TWCR = (*internal_configuration[id].handle._TWCR & ~TWINT_MSK) | TWEA_MSK;
                 ++processed_bytes;
             }
@@ -1114,6 +1134,7 @@ static i2c_error_t i2c_slave_rx_process(const uint8_t id)
             /* Only one byte processed : we have just consumed the opcode, ready to switch to the not addressed Slave mode
                And allow this slave to recognize its own address (or general call, if enabled) */
             *internal_configuration[id].handle._TWCR = (*internal_configuration[id].handle._TWCR & ~TWINT_MSK) | TWEA_MSK;
+            processed_bytes = 0;
             internal_configuration[id].state = I2C_STATE_READY;
             break;
 
@@ -1126,6 +1147,7 @@ static i2c_error_t i2c_slave_rx_process(const uint8_t id)
         default:
             *internal_configuration[id].handle._TWCR = (*internal_configuration[id].handle._TWCR & ~TWINT_MSK) | TWEA_MSK;
             internal_configuration[id].state = I2C_STATE_READY;
+            processed_bytes = 0;
             retries = 0;
             break;
     }
@@ -1236,7 +1258,10 @@ static i2c_error_t process_helper_single(const uint8_t id)
 
         /* Either a Start condition was written from i2c_read or a Rx operation is already ongoing */
         case I2C_STATE_MASTER_RECEIVING:
-            ret = i2c_master_rx_process(id);
+            if (is_twint_set(id))
+            {
+                ret = i2c_master_rx_process(id);
+            }
             break;
 
         /* A Slave receive operation is ongoing */

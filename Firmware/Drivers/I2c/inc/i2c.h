@@ -77,6 +77,7 @@ typedef enum
 typedef enum
 {
     I2C_SLAVE_HANDLER_ERROR_OK,                     /**< Operation is successful                                                     */
+    I2C_SLAVE_HANDLER_ERROR_OK_LAST_BYTE,           /**< Used by I2C slave to notify the driver it is writing the last byte to bus  */
     I2C_SLAVE_HANDLER_ERROR_INVALID_PAYLOAD,        /**< Currently processed data payload cannot be interpreted by slave application */
     I2C_SLAVE_HANDLER_ERROR_UNKNOWN_COMMAND,        /**< Command written into TWI data register cannot be resolved                   */
     I2C_SLAVE_HANDLER_ERROR_BUFFER_NULLPTR,         /**< Given buffer is set to NULL (uninitialized)                                 */
