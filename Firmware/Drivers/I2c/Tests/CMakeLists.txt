@@ -13,6 +13,7 @@ target_include_directories(i2c_driver PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../inc
     ${CMAKE_CURRENT_SOURCE_DIR}/Stub
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../../Utils/inc
     ${AVR_INCLUDES}
 )
 
@@ -35,13 +36,28 @@ target_compile_definitions(i2c_driver_tests PRIVATE
     -DUNIT_TESTING
 )
 
+if(UNIX)
+    target_compile_options(i2c_driver_tests PRIVATE
+        -fstack-protector-strong
+    )
+endif()
+
 target_include_directories(i2c_driver_tests PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../inc
     ${CMAKE_CURRENT_SOURCE_DIR}/Stub
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/Utils/inc
+)
+
+target_include_directories(i2c_driver_tests SYSTEM PUBLIC
     ${GTEST_INCLUDE_DIRS}
 )
-target_link_libraries(i2c_driver_tests i2c_driver ${GTEST_LIBRARIES} pthread)
+
+if(WIN32)
+    target_link_libraries(i2c_driver_tests i2c_driver memutils ${GTEST_LIBRARIES})
+else()
+    target_link_libraries(i2c_driver_tests i2c_driver memutils ${GTEST_LIBRARIES} pthread)
+endif()
 
 set_target_properties(i2c_driver_tests
     PROPERTIES

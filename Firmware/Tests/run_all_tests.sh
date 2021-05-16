@@ -15,14 +15,25 @@ directories=$(find -type d)
 directories=("${directories:1}") #removed the 1st element
 echo "directories = : $directories"
 
+extension=""
+if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OSTYPE" == "win32" ]]; then
+    extension=".exe"
+fi
+
 failed_once=0
 failed_tests=""
 for dir in $directories
 do
     echo -e "\nentering $(basename ${dir}) directory"
     pushd $dir > /dev/null
-    fileList=$(find -maxdepth 1 -type f)
-    if [ -z $fileList ] ; then
+    fileList=""
+    if [ ! -z $extension ] ; then
+        fileList=$(find -maxdepth 1 -type f -name "*${extension}")
+    else
+        fileList=$(find -maxdepth 1 -type f )
+    fi
+
+    if [ -z "$fileList" ] ; then
         echo -e "No files in directory"
     else
         for f in $fileList

@@ -39,8 +39,12 @@ typedef struct
 {
     uint8_t baudrate;           /**< Baudrate to be fed into bit rate generator register (final baudrate also depends on prescaler)   */
     i2c_prescaler_t prescaler;  /**< TWI clock based on main CPU clock, divided by prescaler                                          */
-    uint8_t slave_address;      /**< Address to which this device will respond                                                        */
-    uint8_t slave_address_mask; /**< Address mask used to drive address recognition module of TWI hardware                            */
+    struct
+    {
+        bool enable;            /**< enables this device as a slave                                                                   */
+        uint8_t address;        /**< Address to which this device will respond                                                        */
+        uint8_t address_mask;   /**< Address mask used to drive address recognition module of TWI hardware                            */
+    } slave;
     bool general_call_enabled;  /**< Activate the response to general call (0x00) or not                                              */
     bool interrupt_enabled;     /**< Use the interrupt-based workflow or not (if not, i2c_process() will have to be called regularly) */
     i2c_handle_t handle;        /**< Handle which will be used to effectively interact with peripheral                                */
@@ -51,18 +55,20 @@ typedef struct
 */
 typedef enum
 {
-    I2C_ERROR_OK,                 /**< Operation is successful                                                  */
-    I2C_ERROR_NULL_POINTER,       /**< One or more input pointer is set to NULL                                 */
-    I2C_ERROR_NULL_HANDLE,        /**< Given handle is not initialised with real addresses                      */
-    I2C_ERROR_DEVICE_NOT_FOUND,   /**< Given device id is out of range                                          */
-    I2C_ERROR_INVALID_ADDRESS,    /**< Given address is out of conventional I2C addresses range                 */
-    I2C_ERROR_WRONG_STATE,        /**< Targeted device is in a wrong internal state                             */
-    I2C_ERROR_NOT_INITIALISED,    /**< Extension of the error above (device not initialised)                    */
-    I2C_ERROR_MAX_RETRIES_HIT,    /**< Too much errors were encountered, maximum allowed retries count was hit  */
-    I2C_ERROR_REQUEST_TOO_SHORT,  /**< The given request (i2c_read or i2c_write) is too short                   */
-    I2C_ERROR_REQUEST_TOO_LONG,   /**< The given request (i2c_read or i2c_write) is too long for this driver    */
-    I2C_ERROR_ALREADY_PROCESSING, /**< Not really an error : indicates driver is busy and get_state() might be  */
-                                    /* called to know which state the I2C driver is running on                  */
+    I2C_ERROR_OK,                       /**< Operation is successful                                                  */
+    I2C_ERROR_NULL_POINTER,             /**< One or more input pointer is set to NULL                                 */
+    I2C_ERROR_NULL_HANDLE,              /**< Given handle is not initialised with real addresses                      */
+    I2C_ERROR_DEVICE_NOT_FOUND,         /**< Given device id is out of range                                          */
+    I2C_ERROR_INVALID_ADDRESS,          /**< Given address is out of conventional I2C addresses range                 */
+    I2C_ERROR_WRONG_STATE,              /**< Targeted device is in a wrong internal state                             */
+    I2C_ERROR_NOT_INITIALISED,          /**< Extension of the error above (device not initialised)                    */
+    I2C_ERROR_MAX_RETRIES_HIT,          /**< Too much errors were encountered, maximum allowed retries count was hit  */
+    I2C_ERROR_REQUEST_TOO_SHORT,        /**< The given request (i2c_read or i2c_write) is too short                   */
+    I2C_ERROR_REQUEST_TOO_LONG,         /**< The given request (i2c_read or i2c_write) is too long for this driver    */
+    I2C_ERROR_ALREADY_PROCESSING,       /**< Not really an error : indicates driver is busy and get_state() might be  */
+                                          /* called to know which state the I2C driver is running on                  */
+    I2C_ERROR_BUS_ERROR_HARDWARE,       /**< A bus error was encountered and I2C hardware recovered from it           */
+    I2C_ERROR_SLAVE_HANDLERS_NOT_SET    /**< Internal slave handlers are not set (NULL), aborting execution           */
 } i2c_error_t;
 
 /**
@@ -70,9 +76,14 @@ typedef enum
 */
 typedef enum
 {
-    I2C_SLAVE_HANDLER_ERROR_OK,              /**< Operation is successful                                   */
-    I2C_SLAVE_HANDLER_ERROR_UNKNOWN_COMMAND, /**< Command written into TWI data register cannot be resolved */
-    I2C_SLAVE_HANDLER_ERROR_BUFFER_NULLPTR,  /**< Given buffer is set to NULL (uninitialized)               */
+    I2C_SLAVE_HANDLER_ERROR_OK,                     /**< Operation is successful                                                     */
+    I2C_SLAVE_HANDLER_ERROR_OK_LAST_BYTE,           /**< Used by I2C slave to notify the driver it is writing the last byte to bus  */
+    I2C_SLAVE_HANDLER_ERROR_INVALID_PAYLOAD,        /**< Currently processed data payload cannot be interpreted by slave application */
+    I2C_SLAVE_HANDLER_ERROR_UNKNOWN_COMMAND,        /**< Command written into TWI data register cannot be resolved                   */
+    I2C_SLAVE_HANDLER_ERROR_BUFFER_NULLPTR,         /**< Given buffer is set to NULL (uninitialized)                                 */
+    I2C_SLAVE_HANDLER_ERROR_BUFFER_OVERFLOW_GUARD,  /**< Prevents to read or write past the length of slave virtual buffer           */
+    I2C_SLAVE_HANDLER_ERROR_NO_HANDLER_SPECIFIED,   /**< Generic error thrown by i2c driver in case slave data handlers still
+                                                         point to default ones                                                       */
 } i2c_slave_handler_error_t;
 
 typedef enum
@@ -101,9 +112,21 @@ typedef enum
 */
 typedef struct
 {
-    uint8_t data[I2C_MAX_BUFFER_SIZE];  /**< pointer to targeted buffer. NULL if command is invalid or after first initialisation */
-    uint8_t length;                     /**< length of the selected buffer, to prevent writing/reading past the end of the buffer */
+    uint8_t* data;  /**< pointer to targeted buffer. NULL if command is invalid or after first initialisation */
+    uint8_t length; /**< length of the selected buffer, to prevent writing/reading past the end of the buffer */
+    bool locked;    /**< This boolean lock tells if this buffer is still in use or not                        */
 } i2c_command_handling_buffers_t;
+
+/**
+ * @brief records the kind of request is ongoing in the internal state machine
+*/
+typedef enum
+{
+    I2C_REQUEST_WRITE,  /**< Write request ongoing                */
+    I2C_REQUEST_READ,   /**< Read request ongoing                 */
+    I2C_REQUEST_IDLE,   /**< No request ongoing, driver is idling */
+} i2c_request_t;
+
 
 /**
  * @brief function pointer which has to be defined by the application software
@@ -111,9 +134,13 @@ typedef struct
  * by a master on the bus.
  * Its role is to parse the incoming uint8_t byte (which is the value stored in TWI Data Register) and to initialise the
  * i2c_command_handling_buffers_t with pointers to internal data.
- * @param[in]   uint8_t -> byte                         : this is the data found in TWDR (to be parsed)
- * @param[out]  i2c_command_handling_buffers_t->buffer  : the buffer which needs initialisation.
-
+ * ----------------------------------------------------------------------------
+ * When a read operation (master reads from this slave), current_byte is considered as an output.
+ * When a write operation (master writes to this slave), current_byte is considered as an input.
+ * The request parameter informs about the nature of the current i2c transaction (read or write requests)
+ * @param[in/out]   current_byte : interface byte used by the I2C driver
+ * @param[in]       request      : nature of the I2C transaction currently taking place
+ *
  * Example given :
  *  Let's think about an I2C slave device which monitors temperature in a complex system and exposes its internal reading
  *  as such : 2 analog values (temperature), and 2 boolean values (2 thermostats for instance, which represents thermo-mechanical switches).
@@ -148,23 +175,29 @@ typedef struct
  *                                        *     buffer->length = 1;
  *                                        *     buffer->lock = &threshold_lock;
 */
-typedef i2c_slave_handler_error_t (*i2c_command_handler_t)(volatile i2c_command_handling_buffers_t *, uint8_t);
+typedef i2c_slave_handler_error_t (*i2c_slave_data_handler_t)(uint8_t * const /* current byte */, const i2c_request_t /* request */);
+
+/**
+ * @brief transmission over callback provides a way for the slave
+ * device to know that the latest transmission is over.
+ * This is useful to be able to reset internal state machines states.
+ * For instance, slave device will reset its buffer index and counters to 0, waiting for next command to set them properly
+ *
+ * E.g : Let's consider we are working on a slave device.
+ * This slave device is now being addressed by a master on the I2C bus and a valid opcode was sent to this slave.
+ * This opcode commands the slave device to select its THERMAL_MONITOR_THRESHOLD data interface.
+ *
+ * Next I2C transmission is a write transmission from the master device : master device wants to modify the current thermal threshold set in the slave device.
+ * As data is being sent over the bus, new data is posted to slave's i2c buffer and consumed by the i2c driver.
+ * Once the transmission is over (master sends a STOP condition over the I2C bus), this callback is fired so that the slave can
+ * reset its internal pointers and buffer indexes. This prevents errors such as buffer overflow guard as indexes and counters are
+ * all reset to their default values.
+*/
+typedef i2c_slave_handler_error_t (*i2c_slave_transmission_over_callback_t)(void);
 
 /* #############################################################################################
    ######################################## Configuration API ##################################
    ############################################################################################# */
-
-#ifdef UNIT_TESTING
-/**
- * @brief clears the driver's internal memory and resets everything to 0 (memset used)
- * as depicted with the above conditionnal compilation #define, this is only needed while
- * performing unit testing.
-*/
-void i2c_driver_reset_memory(void);
-
-uint8_t * i2c_get_internal_data_buffer(const uint8_t id);
-
-#endif
 
 /**
  * @brief gets a default configuration for I2C driver, with non initialised handle (you have to manually input right register addresses)
@@ -184,7 +217,7 @@ i2c_error_t i2c_get_default_config(i2c_config_t * const config);
  *      I2C_ERROR_NULL_POINTER        : Uninitialised handle in config object (could not access to device's registers)
  *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
 */
-i2c_error_t i2c_set_handle(const uint8_t id, const i2c_handle_t * const handle);
+i2c_error_t i2c_set_handle(const uint8_t id, i2c_handle_t const * const handle);
 
 /**
  * @brief copies internal handle to given output object
@@ -201,6 +234,17 @@ i2c_error_t i2c_get_handle(const uint8_t id, i2c_handle_t * const handle);
 /* #############################################################################################
    ######################################## Single shot registers manipulators #################
    ############################################################################################# */
+
+/**
+ * @brief Enables or disables I2C slave mode
+ * @param[in]   id      : selected I2C driver instance to be configured
+ * @param[in]   enabled : if enabled, this device will listen on I2C bus
+ * @return i2c_error_t :
+ *      I2C_ERROR_OK                 : Operation succeeded
+ *      I2C_ERROR_NULL_HANDLE        : Uninitialised handle in config object (could not access to device's registers)
+ *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
+*/
+i2c_error_t i2c_set_slave_mode(const uint8_t id, const bool enabled);
 
 /**
  * @brief sets the selected device I2C slave address to which it is meant to respond
@@ -351,7 +395,7 @@ i2c_error_t i2c_get_interrupt_mode(const uint8_t id, bool * const use_interrupts
  *      I2C_ERROR_NULL_HANDLE        : Uninitialised handle in config object (could not access to device's registers)
  *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
 */
-i2c_error_t i2c_get_status_code(const uint8_t id, uint8_t * const status_code);
+i2c_error_t i2c_get_status_code(const uint8_t id, volatile uint8_t * const status_code);
 
 
 /* #############################################################################################
@@ -380,7 +424,7 @@ i2c_error_t i2c_disable(const uint8_t id);
 
 /**
  * @brief registers the given function into selected I2C driver command handler used when receiving commands as a slave device
- *        @see i2c_command_handler_t documentation for further details about this command handler
+ * @see i2c_command_handler_t documentation for further details about this command handler
  * @param[in]   id                          : selected I2C driver instance to be configured
  * @param[in]   i2c_slave_command_handler   : command handler which will be used to handle incoming data when working as a slave device
  * @return i2c_error_t :
@@ -388,15 +432,20 @@ i2c_error_t i2c_disable(const uint8_t id);
  *      I2C_ERROR_NULL_POINTER       : Uninitialised pointer parameter
  *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
 */
-i2c_error_t i2c_slave_set_command_handler(const uint8_t id, i2c_command_handler_t command_handler);
+i2c_error_t i2c_slave_set_data_handler(const uint8_t id, i2c_slave_data_handler_t command_handler);
 
-#ifdef UNIT_TESTING
 /**
- * @brief this is used in a unit testing context and is meaningful when checking if
- * the command handler has effectively been registered correctly
+ * @brief registers the given function into selected I2C driver command handler used when receiving commands as a slave device
+ * @see i2c_command_handler_t documentation for further details about this command handler
+ * @param[in]   id                          : selected I2C driver instance to be configured
+ * @param[in]   i2c_slave_command_handler   : command handler which will be used to handle incoming data when working as a slave device
+ * @return i2c_error_t :
+ *      I2C_ERROR_OK                 : Operation succeeded
+ *      I2C_ERROR_NULL_POINTER       : Uninitialised pointer parameter
+ *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
 */
-i2c_command_handler_t i2c_slave_get_command_handler(const uint8_t id);
-#endif
+i2c_error_t i2c_slave_set_transmission_over_callback(const uint8_t id, i2c_slave_transmission_over_callback_t callback);
+
 
 /**
  * @brief initialises targeted instance of I2C driver with provided configuration object.
@@ -433,16 +482,6 @@ i2c_error_t i2c_deinit(const uint8_t id);
  *      I2C_ERROR_DEVICE_NOT_FOUND   : Selected instance id does not exist in available instances
 */
 i2c_error_t i2c_get_state(const uint8_t id, i2c_state_t * const state);
-
-#ifdef UNIT_TESTING
-/**
- * @brief this is only needed while performing unit tests, and allows
- * to manually set the internal state machine current state.
- * This is essentially meaningful when checking whether get/set api is accessing the
- * right data
-*/
-void i2c_set_state(const uint8_t id, const i2c_state_t state);
-#endif
 
 /**
  * @brief this function shall be used when non-interrupt mode is used
@@ -495,7 +534,12 @@ i2c_error_t i2c_process(const uint8_t id);
 i2c_error_t i2c_write(const uint8_t id, const uint8_t target_address , uint8_t * const buffer, const uint8_t length, const uint8_t retries);
 
 /**
- * @brief reads data to I2C bus
+ * @brief Reads data from the targeted slave device with or without opcode writing beforehand.
+ * @details for some devices, an opcode is required to be sent first in order for the targeted slave to
+ * write the appropriate data to exposed buffer.
+ * When this feature is not required (for small devices such as PCF8574 io expander), no opcode is required and
+ * data could be read directly from the output buffer.
+ *
  * @param[in]   id              : selected I2C driver instance to be configured
  * @param[in]   target_address  : targeted slave address on I2C bus (address is not checked at runtime, must not bit greater than 127)
  * @param[out]  buffer          : pointer to a buffer of bytes holding the actual payload to be sent over I2C bus
@@ -503,6 +547,10 @@ i2c_error_t i2c_write(const uint8_t id, const uint8_t target_address , uint8_t *
  *                                read data from ; so it is actually an i2c write action (single byte) followed by a subsequent read starting
  *                                from pointed slave register's address)
  * @param[in]   length          : total length of given buffer
+ * @param[in]   has_opcode      : tells if the i2c driver shall send an opcode in write mode first and then read data back or not
+ *                                  - true  : first byte of given buffer should contain the opcode which will be sent to the target
+ *                                            before a read operation is performed
+ *                                  - false : no opcode is required and i2c driver will directly init rx transmission (used for small devices)
  * @param[in]   retries         : number of available tries before giving up
  * @return i2c_error_t :
  *      I2C_ERROR_OK                  : Operation succeeded
@@ -513,7 +561,17 @@ i2c_error_t i2c_write(const uint8_t id, const uint8_t target_address , uint8_t *
  *      I2C_ERROR_REQUEST_TOO_SHORT   : Given request's length is too short (shall be >= 2)
  *      I2C_ERROR_ALREADY_PROCESSING  : Selected instance is already processing (either in master or slave mode). @see i2c_get_state()
 */
-i2c_error_t i2c_read(const uint8_t id, const uint8_t target_address, uint8_t const * buffer, const uint8_t length, const uint8_t retries);
+i2c_error_t i2c_read(const uint8_t id, const uint8_t target_address, uint8_t * const buffer, const uint8_t length, const bool has_opcode, const uint8_t retries);
+
+/**
+ * @brief this function tells whether the master buffer passed in i2c_read and i2c_write is still used by the driver or not
+ * In case it is still used, it means caller shall not modify the given buffer, otherwise it might compromise the whole
+ * I2C driver current operation.
+ * @return
+ *      true    : buffer is currently used and is soft-locked by the driver. Do not modify it.
+ *      false   : driver's operations completed and data is now ready to be used
+*/
+bool i2c_is_master_buffer_locked(const uint8_t id);
 
 #ifdef __cplusplus
 }

@@ -45,11 +45,11 @@ extern "C"
 
 #define HD44780_LCD_DEFAULT_I2C_RETRIES_COUNT (3U)
 
-#ifdef HD44780_LCD_USE_MICROSECONDS_TIMER
-    #define HD44780_LCD_ENABLE_PULSE_DURATION_WAIT (37U)    /**< 37 microseconds, absolute minimum to wait for an instruction to complete */
-#else
-    #define HD44780_LCD_ENABLE_PULSE_DURATION_WAIT (1U)     /**< 1 millisecond wait, minimum resolution                                   */
-#endif
+// The following symbol is used to slow down a bit I2C requests.
+// If enable pin is cycled too fast (less than 1ms), LCD screen does not work properly.
+// However, forcing to wait for 1 more ms fixes all this kind of timing issues without having to add more complex code
+// It just slows the screen down a bit.
+#define HD44780_LCD_ENABLE_PULSE_DURATION_WAIT  (2U)    /**< 2 millisecond wait, to help the lcd screen update correctly                                                    */
 #define HD44780_LCD_BOOTUP_TIME_MS              (40U)   /**< We have to wait more than 40 ms in the case (worst case) where LCD screen is powered with 2.7 Volts            */
 #define HD44780_LCD_FUNCTION_SET_FIRST_WAIT_MS  (5U)    /**< Should be more than 4.1ms, 5ms is fine                                                                         */
 #define HD44780_LCD_FUNCTION_SET_SECOND_WAIT_MS (1U)    /**< Normally, 100 µs are sufficient, but this is only for initialisation so 1 ms resolution will do it just fine   */
@@ -112,21 +112,21 @@ typedef struct
     uint8_t i2c_address;    /**< I/O expander address       */
 
     struct {
-        uint8_t timebase : 4;    /**< Used timebase module id    */
-        uint8_t i2c : 4;         /**< I2C module index           */
+        uint8_t timebase;    /**< Used timebase module id    */
+        uint8_t i2c;         /**< I2C module index           */
     } indexes;
 
     // Bitfield storing persistent data about display state
     // All fields might be encoded within one CPU word (8 bits)
     struct
     {
-        bool backlight : 1;                         /**< true : backlight on,       false : backlight off                                */
-        bool enabled : 1;                           /**< true : display on,         false : display off                                  */
-        bool cursor_visible : 1;                    /**< true : cursor visible,     false : cursor not displayed                         */
-        bool cursor_blinking : 1;                   /**< true : blinking cursor,    false : persistent cursor                            */
-        bool two_lines_mode : 1;                    /**< true : two lines mode,     false : one line mode (5x8 and 5x10 fonts supported) */
-        bool small_font : 1;                        /**< true : 5x8 font used,      false : 5x10 dots font, single line only             */
-        hd44780_lcd_entry_mode_t entry_mode : 2;    /**< Selects the kind of entry mode which is requested by the user upon typing                          */
+        bool backlight;                         /**< true : backlight on,       false : backlight off                                */
+        bool enabled;                           /**< true : display on,         false : display off                                  */
+        bool cursor_visible;                    /**< true : cursor visible,     false : cursor not displayed                         */
+        bool cursor_blinking;                   /**< true : blinking cursor,    false : persistent cursor                            */
+        bool two_lines_mode;                    /**< true : two lines mode,     false : one line mode (5x8 and 5x10 fonts supported) */
+        bool small_font;                        /**< true : 5x8 font used,      false : 5x10 dots font, single line only             */
+        hd44780_lcd_entry_mode_t entry_mode;        /**< Selects the kind of entry mode which is requested by the user upon typing                          */
     } display;
 } internal_configuration_t;
 
@@ -148,8 +148,8 @@ typedef union
     /* Single byte-wide structure */
     struct
     {
-        uint8_t line : 2;                   /**< Gives the line number of the cursor position (from 0 to 3, could adapt this for 20x04 displays)*/
-        uint8_t column : 6;                 /**< Gives the column number of the cursor position (from 0 to 63)                                  */
+        uint8_t line;                   /**< Gives the line number of the cursor position (from 0 to 3, could adapt this for 20x04 displays)*/
+        uint8_t column;                 /**< Gives the column number of the cursor position (from 0 to 63)                                  */
     } cursor_position;
 
     /* 3 bytes-wide structure */
@@ -161,25 +161,27 @@ typedef union
     } message;
 } process_commands_parameters_t;
 
+typedef void (*process_command_t) (void);
+
 /**
  * @brief A command handler which is used to keep track of the current command state and where it should go at next process() call
 */
 typedef struct
 {
-    void (*process_command)(void);              /**< Pointer to the private function to be called                                               */
+    process_command_t process_command;          /**< Pointer to the private function to be called                                               */
     process_commands_parameters_t parameters;   /**< Stores all necessary parameters to perform requested commands                              */
     uint16_t start_time;                        /**< Used to record starting time of a wait operation, for instance                             */
 
     struct
     {
-        uint8_t count : 4;                      /**< Gives the current sequence number to allow each command to know where it should resume     */
-        bool pulse_sent : 1;                    /**< Persistent flag which tells if a pulse (HD44780 'E' pin was sent or not                    */
-        bool waiting : 1;                       /**< States whether the command sequence is waiting for LCD to settle or not                    */
-        bool first_pass : 1;                    /**< Tells if current sequence has already been entered once and is being reentered             */
-        bool lower_bits : 1;                    /**< When sending a byte of information, selects which 4 bits to send from 8 bits data          */
+        uint8_t count;                      /**< Gives the current sequence number to allow each command to know where it should resume     */
+        bool pulse_sent;                    /**< Persistent flag which tells if a pulse (HD44780 'E' pin was sent or not                    */
+        bool waiting;                       /**< States whether the command sequence is waiting for LCD to settle or not                    */
+        bool first_pass;                    /**< Tells if current sequence has already been entered once and is being reentered             */
+        bool lower_bits;                    /**< When sending a byte of information, selects which 4 bits to send from 8 bits data          */
     } sequence;
 
-    bool nested_sequence_mode : 1;              /**< Tells whether a command is nested within a high-level sequence or not (such as in initialisation sequence for instance) */
+    bool nested_sequence_mode;              /**< Tells whether a command is nested within a high-level sequence or not (such as in initialisation sequence for instance) */
 } process_commands_sequencer_t;
 
 
@@ -288,16 +290,59 @@ void set_backlight_flag_in_i2c_buffer(void);
 hd44780_lcd_error_t is_ready_to_accept_instruction(void);
 
 /* Data handlers */
+
+/**
+ * @brief writes the function set instruction into "data_byte"
+*/
 void handle_function_set(void);
+
+/**
+ * @brief writes the display controls instruction into "data_byte"
+*/
 void handle_display_controls(void);
+
+/**
+ * @brief writes the entry mode set instruction into "data_byte"
+*/
 void handle_entry_mode(void);
+
+/**
+ * @brief handles a full byte sending request over I2C
+ * It basically splits the byte in twi halves (cuts in the middle with 4 high order bits and 4 low order bits)
+ * Then it also handles the pulse pin switching high and low between each I2C request
+ * Basically, when we send one byte, we actually do :
+ * byte_low = byte & 0x0f
+ * byte_high = byte & 0xf0 >> 4
+ *
+ * | I2C write 0   |   | I2C write 1   |         | I2C write 2  |     | I2C write 3   |
+ * [byte high + Ena]---[byte high - Ena]---------[byte low + Ena]-----[byte low - Ena]
+*/
 bool handle_byte_sending(void);
+
+/**
+ * @brief handles the end of command sequencer (when the internal state machine reaches the end of the command stack)
+*/
 void handle_end_of_internal_command(bool byte_sent);
+
+/**
+ * @brief Converts errors returned by i2C driver
+*/
 hd44780_lcd_error_t convert_i2c_write_error(const i2c_error_t error);
 
-
+/**
+ * @brief Handles bootup sequence for LCD screen (particular initialization steps has
+ * to be observed)
+*/
 void bootup_sequence_handler(uint8_t time_to_wait, bool end_with_wait);
+
+/**
+ * @brief handles buffer sending over I2C communication
+*/
 bool write_buffer(void);
+
+/**
+ * @brief Idle command with nothing to do
+*/
 void process_command_idling(void);
 
 #ifdef UNIT_TESTING

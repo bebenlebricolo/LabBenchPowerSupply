@@ -1,6 +1,6 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.20)
 
-project(Tests C CXX)
+project(LabBenchPowerSupply_FirmwareTests C CXX)
 
 find_package(GTest REQUIRED)
 enable_testing()
@@ -11,17 +11,32 @@ add_definitions(
     -DUNIT_TESTING
 )
 
-set(AVR_INCLUDES /usr/avr/include)
+if(UNIX)
+    set(AVR_INCLUDES /usr/avr/include)
+    set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 -Wall -Wextra")
+    set(CMAKE_C_FLAGS_DEBUG "-O0 -g3 -Wall -Wextra")
+    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -Wextra")
+    set(CMAKE_C_FLAGS_RELEASE "-O3 -Wall -Wextra")
+else()
+    if (NOT DEFINED AVR_INCLUDES)
+        message(FATAL_ERROR "AVR_INCLUDES variable not set, please provide the path to avr includes")
+    endif()
+    set(CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS_DEBUG} /Od /W4")
+    set(CMAKE_C_FLAGS_DEBUG     "${CMAKE_C_FLAGS_DEBUG} /Od /W4")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /O2 /W4 ")
+    set(CMAKE_C_FLAGS_RELEASE   "${CMAKE_C_FLAGS_RELEASE} /O2 /W4")
+endif()
 
-set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 -Wall -Wextra")
-set(CMAKE_C_FLAGS_DEBUG "-O0 -g3 -Wall -Wextra")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -Wextra")
-set(CMAKE_C_FLAGS_RELEASE "-O3 -Wall -Wextra")
 
 
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 add_subdirectory( ${CMAKE_SOURCE_DIR}/../Drivers/Adc/Tests
     ${CMAKE_BINARY_DIR}/Tests/Adc
+)
+
+# Memory utils library
+add_subdirectory( ${CMAKE_SOURCE_DIR}/../Utils
+    ${CMAKE_BINARY_DIR}/Tests/Utils
 )
 
 # Timer drivers

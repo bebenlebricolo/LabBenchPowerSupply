@@ -9,7 +9,7 @@ extern "C"
 #include <stdint.h>
 #include "i2c_device_interface.h"
 
-#define I2C_FAKE_DEVICE_MSG_LEN 30U
+#define I2C_FAKE_DEVICE_MSG_LEN 29U
 
 
 /* Device operating modes */
@@ -55,7 +55,7 @@ typedef struct
 } i2c_exposed_data_t;
 
 /* Interface */
-void i2c_fake_device_init(const uint8_t address, const bool general_call_enabled);
+void i2c_fake_device_init(const uint8_t address, const bool general_call_enabled, const bool needs_opcode);
 void i2c_fake_device_clear(void);
 
 /**

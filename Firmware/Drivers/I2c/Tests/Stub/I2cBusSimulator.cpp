@@ -4,6 +4,12 @@
 
 #define GENERAL_CALL_ADDRESS (0x00)
 
+I2cBusSimulator::I2cBusSimulator()
+{
+
+}
+
+
 void I2cBusSimulator::devices_process(const uint8_t id)
 {
     for (auto& device : devices)
@@ -17,7 +23,7 @@ void I2cBusSimulator::idle_process(const uint8_t id)
 {
     potential_masters_indexes.clear();
     slaves_indexes.clear();
-    
+
     devices_process(id);
 
     // Find potential masters to be watched carefully when Slave addressing mode is entered
@@ -29,7 +35,7 @@ void I2cBusSimulator::idle_process(const uint8_t id)
         }
     }
 
-    // Propagate start condition to all devices 
+    // Propagate start condition to all devices
     if (0 != potential_masters_indexes.size())
     {
         // Let all non-master devices know that one of them became the master of the i2c bus
@@ -44,7 +50,7 @@ void I2cBusSimulator::idle_process(const uint8_t id)
             }
         }
         states.current = I2cBusSimulator::StateMachine::SlaveAddressing;
-        
+
     }
     // else, fallback to Idle mode, waiting for next change
 }
@@ -67,7 +73,7 @@ void I2cBusSimulator::slave_addressing_process(const uint8_t id)
                 devices[potential_masters_indexes[i]].interface->lost_arbitration = true;
                 devices[potential_masters_indexes[i]].process(id);
             }
-        } 
+        }
     }
     else
     {
@@ -77,7 +83,7 @@ void I2cBusSimulator::slave_addressing_process(const uint8_t id)
     // Only the master device needs to process its internal datas in the first place
     devices[master_index].process(id);
     uint8_t address = (devices[master_index].interface->data & 0xFE) >> 1U;
-    
+
     // Handle stop conditions
     if (devices[master_index].interface->stop_sent)
     {
@@ -94,7 +100,7 @@ void I2cBusSimulator::slave_addressing_process(const uint8_t id)
     }
 
     TransactionMode transaction_mode =  static_cast<TransactionMode>(devices[master_index].interface->data & I2C_CMD_MASK);
-    
+
     // Check for general calls
     if (address == GENERAL_CALL_ADDRESS)
     {
@@ -106,7 +112,7 @@ void I2cBusSimulator::slave_addressing_process(const uint8_t id)
     {
         if (i != master_index )
         {
-            if ((address == devices[i].interface->address) 
+            if ((address == devices[i].interface->address)
             ||  (address == GENERAL_CALL_ADDRESS  && devices[i].interface->general_call_enabled))
             {
                 slaves_indexes.push_back(i);
@@ -115,7 +121,7 @@ void I2cBusSimulator::slave_addressing_process(const uint8_t id)
     }
 
 
-    // Accept the transition to next state        
+    // Accept the transition to next state
     if (slaves_indexes.size() != 0)
     {
         // Execute slave's code to check if they manage to recognize their address
@@ -132,7 +138,7 @@ void I2cBusSimulator::slave_addressing_process(const uint8_t id)
         {
             devices[master_index].interface->ack_sent = true;
         }
-        
+
         mode = transaction_mode;
         states.previous = states.current;
         states.current = I2cBusSimulator::StateMachine::Active;
@@ -148,12 +154,12 @@ void I2cBusSimulator::slave_addressing_process(const uint8_t id)
 
  I2cBusSimulator::StartStopConditions I2cBusSimulator::check_bus_for_start_stop_cond()
  {
-    // Check for start condition 
+    // Check for start condition
     bool start_sent = devices[master_index].interface->start_sent;
     bool stop_sent = devices[master_index].interface->stop_sent;
 
     // TODO : further check this statement, not sure it is true ... !
-    // Exclude start condition if a stop is sent at the same time (this would be a software issue only, 
+    // Exclude start condition if a stop is sent at the same time (this would be a software issue only,
     // as on physicall bus, the start condition will win against a stop condition and will always be seen as such)
     if (start_sent && stop_sent)
     {
@@ -174,7 +180,7 @@ void I2cBusSimulator::slave_addressing_process(const uint8_t id)
         return StartStopConditions::Stop;
     }
 
-    // Reverts back to SlaveAddressing state as this is a Repeated Start condition 
+    // Reverts back to SlaveAddressing state as this is a Repeated Start condition
     // -> occured while the previous transmission was still ongoing
     if (start_sent)
     {
@@ -194,7 +200,7 @@ void I2cBusSimulator::slave_addressing_process(const uint8_t id)
 
 void I2cBusSimulator::active_process(const uint8_t id)
 {
-    
+
     StartStopConditions bus_conditions = StartStopConditions::None;
     uint8_t data = 0xFF;
     bool ack_sent = false;
@@ -204,7 +210,7 @@ void I2cBusSimulator::active_process(const uint8_t id)
         case TransactionMode::GeneralCall :
             // Master process time
             devices[master_index].process(id);
-            bus_conditions = check_bus_for_start_stop_cond();            
+            bus_conditions = check_bus_for_start_stop_cond();
 
             // Handle stop condition when master decides to break execution
             if (StartStopConditions::Stop == bus_conditions)
@@ -228,7 +234,7 @@ void I2cBusSimulator::active_process(const uint8_t id)
 
             // Transfer data to slave and call slave.process() function
             for (auto& slave_index : slaves_indexes)
-            {   
+            {
                 if (StartStopConditions::None == bus_conditions)
                 {
                     devices[slave_index].interface->data = devices[master_index].interface->data;
@@ -265,7 +271,7 @@ void I2cBusSimulator::active_process(const uint8_t id)
                 devices[slave_index].interface->ack_sent = devices[master_index].interface->ack_sent;
             }
 
-            bus_conditions = check_bus_for_start_stop_cond();            
+            bus_conditions = check_bus_for_start_stop_cond();
 
             // Handle stop condition when master decides to break execution
             if (StartStopConditions::Stop == bus_conditions)
@@ -316,10 +322,10 @@ void I2cBusSimulator::process(const uint8_t id)
         // arbitration is done when writing slave addresses + direction bit
         // Note : this is handled by hardware and arbitration can only occur at this time (Start condition being a SDA low, it pulls the whole SDA line to low, so there is no way
         // to identify at this time)
-        
+
         // When master is found, set the master_index with the device which won the fight
         // Then go to SlaveAddressing on next call -> set states.current to SlaveAddressing mode
-        
+
         idle_process(id);
         break;
     case I2cBusSimulator::StateMachine::SlaveAddressing :
@@ -369,7 +375,7 @@ uint8_t I2cBusSimulator::get_current_byte_on_bus()
 {
     if( I2cBusSimulator::StateMachine::Active == states.current)
     {
-        if( TransactionMode::Read == mode) 
+        if( TransactionMode::Read == mode)
         {
             uint8_t data = 0xFF;
             if (0 != slaves_indexes.size())

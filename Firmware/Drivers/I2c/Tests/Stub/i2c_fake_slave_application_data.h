@@ -31,7 +31,6 @@ typedef enum
     I2C_FAKE_SLAVE_APPLICATION_DATA_FAN_SPEED_100,
 } i2c_fake_slave_application_data_fan_speed_t;
 
-
 typedef struct
 {
     i2c_fake_slave_application_data_fan_speed_t fan_speed;
@@ -43,11 +42,23 @@ typedef struct
 } i2c_fake_slave_application_data_exposed_data_t;
 
 /**
- * @brief handles the first byte of a read/write operation when configured as a slave
- * @param[out] buffer_data  : Will point to the right I2C exposed buffer if command encoded in the 'command_byte' parameter is valid
- * @param[in]  command_byte : Contains the encoded command which will be used to initialise buffer_data correctly
+ * @brief initialises internal memory of this fake i2c application
 */
-i2c_slave_handler_error_t i2c_fake_slave_command_handler(volatile i2c_command_handling_buffers_t * buffer_data, uint8_t command_byte);
+void i2c_fake_slave_application_init(void);
+
+/**
+ * @brief handles the first byte of a read/write operation when configured as a slave
+ * @param[in/out]   byte    : gives the current byte on which we are working
+ * @param[in]       request : gives the current I2C operation from master's point of view
+ *                            => when master reads from slave, request shall be set to I2C_REQUEST_READ
+*/
+i2c_slave_handler_error_t i2c_fake_slave_command_handler(uint8_t * byte, const i2c_request_t request);
+
+/**
+ * @brief handles transmission over request from i2c device whenever either a READ or WRITE operation from
+ * master of i2c bus is finished
+*/
+i2c_slave_handler_error_t i2c_fake_slave_transmission_over_callback(void);
 
 /**
  * @brief used to reset data

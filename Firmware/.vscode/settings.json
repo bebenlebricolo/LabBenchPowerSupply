@@ -36,7 +36,13 @@
         "string_view": "c",
         "initializer_list": "c",
         "ranges": "c",
-        "utility": "c"
+        "utility": "c",
+        "string": "c",
+        "cstdint": "cpp",
+        "tuple": "cpp",
+        "cstddef": "c",
+        "i2c_device_interface.h": "c",
+        "i2c_fake_device.h": "c"
     },
     "editor.tokenColorCustomizations": {
         "textMateRules": [

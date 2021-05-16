@@ -35,7 +35,10 @@ target_link_libraries(firmware
     i2c_driver
     timebase_module
     HD44780_lcd_driver
+    memutils
 )
+
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT firmware)
 
 # Only add those targets if this is used on a Linux environment, as Atmel Studio already handles them itself
 

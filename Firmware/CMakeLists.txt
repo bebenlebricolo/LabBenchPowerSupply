@@ -1,8 +1,8 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.20)
 # Use AVR GCC toolchain
 set(CMAKE_TOOLCHAIN_FILE ${CMAKE_SOURCE_DIR}/Toolchain/avr8-gcc-toolchain.cmake)
 
-project(firmware C)
+project(LabBenchPowerSupply_Firmware C)
 
 set(AVR_MCU atmega328p)
 set(AVR_MCU_SPEED 16000000)
@@ -22,7 +22,11 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
     add_definitions(-DDEBUG_WITH_SIMAVR)
 endif()
 
-# Adding sources
+# This variable is needed by I2c driver in order to locate the config.h file
+# Provided by the application
+set (I2C_DRIVER_CONFIG_FILE_DIR ${CMAKE_SOURCE_DIR}/App/inc)
+
+add_subdirectory(${CMAKE_SOURCE_DIR}/Utils)
 add_subdirectory(${CMAKE_SOURCE_DIR}/Drivers)
 add_subdirectory(${CMAKE_SOURCE_DIR}/Modules)
 add_subdirectory(${CMAKE_SOURCE_DIR}/App)

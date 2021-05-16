@@ -26,9 +26,17 @@ target_include_directories(timer_16_bit_driver_tests PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/Stub
     ${CMAKE_CURRENT_SOURCE_DIR}/../inc
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Timer_generic/inc
+)
+
+target_include_directories(timer_16_bit_driver_tests SYSTEM PUBLIC
     ${GTEST_INCLUDE_DIRS}
 )
-target_link_libraries(timer_16_bit_driver_tests timer_16_bit_driver timer_generic_driver ${GTEST_LIBRARIES} pthread)
+
+if(WIN32)
+    target_link_libraries(timer_16_bit_driver_tests timer_16_bit_driver timer_generic_driver ${GTEST_LIBRARIES} )
+else()
+    target_link_libraries(timer_16_bit_driver_tests timer_16_bit_driver timer_generic_driver ${GTEST_LIBRARIES} pthread)
+endif()
 
 set_target_properties(timer_16_bit_driver_tests
     PROPERTIES

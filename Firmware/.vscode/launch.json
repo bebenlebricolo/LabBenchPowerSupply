@@ -9,8 +9,8 @@
             "name": "(gdb) Launch single test",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/Tests/build/bin/Drivers/I2c/i2c_driver_tests",
-            "args": ["--gtest_filter=i2c_driver_tests.test_initialisation_deinitialisation"],
+            "program": "${workspaceFolder}/Tests/build/bin/Drivers/Lcd_screen/HD44780_lcd_driver_tests",
+            "args": ["--gtest_filter=LcdScreenTestFixtureWithI2cErrors.test_command_clear_max_errors_hit"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
@@ -76,7 +76,7 @@
                     "description": "re enables randomization",
                     "text": "set disable-randomization off",
                     "ignoreFailures": true
-                }
+                },
                 {
                     "description": "loads symbols",
                     "text": "load",

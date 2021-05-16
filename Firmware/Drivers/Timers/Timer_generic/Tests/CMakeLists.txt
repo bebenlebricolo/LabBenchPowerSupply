@@ -25,9 +25,17 @@ target_include_directories(timer_generic_driver_tests PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Timer_8_bit/inc
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Timer_8_bit_async/inc
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Timer_16_bit/inc
+)
+
+target_include_directories(timer_generic_driver_tests SYSTEM PUBLIC
     ${GTEST_INCLUDE_DIRS}
 )
-target_link_libraries(timer_generic_driver_tests timer_generic_driver ${GTEST_LIBRARIES} pthread)
+
+if(WIN32)
+    target_link_libraries(timer_generic_driver_tests timer_generic_driver ${GTEST_LIBRARIES} )
+else()
+    target_link_libraries(timer_generic_driver_tests timer_generic_driver ${GTEST_LIBRARIES} pthread)
+endif()
 
 set_target_properties(timer_generic_driver_tests
     PROPERTIES
