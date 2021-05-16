@@ -56,8 +56,11 @@ target_include_directories(adc_stack_tests SYSTEM PUBLIC
     ${GTEST_INCLUDE_DIRS}
 )
 
-
-target_link_libraries(adc_stack_tests adc_stack ${GTEST_LIBRARIES})
+if(WIN32)
+    target_link_libraries(adc_stack_tests adc_stack ${GTEST_LIBRARIES})
+else()
+    target_link_libraries(adc_stack_tests adc_stack ${GTEST_LIBRARIES} pthread)
+endif()
 
 set_target_properties(adc_stack_tests
     PROPERTIES
@@ -84,7 +87,11 @@ target_include_directories(adc_driver_tests SYSTEM PUBLIC
     ${GTEST_INCLUDE_DIRS}
 )
 
-target_link_libraries(adc_driver_tests adc_driver ${GTEST_LIBRARIES})
+if(WIN32)
+    target_link_libraries(adc_driver_tests adc_driver ${GTEST_LIBRARIES})
+else()
+    target_link_libraries(adc_driver_tests adc_driver ${GTEST_LIBRARIES} pthread)
+endif()
 
 set_target_properties(adc_driver_tests
     PROPERTIES

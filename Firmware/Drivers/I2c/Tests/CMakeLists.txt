@@ -53,7 +53,11 @@ target_include_directories(i2c_driver_tests SYSTEM PUBLIC
     ${GTEST_INCLUDE_DIRS}
 )
 
-target_link_libraries(i2c_driver_tests i2c_driver memutils ${GTEST_LIBRARIES})
+if(WIN32)
+    target_link_libraries(i2c_driver_tests i2c_driver memutils ${GTEST_LIBRARIES})
+else()
+    target_link_libraries(i2c_driver_tests i2c_driver memutils ${GTEST_LIBRARIES} pthread)
+endif()
 
 set_target_properties(i2c_driver_tests
     PROPERTIES

@@ -42,7 +42,11 @@ target_include_directories(HD44780_lcd_driver_tests SYSTEM PUBLIC
     ${GTEST_INCLUDE_DIRS}
 )
 
-target_link_libraries(HD44780_lcd_driver_tests HD44780_lcd_driver ${GTEST_LIBRARIES} )
+if(WIN32)
+    target_link_libraries(HD44780_lcd_driver_tests HD44780_lcd_driver ${GTEST_LIBRARIES} )
+else()
+    target_link_libraries(HD44780_lcd_driver_tests HD44780_lcd_driver ${GTEST_LIBRARIES} pthread)
+endif()
 
 set_target_properties(HD44780_lcd_driver_tests
     PROPERTIES

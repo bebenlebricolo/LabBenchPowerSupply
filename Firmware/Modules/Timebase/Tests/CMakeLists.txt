@@ -43,11 +43,11 @@ target_include_directories(timebase_module_tests SYSTEM PUBLIC
     ${GTEST_INCLUDE_DIRS}
 )
 
-target_link_libraries(timebase_module_tests
-    timebase_module
-    ${GTEST_LIBRARIES}
-
-)
+if(WIN32)
+    target_link_libraries(timebase_module_tests timebase_module ${GTEST_LIBRARIES} )
+else()
+    target_link_libraries(timebase_module_tests timebase_module ${GTEST_LIBRARIES} pthread)
+endif()
 
 set_target_properties(timebase_module_tests
     PROPERTIES
