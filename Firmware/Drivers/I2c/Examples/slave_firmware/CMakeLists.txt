@@ -21,7 +21,7 @@ add_compile_options(-mmcu=${AVR_MCU})
 
 
 # Target definitions
-set( I2C_DRIVER_CONFIG_FILE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/App/inc )
+set( CONFIG_FILE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/App/inc )
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../  ${CMAKE_BINARY_DIR}/slave_firmware/Drivers/I2c)
 add_subdirectory(App ${CMAKE_BINARY_DIR}/slave_firmware/bin )

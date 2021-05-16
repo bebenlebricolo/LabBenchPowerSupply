@@ -4,10 +4,13 @@ add_library(timer_16_bit_driver STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/timer_16_bit.c
 )
 
-target_include_directories(timer_16_bit_driver PRIVATE
-    ${CMAKE_SOURCE_DIR}/App/inc
+if (NOT DEFINED CONFIG_FILE_DIR)
+    message(FATAL_ERROR "No config file path was provided to timer_16_bit_driver, please provide the variable CONFIG_FILE_DIR to point to the config.h location")
+endif()
+
+target_include_directories(timer_16_bit_driver PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/inc
-    ${CMAKE_CURRENT_SOURCE_DIR}/../Timer_generic/inc
+    ${CONFIG_FILE_DIR}
     ${AVR_INCLUDES}
 )
 

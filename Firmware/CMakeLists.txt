@@ -24,7 +24,7 @@ endif()
 
 # This variable is needed by I2c driver in order to locate the config.h file
 # Provided by the application
-set (I2C_DRIVER_CONFIG_FILE_DIR ${CMAKE_SOURCE_DIR}/App/inc)
+set (CONFIG_FILE_DIR ${CMAKE_SOURCE_DIR}/App/inc)
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/Utils)
 add_subdirectory(${CMAKE_SOURCE_DIR}/Drivers)

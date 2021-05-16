@@ -4,9 +4,7 @@ add_library(timer_generic_driver STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/timer_generic.c
 )
 
-target_include_directories(timer_generic_driver PRIVATE
-    ${CMAKE_SOURCE_DIR}/App/inc
+target_include_directories(timer_generic_driver PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/inc
-    ${CMAKE_CURRENT_SOURCE_DIR}/../Timer_generic/inc
     ${AVR_INCLUDES}
 )

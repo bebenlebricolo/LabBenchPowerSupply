@@ -7,9 +7,12 @@ add_library(timebase_module STATIC
 target_include_directories(timebase_module PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/inc
     ${CMAKE_SOURCE_DIR}/App/inc
-    ${CMAKE_SOURCE_DIR}/Drivers/Timers/Timer_generic/inc
-    ${CMAKE_SOURCE_DIR}/Drivers/Timers/Timer_8_bit/inc
-    ${CMAKE_SOURCE_DIR}/Drivers/Timers/Timer_16_bit/inc
-    ${CMAKE_SOURCE_DIR}/Drivers/Timers/Timer_8_bit_async/inc
     ${AVR_INCLUDES}
+)
+
+target_link_libraries(timebase_module
+    timer_generic_driver
+    timer_8_bit_driver
+    timer_16_bit_driver
+    timer_8_bit_async_driver
 )

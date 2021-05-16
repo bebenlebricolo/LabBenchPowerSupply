@@ -154,17 +154,13 @@
                 "${workspaceFolder}/Modules/Timebase/inc",
                 "${workspaceFolder}/**",
 
-                "/usr/include",
-                "/usr/include/c++/**/",
-                "/usr/include/gtest",
-                "/usr/avr/include",
-                "/usr/lib/gcc/avr/10.2.0/include"
+                "D:\\InstalledPrograms\\avr8-gnu-toolchain_b\\avr\\include"
             ],
             "defines": [
                 "__AVR_ATmega328__",
                 "DEBUG_WITH_SIMAVR"
             ],
-            "compilerPath": "/usr/bin/avr-gcc",
+            "compilerPath": "D:\\InstalledPrograms\\avr8-gnu-toolchain_b\\bin\\avr-gcc.exe",
             "cStandard": "c11",
             "cppStandard": "c++17",
             "intelliSenseMode": "gcc-x86"

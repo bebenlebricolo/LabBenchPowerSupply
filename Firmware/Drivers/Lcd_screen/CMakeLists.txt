@@ -8,7 +8,10 @@ string(REPLACE "-Og" "-O0" CMAKE_C_FLAGS_DEBUG ${CMAKE_C_FLAGS_DEBUG})
 
 target_include_directories(HD44780_lcd_driver PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/inc
-    ${CMAKE_SOURCE_DIR}/Drivers/I2c/inc
-    ${CMAKE_SOURCE_DIR}/Modules/Timebase/inc
     ${AVR_INCLUDES}
+)
+
+target_link_libraries(HD44780_lcd_driver
+    i2c_driver
+    timebase_module
 )
