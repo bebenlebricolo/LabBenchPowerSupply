@@ -112,21 +112,21 @@ typedef struct
     uint8_t i2c_address;    /**< I/O expander address       */
 
     struct {
-        uint8_t timebase : 4;    /**< Used timebase module id    */
-        uint8_t i2c : 4;         /**< I2C module index           */
+        uint8_t timebase;    /**< Used timebase module id    */
+        uint8_t i2c;         /**< I2C module index           */
     } indexes;
 
     // Bitfield storing persistent data about display state
     // All fields might be encoded within one CPU word (8 bits)
     struct
     {
-        bool backlight : 1;                         /**< true : backlight on,       false : backlight off                                */
-        bool enabled : 1;                           /**< true : display on,         false : display off                                  */
-        bool cursor_visible : 1;                    /**< true : cursor visible,     false : cursor not displayed                         */
-        bool cursor_blinking : 1;                   /**< true : blinking cursor,    false : persistent cursor                            */
-        bool two_lines_mode : 1;                    /**< true : two lines mode,     false : one line mode (5x8 and 5x10 fonts supported) */
-        bool small_font : 1;                        /**< true : 5x8 font used,      false : 5x10 dots font, single line only             */
-        hd44780_lcd_entry_mode_t entry_mode : 2;    /**< Selects the kind of entry mode which is requested by the user upon typing                          */
+        bool backlight;                         /**< true : backlight on,       false : backlight off                                */
+        bool enabled;                           /**< true : display on,         false : display off                                  */
+        bool cursor_visible;                    /**< true : cursor visible,     false : cursor not displayed                         */
+        bool cursor_blinking;                   /**< true : blinking cursor,    false : persistent cursor                            */
+        bool two_lines_mode;                    /**< true : two lines mode,     false : one line mode (5x8 and 5x10 fonts supported) */
+        bool small_font;                        /**< true : 5x8 font used,      false : 5x10 dots font, single line only             */
+        hd44780_lcd_entry_mode_t entry_mode;        /**< Selects the kind of entry mode which is requested by the user upon typing                          */
     } display;
 } internal_configuration_t;
 
@@ -148,8 +148,8 @@ typedef union
     /* Single byte-wide structure */
     struct
     {
-        uint8_t line : 2;                   /**< Gives the line number of the cursor position (from 0 to 3, could adapt this for 20x04 displays)*/
-        uint8_t column : 6;                 /**< Gives the column number of the cursor position (from 0 to 63)                                  */
+        uint8_t line;                   /**< Gives the line number of the cursor position (from 0 to 3, could adapt this for 20x04 displays)*/
+        uint8_t column;                 /**< Gives the column number of the cursor position (from 0 to 63)                                  */
     } cursor_position;
 
     /* 3 bytes-wide structure */
@@ -161,25 +161,27 @@ typedef union
     } message;
 } process_commands_parameters_t;
 
+typedef void (*process_command_t) (void);
+
 /**
  * @brief A command handler which is used to keep track of the current command state and where it should go at next process() call
 */
 typedef struct
 {
-    void (*process_command)(void);              /**< Pointer to the private function to be called                                               */
+    process_command_t process_command;          /**< Pointer to the private function to be called                                               */
     process_commands_parameters_t parameters;   /**< Stores all necessary parameters to perform requested commands                              */
     uint16_t start_time;                        /**< Used to record starting time of a wait operation, for instance                             */
 
     struct
     {
-        uint8_t count : 4;                      /**< Gives the current sequence number to allow each command to know where it should resume     */
-        bool pulse_sent : 1;                    /**< Persistent flag which tells if a pulse (HD44780 'E' pin was sent or not                    */
-        bool waiting : 1;                       /**< States whether the command sequence is waiting for LCD to settle or not                    */
-        bool first_pass : 1;                    /**< Tells if current sequence has already been entered once and is being reentered             */
-        bool lower_bits : 1;                    /**< When sending a byte of information, selects which 4 bits to send from 8 bits data          */
+        uint8_t count;                      /**< Gives the current sequence number to allow each command to know where it should resume     */
+        bool pulse_sent;                    /**< Persistent flag which tells if a pulse (HD44780 'E' pin was sent or not                    */
+        bool waiting;                       /**< States whether the command sequence is waiting for LCD to settle or not                    */
+        bool first_pass;                    /**< Tells if current sequence has already been entered once and is being reentered             */
+        bool lower_bits;                    /**< When sending a byte of information, selects which 4 bits to send from 8 bits data          */
     } sequence;
 
-    bool nested_sequence_mode : 1;              /**< Tells whether a command is nested within a high-level sequence or not (such as in initialisation sequence for instance) */
+    bool nested_sequence_mode;              /**< Tells whether a command is nested within a high-level sequence or not (such as in initialisation sequence for instance) */
 } process_commands_sequencer_t;
 
 

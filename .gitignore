@@ -29,6 +29,7 @@ fp-info-cache
 # Build directories
 .*[Bb]uild/
 [Bb]uild/
+[Bb]uild*
 
 # Atmel Studio 7 and Visual Studio databases
 .vs/

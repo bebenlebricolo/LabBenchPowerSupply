@@ -76,7 +76,7 @@
                     "description": "re enables randomization",
                     "text": "set disable-randomization off",
                     "ignoreFailures": true
-                }
+                },
                 {
                     "description": "loads symbols",
                     "text": "load",

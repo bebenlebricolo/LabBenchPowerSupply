@@ -57,8 +57,8 @@ typedef struct
 {
     struct
     {
-        timebase_timer_t type : 2;  /**< Used to select a timer from its type                                       */
-        uint8_t index : 6;          /**< Used to select a particular timer from the available ones                  */
+        timebase_timer_t type;  /**< Used to select a timer from its type                                       */
+        uint8_t index;          /**< Used to select a particular timer from the available ones                  */
     } timer;
     uint32_t cpu_freq;              /**< Gives the CPU frequency to compute the right prescaler for the timebase    */
 

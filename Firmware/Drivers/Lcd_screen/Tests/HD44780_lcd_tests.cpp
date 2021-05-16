@@ -65,9 +65,9 @@ protected:
 class LcdScreenTestFixtureBase : public ::testing::Test
 {
 public:
-    hd44780_lcd_config_t config;
-    process_commands_sequencer_t * command_sequencer;
-    internal_configuration_t * internal_configuration;
+    hd44780_lcd_config_t config = { 0 };
+    process_commands_sequencer_t* command_sequencer = nullptr;
+    internal_configuration_t* internal_configuration = nullptr;
 
     void SetUp() override
     {
@@ -141,6 +141,11 @@ public:
     template <typename T>
     std::vector<T> remove_adjacent_duplicates(const std::vector<T>& vector)
     {
+        if (vector.size() == 0)
+        {
+            return vector;
+        }
+
         std::vector<T> out;
         T prev = vector[0];
         out.push_back(prev);
@@ -804,7 +809,7 @@ TEST_F(LcdScreenTestFixtureWithI2cErrors, test_command_clear_max_errors_hit)
 
     error = hd44780_lcd_clear();
     ASSERT_EQ(HD44780_LCD_ERROR_OK, error);
-    ASSERT_EQ(command_sequencer->process_command, internal_command_clear);
+    ASSERT_EQ(command_sequencer->process_command, &internal_command_clear);
     ASSERT_TRUE(command_sequencer_is_reset());
 
     process_command();

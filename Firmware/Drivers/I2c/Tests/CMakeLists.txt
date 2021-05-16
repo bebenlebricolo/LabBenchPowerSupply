@@ -36,9 +36,11 @@ target_compile_definitions(i2c_driver_tests PRIVATE
     -DUNIT_TESTING
 )
 
-target_compile_options(i2c_driver_tests PRIVATE
-    -fstack-protector-strong
-)
+if(UNIX)
+    target_compile_options(i2c_driver_tests PRIVATE
+        -fstack-protector-strong
+    )
+endif()
 
 target_include_directories(i2c_driver_tests PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../inc
