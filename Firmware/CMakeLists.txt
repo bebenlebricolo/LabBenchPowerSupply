@@ -13,6 +13,7 @@ set(CMAKE_C_STANDARD 11)
 add_compile_definitions(
     F_CPU=${AVR_MCU_SPEED}
     __AVR_ATmega328P__
+    I2C_IMPLEM_MASTER_FULL
 )
 add_compile_options(-mmcu=${AVR_MCU})
 

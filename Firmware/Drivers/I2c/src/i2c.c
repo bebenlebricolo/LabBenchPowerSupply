@@ -21,7 +21,7 @@
     #include "memutils.h"
 #endif
 
-/* Minimum I2C request size is 2 to account for : 1 op code + 1 read/write data for configurablde devices
+/* Minimum I2C request size is 2 to account for : 1 op code + 1 read/write data for configurable devices
    or 1 for "dumb" devices such as IO Expanders with no Op Code */
 #define MINIMUM_REQUEST_SIZE (1U)
 
@@ -60,7 +60,9 @@ typedef struct
 } i2c_master_buffer_t;
 static i2c_master_buffer_t master_buffer[I2C_DEVICES_COUNT] = {0};
 
+#if defined(I2C_IMPLEM_SLAVE_TX) || defined(I2C_IMPLEM_SLAVE_RX)
 static uint8_t slave_received_bytes[I2C_DEVICES_COUNT] = {0};
+#endif
 
 static inline volatile uint8_t * get_current_master_buffer_byte(const uint8_t id)
 {

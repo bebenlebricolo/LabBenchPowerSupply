@@ -9,6 +9,7 @@ enable_testing()
 add_definitions(
     -D__AVR_ATmega328__
     -DUNIT_TESTING
+    -DI2C_IMPLEM_FULL_DRIVER
 )
 
 if(UNIX)
