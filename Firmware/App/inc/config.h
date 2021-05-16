@@ -9,4 +9,8 @@
 #define TIMEBASE_MAX_MODULES 3U
 #define I2C_DEVICES_COUNT 1U
 
+// Only implement master tx driver
+#define I2C_IMPLEM_MASTER_TX
+//#define I2C_IMPLEM_FULL_DRIVER
+
 #endif /* CONFIG_HEADER */
