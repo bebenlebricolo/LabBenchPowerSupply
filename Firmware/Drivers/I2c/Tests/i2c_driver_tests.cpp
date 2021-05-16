@@ -253,7 +253,7 @@ TEST(i2c_driver_tests, guard_out_of_range)
     // Should break on every function
     uint8_t id = I2C_DEVICES_COUNT;
     {
-        i2c_handle_t handle;
+        i2c_handle_t handle = { NULL };
         auto ret = i2c_set_handle(id, &handle);
         ASSERT_EQ(ret , I2C_ERROR_DEVICE_NOT_FOUND);
         ret = i2c_get_handle(id, &handle);
@@ -274,35 +274,35 @@ TEST(i2c_driver_tests, guard_out_of_range)
         ASSERT_EQ(ret , I2C_ERROR_DEVICE_NOT_FOUND);
     }
     {
-        i2c_prescaler_t prescaler;
+        i2c_prescaler_t prescaler = I2C_PRESCALER_1;
         auto ret = i2c_set_prescaler(id, prescaler);
         ASSERT_EQ(ret , I2C_ERROR_DEVICE_NOT_FOUND);
         ret = i2c_get_prescaler(id, &prescaler);
         ASSERT_EQ(ret , I2C_ERROR_DEVICE_NOT_FOUND);
     }
     {
-        uint8_t baudrate;
+        uint8_t baudrate = 0;
         auto ret = i2c_set_baudrate(id, baudrate);
         ASSERT_EQ(ret , I2C_ERROR_DEVICE_NOT_FOUND);
         ret = i2c_get_baudrate(id, &baudrate);
         ASSERT_EQ(ret , I2C_ERROR_DEVICE_NOT_FOUND);
     }
     {
-        bool gcenabled;
+        bool gcenabled = false;
         auto ret = i2c_set_general_call_enabled(id, gcenabled);
         ASSERT_EQ(ret , I2C_ERROR_DEVICE_NOT_FOUND);
         ret = i2c_get_general_call_enabled(id, &gcenabled);
         ASSERT_EQ(ret , I2C_ERROR_DEVICE_NOT_FOUND);
     }
     {
-        bool use_interrupt;
+        bool use_interrupt = false;
         auto ret = i2c_set_interrupt_mode(id, use_interrupt);
         ASSERT_EQ(ret , I2C_ERROR_DEVICE_NOT_FOUND);
         ret = i2c_get_interrupt_mode(id, &use_interrupt);
         ASSERT_EQ(ret , I2C_ERROR_DEVICE_NOT_FOUND);
     }
     {
-        uint8_t status_code;
+        uint8_t status_code = 0;
         auto ret = i2c_get_status_code(id, &status_code);
         ASSERT_EQ(ret , I2C_ERROR_DEVICE_NOT_FOUND);
     }
@@ -319,14 +319,14 @@ TEST(i2c_driver_tests, guard_out_of_range)
         ASSERT_EQ(ret , I2C_ERROR_DEVICE_NOT_FOUND);
     }
     {
-        i2c_config_t config;
+        i2c_config_t config = { 0 };
         auto ret = i2c_init(id, &config);
         ASSERT_EQ(ret , I2C_ERROR_DEVICE_NOT_FOUND);
         ret = i2c_deinit(id);
         ASSERT_EQ(ret , I2C_ERROR_DEVICE_NOT_FOUND);
     }
     {
-        i2c_state_t state;
+        i2c_state_t state = I2C_STATE_READY;
         auto ret = i2c_get_state(id, &state);
         ASSERT_EQ(ret , I2C_ERROR_DEVICE_NOT_FOUND);
     }
@@ -1181,6 +1181,7 @@ TEST_F(I2cTestFixture, test_twi_as_slave_transmitter_all_in_one)
     // Check data has been correctly transmitted to buffer (which is the buffer of master fake I2C device here)
     ASSERT_STREQ((char *)(buffer + 1), msg);
 
+
     // Use fake device to write data to our slave i2c device
     // Set the fan speed after the first read
     buffer[0] = I2C_FAKE_SLAVE_APPLICATION_DATA_CMD_FAN_SPEED;
@@ -1224,7 +1225,7 @@ TEST_F(I2cTestFixture, test_twi_as_slave_transmitter_all_in_one)
     // Our I2c device is now becoming the master here, as if it was writting to another device (multi master mode)
     i2c_exposed_data_t* fake_device_data = i2c_fake_device_get_exposed_data();
     buffer[0] = I2C_FAKE_DEVICE_CMD_MESSAGE;
-    memset(buffer + 1, 0, I2C_FAKE_SLAVE_APPLICATION_DATA_MAX_BYTE_ARRAY_LENGTH);
+    memset(buffer + 1, 0, I2C_FAKE_SLAVE_APPLICATION_DATA_MAX_BYTE_ARRAY_LENGTH - 1);
     snprintf((char *) (buffer + 1), 20, "Write test !");
 
     ret = i2c_write(0U, 0x23, buffer, 21, 0U);
@@ -1242,7 +1243,6 @@ TEST_F(I2cTestFixture, test_twi_as_slave_transmitter_all_in_one)
     ASSERT_STREQ(fake_device_data->msg, (char *) (buffer + 1));
 
     i2c_fake_slave_application_data_clear();
-
 }
 
 

@@ -357,7 +357,7 @@ static void handle_slave_wait_master_addressing(const uint8_t id)
         else
         {
             states[id].current = INTERNAL_STATE_SLAVE_RX;
-            write_status_code_to_reg(id, SLA_RX_SLAVE_WRITE_ACK);
+            write_status_code_to_reg(id, SLA_RX_PREV_ADDRESSED_DATA_RECEIVED_ACK);
         }
         interface[id].ack_sent = true;
         set_twint(id);
