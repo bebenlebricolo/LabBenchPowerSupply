@@ -1,6 +1,6 @@
 cmake_minimum_required( VERSION 3.18)
 # Use AVR GCC toolchain
-set(CMAKE_TOOLCHAIN_FILE ${CMAKE_SOURCE_DIR}/../../../Toolchain/avr8-gcc-toolchain.cmake)
+set(CMAKE_TOOLCHAIN_FILE ${CMAKE_SOURCE_DIR}/../../../../Toolchain/avr8-gcc-toolchain.cmake)
 project(i2c_slave_firmware C)
 
 # Microcontroller variables
@@ -23,5 +23,5 @@ add_compile_options(-mmcu=${AVR_MCU})
 # Target definitions
 set( I2C_DRIVER_CONFIG_FILE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/App/inc )
 
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../../Drivers/I2c ${CMAKE_BINARY_DIR}/slave_firmware/Drivers/I2c)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../  ${CMAKE_BINARY_DIR}/slave_firmware/Drivers/I2c)
 add_subdirectory(App ${CMAKE_BINARY_DIR}/slave_firmware/bin )
