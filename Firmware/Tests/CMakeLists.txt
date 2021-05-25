@@ -64,6 +64,11 @@ add_subdirectory( ${CMAKE_SOURCE_DIR}/../Drivers/Lcd_screen/Tests
     ${CMAKE_BINARY_DIR}/Tests/Drivers/Lcd_screen
 )
 
+# Io driver
+add_subdirectory( ${CMAKE_SOURCE_DIR}/../Drivers/Io/Tests
+    ${CMAKE_BINARY_DIR}/Tests/Drivers/Io
+)
+
 # Modules
 add_subdirectory( ${CMAKE_SOURCE_DIR}/../Modules/Timebase/Tests
     ${CMAKE_BINARY_DIR}/Tests/Modules/Timebase
