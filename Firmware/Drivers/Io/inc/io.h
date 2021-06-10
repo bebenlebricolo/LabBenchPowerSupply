@@ -12,7 +12,7 @@ extern "C"
 
 #ifndef IO_MAX_PINS
 #define IO_MAX_PINS (28U)
-#pragma warning("IO_MAX_PINS macro was not defined in this compilation unit, IO_MAX_PINS will take its default size.")
+#pragma message("IO_MAX_PINS macro was not defined in this compilation unit, IO_MAX_PINS will take its default size.")
 #endif
 
 /**
@@ -21,13 +21,16 @@ extern "C"
 */
 typedef enum
 {
-    IO_PORT_A = 0U,  /**< PORT A of avr core */
-    IO_PORT_B = 1U,  /**< PORT B of avr core */
-    IO_PORT_C = 2U,  /**< PORT C of avr core */
-    IO_PORT_D = 3U,   /**< PORT D of avr core */
+    IO_PORT_A = 0U,     /**< PORT A of avr core */
+    IO_PORT_B = 1U,     /**< PORT B of avr core */
+    IO_PORT_C = 2U,     /**< PORT C of avr core */
+    IO_PORT_D = 3U,     /**< PORT D of avr core */
     IO_PORT_COUNT = 4U
 } io_port_t;
 
+/**
+ * @brief overkill io state made explicit for everyone (hell yeah!)
+*/
 typedef enum
 {
     IO_STATE_LOW = 0U,
