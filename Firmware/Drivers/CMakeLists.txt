@@ -7,4 +7,5 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Timers/Timer_16_bit)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Timers/Timer_generic)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/I2c)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Lcd_screen)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Io)
 

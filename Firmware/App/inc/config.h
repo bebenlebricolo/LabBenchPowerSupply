@@ -4,7 +4,7 @@
 @<FreeMyCode>
 FreeMyCode version : 1.0 RC alpha
     Author : bebenlebricolo
-    License : 
+    License :
         name : GPLv3
         url : https://www.gnu.org/licenses/quick-guide-gplv3.html
     Date : 12/02/2021
@@ -42,5 +42,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Only implement master tx driver
 #define I2C_IMPLEM_MASTER_TX
 //#define I2C_IMPLEM_FULL_DRIVER
+
+#define IO_MAX_PINS 6U
 
 #endif /* CONFIG_HEADER */

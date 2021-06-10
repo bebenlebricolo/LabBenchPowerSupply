@@ -33,4 +33,5 @@ fp-info-cache
 
 # Atmel Studio 7 and Visual Studio databases
 .vs/
+.vscode/
 
