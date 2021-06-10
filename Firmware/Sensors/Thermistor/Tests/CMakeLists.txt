@@ -8,8 +8,9 @@ project(thermistor_test)
 add_library(thermistor_driver STATIC
     ../src/thermistor.c
 )
-target_include_directories(thermistor_driver PRIVATE
+target_include_directories(thermistor_driver PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../inc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../../Drivers/Adc/inc
     ${CMAKE_CURRENT_SOURCE_DIR}/Stubs
 )
 
@@ -39,9 +40,9 @@ target_include_directories(thermistor_driver_test SYSTEM PUBLIC
 )
 
 if(WIN32)
-    target_link_libraries(thermistor_driver_test adc_stack ${GTEST_LIBRARIES})
+    target_link_libraries(thermistor_driver_test thermistor_driver ${GTEST_LIBRARIES})
 else()
-    target_link_libraries(thermistor_driver_test adc_stack ${GTEST_LIBRARIES} pthread)
+    target_link_libraries(thermistor_driver_test thermistor_driver ${GTEST_LIBRARIES} pthread)
 endif()
 
 set_target_properties(thermistor_driver_test
