@@ -26,14 +26,6 @@ typedef enum
     THERMISTOR_ERR_WRONG_CONFIG,
 } thermistor_error_t;
 
-/**
- * @brief thermistor intrinsic type (positive thermal coefficient, negative thermal coefficient, ...)
-*/
-typedef enum
-{
-    THERMISTOR_TYPE_NTC,    /**< Negative thermal coefficient thermistor kind */
-    THERMISTOR_TYPE_PTC,    /**< Positive thermal coefficient thermistor kind */
-} thermistor_type_t;
 
 /**
  * @brief thermistor intrinsic type (positive thermal coefficient, negative thermal coefficient, ...)
@@ -67,7 +59,6 @@ typedef union
 */
 typedef struct
 {
-    thermistor_type_t type;     /**< thermistor kind (NTC, PTC)                                                  */
     struct
     {
         uint16_t resistance;    /**< Calibration resistance for the modelised thermistance (in Ohms)             */
@@ -81,6 +72,27 @@ typedef struct
         thermistor_curve_t const * curve;   /**< Thermistor curve (curve is owned externally so it can be reused for several identical thermistors) */
     } curve;
 } thermistor_model_t;
+
+/**
+ * @brief configuration structure for thermistor driver
+*/
+typedef struct
+{
+    uint8_t adc_index;          /**< Index of adc input to be requested to adc driver   */
+    thermistor_model_t model;   /**< Thermistor model used                              */
+} thermistor_config_t;
+
+/**
+ * @brief configures thermistor driver using static configuration (@see thermistor_driver_config symbol)
+ * @return thermistor driver errors
+*/
+thermistor_error_t thermistor_init(void);
+
+/**
+ * @brief this extern symbol has to be implemented by application code. Usually, this is done in a config.c file
+ * whose symbols are linked when building the whole application
+*/
+extern thermistor_config_t thermistor_driver_config[THERMISTOR_MAX_THERMISTORS];
 
 #ifdef __cplusplus
 }
