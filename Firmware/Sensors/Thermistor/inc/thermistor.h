@@ -51,8 +51,7 @@ typedef struct
 */
 typedef struct
 {
-    thermistor_curve_discrete_pair_t hot_half[THERMISTOR_CURVE_MAX_SAMPLES / 2U + 1];   /**< Hot half curve (ratio <= 1)    */
-    thermistor_curve_discrete_pair_t cold_half[THERMISTOR_CURVE_MAX_SAMPLES / 2U + 1];  /**< Cold half curve (ratio >= 1)   */
+    thermistor_curve_discrete_pair_t data[THERMISTOR_CURVE_MAX_SAMPLES / 2U + 1];   /**< Hot half curve (ratio <= 1)    */
     uint8_t count;                            /**< Stores how many samples are used in this curve               */
 } thermistor_curve_discrete_t;
 
@@ -77,7 +76,11 @@ typedef struct
     thermistor_curve_type_t type;
     union
     {
-        thermistor_curve_discrete_t * discrete;
+        struct
+        {
+            thermistor_curve_discrete_t const * hot_side;
+            thermistor_curve_discrete_t const * cold_side;
+        } discrete;
         thermistor_curve_linear_t * linear;
     } data;
 } thermistor_curve_t;

@@ -30,11 +30,25 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "gtest/gtest.h"
 #include "thermistor.h"
+#include "thermistor_private.h"
+#include "config.h"
 
-
-
-TEST(thermistor_tests, test_model)
+TEST(thermistor_tests, test_find_segment)
 {
+    uint8_t target_ratio = 11;
+    thermistor_curve_discrete_pair_t const * lower_bound = NULL;
+    thermistor_curve_discrete_pair_t const * upper_bound = NULL;
+    bool ret = find_segment(thermistor_driver_config[0].model.curve.data.discrete.cold_side, target_ratio, &lower_bound, &upper_bound );
+    ASSERT_TRUE(ret);
+    ASSERT_EQ(lower_bound->ratio, 12U);
+    ASSERT_EQ(upper_bound->ratio, 8U);
+
+    target_ratio = 8;
+    ret = find_segment(thermistor_driver_config[0].model.curve.data.discrete.cold_side, target_ratio, &lower_bound, &upper_bound );
+    ASSERT_TRUE(ret);
+    ASSERT_EQ(lower_bound->ratio, 8U);
+    ASSERT_EQ(upper_bound->ratio, 8U);
+    ASSERT_EQ(lower_bound, upper_bound);
 
 }
 
