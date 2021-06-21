@@ -4,7 +4,7 @@
 @<FreeMyCode>
 FreeMyCode version : 1.0 RC alpha
     Author : bebenlebricolo
-    License : 
+    License :
         name : GPLv3
         url : https://www.gnu.org/licenses/quick-guide-gplv3.html
     Date : 12/02/2021
@@ -283,7 +283,7 @@ TEST(i2c_driver_tests, guard_out_of_range)
     // Should break on every function
     uint8_t id = I2C_DEVICES_COUNT;
     {
-        i2c_handle_t handle = { NULL };
+        i2c_handle_t handle;
         auto ret = i2c_set_handle(id, &handle);
         ASSERT_EQ(ret , I2C_ERROR_DEVICE_NOT_FOUND);
         ret = i2c_get_handle(id, &handle);
@@ -349,7 +349,7 @@ TEST(i2c_driver_tests, guard_out_of_range)
         ASSERT_EQ(ret , I2C_ERROR_DEVICE_NOT_FOUND);
     }
     {
-        i2c_config_t config = { 0 };
+        i2c_config_t config;
         auto ret = i2c_init(id, &config);
         ASSERT_EQ(ret , I2C_ERROR_DEVICE_NOT_FOUND);
         ret = i2c_deinit(id);

@@ -4,7 +4,7 @@
 @<FreeMyCode>
 FreeMyCode version : 1.0 RC alpha
     Author : bebenlebricolo
-    License : 
+    License :
         name : GPLv3
         url : https://www.gnu.org/licenses/quick-guide-gplv3.html
     Date : 12/02/2021
@@ -95,7 +95,7 @@ protected:
 class LcdScreenTestFixtureBase : public ::testing::Test
 {
 public:
-    hd44780_lcd_config_t config = { 0 };
+    hd44780_lcd_config_t config;
     process_commands_sequencer_t* command_sequencer = nullptr;
     internal_configuration_t* internal_configuration = nullptr;
 
