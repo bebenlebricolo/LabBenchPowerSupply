@@ -15,3 +15,5 @@ target_include_directories(thermistor_driver PRIVATE
     ${CONFIG_FILE_DIR}
     ${AVR_INCLUDES}
 )
+
+target_link_libraries(thermistor_driver adc_driver)
