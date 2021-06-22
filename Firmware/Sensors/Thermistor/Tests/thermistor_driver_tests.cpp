@@ -29,9 +29,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "gtest/gtest.h"
+
+#include "config.h"
+#include "adc_stub.h"
 #include "thermistor.h"
 #include "thermistor_private.h"
-#include "config.h"
 
 TEST(thermistor_tests, test_find_segment)
 {
@@ -136,6 +138,51 @@ TEST(thermistor_tests, test_compute_temperature)
     ASSERT_EQ(temp, 77);
 }
 
+
+TEST(thermistor_tests, test_process_sensors)
+{
+    adc_millivolts_t reading = 2125U;
+    thermistor_error_t error = THERMISTOR_ERR_OK;
+    int8_t temperature = 0;
+    stub_adc_set_readings(THERMISTOR_CONFIG_ADC_INDEX, reading);
+
+    stub_adc_set_error(ADC_ERROR_CONFIG);
+    error = thermistor_process();
+    ASSERT_EQ(error, THERMISTOR_ERR_WRONG_CONFIG);
+
+    stub_adc_register_channel(ADC_MUX_ADC1);
+
+    stub_adc_set_error(ADC_ERROR_OK);
+    error = thermistor_process();
+    ASSERT_EQ(error, THERMISTOR_ERR_OK);
+    error = thermistor_read(0U, &temperature);
+    EXPECT_EQ(temperature, 23U);
+
+    reading = 2000;
+    stub_adc_set_readings(THERMISTOR_CONFIG_ADC_INDEX, reading);
+    error = thermistor_process();
+    ASSERT_EQ(error, THERMISTOR_ERR_OK);
+    error = thermistor_read(0U, &temperature);
+    ASSERT_EQ(error, THERMISTOR_ERR_OK);
+    EXPECT_EQ(temperature, 22);
+
+    reading = 3200U;
+    stub_adc_set_readings(THERMISTOR_CONFIG_ADC_INDEX, reading);
+    error = thermistor_process();
+    ASSERT_EQ(error, THERMISTOR_ERR_OK);
+    error = thermistor_read(0U, &temperature);
+    ASSERT_EQ(error, THERMISTOR_ERR_OK);
+    EXPECT_EQ(temperature, 33);
+
+    reading = 4980U;
+    stub_adc_set_readings(THERMISTOR_CONFIG_ADC_INDEX, reading);
+    error = thermistor_process();
+    ASSERT_EQ(error, THERMISTOR_ERR_OK);
+    error = thermistor_read(0U, &temperature);
+    ASSERT_EQ(error, THERMISTOR_ERR_OK);
+    EXPECT_EQ(temperature, 77);
+
+}
 
 int main(int argc, char **argv)
 {

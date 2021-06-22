@@ -28,10 +28,11 @@ thermistor_error_t thermistor_process(void)
     for (uint8_t i = 0 ; i < THERMISTOR_MAX_THERMISTORS ; i++)
     {
         err = adc_read_millivolt(thermistor_driver_config[i].adc_index, &reading);
-        if (err == ADC_ERROR_OK)
+        if (err != ADC_ERROR_OK)
         {
-            temperatures[i] = compute_temperature(i, &reading);
+            return THERMISTOR_ERR_WRONG_CONFIG;
         }
+        temperatures[i] = compute_temperature(i, &reading);
     }
     return THERMISTOR_ERR_OK;
 }

@@ -53,6 +53,8 @@ int8_t compute_temperature(const uint8_t index, adc_millivolts_t * reading);
  *  - Rth : current resistance of thermistance
  *  - R0  : calibration resistance of thermistance (usually 25°C / 298.15K)
  * And returns a ratio_coefficient_t enum value to indicate the scale used by the ratio number to accurately represent it later.
+ * This is useful because we want to restrict data usage as much as possible to prevent bloating the flash with unecessary data, so a bit
+ * of code is sacrificed to help reduce the ram footprint.
  *
  * For instance, ratio could be encoded with :
  *   | scale | ratio values |
@@ -60,7 +62,10 @@ int8_t compute_temperature(const uint8_t index, adc_millivolts_t * reading);
  *   | 10:1  |    [1,10]    |
  *   | 100:1 |    [0,1]     |
  *
- * @param[in]
+ * @param[in] model     : thermistor model as configured in config.c
+ * @param[in] reading   : adc reading in millivolt for a given sensor
+ * @param[out] ratio    : output calculated ratio
+ * @return ratio coefficient used to depict ratio's current scaling
 */
 ratio_coefficients_t compute_ratio(thermistor_model_t const * const model, const adc_millivolts_t * reading, uint8_t * const ratio);
 

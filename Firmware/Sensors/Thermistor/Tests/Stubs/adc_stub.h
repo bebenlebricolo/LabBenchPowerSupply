@@ -6,37 +6,39 @@ extern "C"
 {
 #endif
 
+#include "adc.h"
+
 #define ADC_STUB_MAX_READINGS 5U
 
 /**
  * @brief updates internal data storage for selected adc channel
 */
-void set_adc_readings(const adc_mux_t channel, const adc_millivolts_t reading);
+void stub_adc_set_readings(const adc_mux_t channel, const adc_millivolts_t reading);
 
 /**
  * @brief clears all fakes adc readings
 */
-void clear_readings(void);
+void stub_adc_clear_readings(void);
 
 /**
  * @brief performs a fake channel registration, as if it has effectively been registered by application program
 */
-void register_channel(const adc_mux_t channel);
+void stub_adc_register_channel(const adc_mux_t channel);
 
 /**
  * @brief clears registered channels
 */
-void clear_registered_channels(void);
+void stub_adc_clear_registered_channels(void);
 
 /**
  * @brief resets this fake driver
 */
-void clear_all(void);
+void stub_adc_clear_all(void);
 
 /**
  * @brief sets the adc_error_t that functions will return
 */
-void set_error(const adc_error_t error);
+void stub_adc_set_error(const adc_error_t error);
 
 #ifdef __cplusplus
 }
