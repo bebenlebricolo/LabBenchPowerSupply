@@ -3,7 +3,7 @@
 
 static const thermistor_curve_discrete_t hot_side_curve =
 {
-    .count = 8U,
+    .count = 5U,
     .data = {
         {100, 25},  /**< hot half is always less than 1, so we can retrieve percentages by multiplying by 100 to ease computations */
         {25, 39},
@@ -15,7 +15,7 @@ static const thermistor_curve_discrete_t hot_side_curve =
 
 static const thermistor_curve_discrete_t cold_side_curve =
 {
-    .count = 8U,
+    .count = 6U,
     .data = {
         {16, 1},    /**< cold half exceeds ratio exceeds 1 so we don't multiply the ratio by 100 to get correct computation */
         {12, 3},

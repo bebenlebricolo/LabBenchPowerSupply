@@ -33,6 +33,11 @@ void clear_registered_channels(void);
 */
 void clear_all(void);
 
+/**
+ * @brief sets the adc_error_t that functions will return
+*/
+void set_error(const adc_error_t error);
+
 #ifdef __cplusplus
 }
 #endif

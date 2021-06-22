@@ -41,8 +41,8 @@ typedef enum
 
 typedef struct
 {
-    uint8_t ratio;                        /**< Rtherm/Rcalibration                                          */
-    int8_t  temperature;                  /**< matching temperature in Celsius degrees (°C)                 */
+    uint8_t ratio;              /**< Rtherm/Rcalibration                                          */
+    int8_t  temperature;        /**< matching temperature in Celsius degrees (°C)                 */
 } thermistor_curve_discrete_pair_t;
 
 /**
@@ -51,8 +51,8 @@ typedef struct
 */
 typedef struct
 {
-    thermistor_curve_discrete_pair_t data[THERMISTOR_CURVE_MAX_SAMPLES / 2U + 1];   /**< Hot half curve (ratio <= 1)    */
-    uint8_t count;                            /**< Stores how many samples are used in this curve               */
+    thermistor_curve_discrete_pair_t data[THERMISTOR_CURVE_MAX_SAMPLES / 2U + 1];   /**< Hot half curve (ratio <= 1)                    */
+    uint8_t count;                                                                  /**< Stores how many samples are used in this curve */
 } thermistor_curve_discrete_t;
 
 /**
@@ -64,8 +64,8 @@ typedef struct
 */
 typedef struct
 {
-    int8_t coefficient;                       /**< Linear coefficient using first order approximation      */
-    int8_t offset;                            /**< Offset for linear equation                              */
+    int8_t coefficient;  /**< Linear coefficient using first order approximation      */
+    int8_t offset;       /**< Offset for linear equation                              */
 } thermistor_curve_linear_t;
 
 /**
@@ -73,15 +73,15 @@ typedef struct
 */
 typedef struct
 {
-    thermistor_curve_type_t type;
+    thermistor_curve_type_t type;   /**< curve type, either discrete or linear curve */
     union
     {
         struct
         {
-            thermistor_curve_discrete_t const * hot_side;
-            thermistor_curve_discrete_t const * cold_side;
+            thermistor_curve_discrete_t const * hot_side;   /**< hot side curve, where ratio is between 0 and 1 */
+            thermistor_curve_discrete_t const * cold_side;  /**< cold side curve, when ratio is above 1         */
         } discrete;
-        thermistor_curve_linear_t * linear;
+        thermistor_curve_linear_t * linear; /**< Linear curve in case we need to use one */
     } data;
 } thermistor_curve_t;
 
@@ -107,7 +107,7 @@ typedef struct
 */
 typedef struct
 {
-    adc_mux_t adc_index;          /**< Index of adc input to be requested to adc driver   */
+    adc_mux_t adc_index;        /**< Index of adc input to be requested to adc driver   */
     thermistor_model_t model;   /**< Thermistor model used                              */
 } thermistor_config_t;
 

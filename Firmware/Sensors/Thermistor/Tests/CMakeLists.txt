@@ -7,7 +7,6 @@ project(thermistor_test)
 ### thermistor_driver library ###
 add_library(thermistor_driver STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/thermistor.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/thermistor_private.c
 )
 target_include_directories(thermistor_driver PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../inc
@@ -26,6 +25,7 @@ target_compile_definitions(thermistor_driver PRIVATE
 add_executable(thermistor_driver_test
     ${CMAKE_CURRENT_SOURCE_DIR}/thermistor_driver_tests.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Stubs/config.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Stubs/adc_stub.c
 )
 
 target_compile_definitions(thermistor_driver_test PRIVATE

@@ -38,18 +38,102 @@ TEST(thermistor_tests, test_find_segment)
     uint8_t target_ratio = 11;
     thermistor_curve_discrete_pair_t const * lower_bound = NULL;
     thermistor_curve_discrete_pair_t const * upper_bound = NULL;
-    bool ret = find_segment(thermistor_driver_config[0].model.curve.data.discrete.cold_side, target_ratio, &lower_bound, &upper_bound );
+    bool ret = find_segment(thermistor_driver_config[0].model.curve.data.discrete.cold_side, target_ratio, RATIO_COEF_1, &lower_bound, &upper_bound );
     ASSERT_TRUE(ret);
     ASSERT_EQ(lower_bound->ratio, 12U);
     ASSERT_EQ(upper_bound->ratio, 8U);
 
-    target_ratio = 8;
-    ret = find_segment(thermistor_driver_config[0].model.curve.data.discrete.cold_side, target_ratio, &lower_bound, &upper_bound );
+    // Using the x10 representation, actual ratio is 8
+    target_ratio = 80U;
+    ret = find_segment(thermistor_driver_config[0].model.curve.data.discrete.cold_side, target_ratio,  RATIO_COEF_10, &lower_bound, &upper_bound );
     ASSERT_TRUE(ret);
     ASSERT_EQ(lower_bound->ratio, 8U);
     ASSERT_EQ(upper_bound->ratio, 8U);
     ASSERT_EQ(lower_bound, upper_bound);
 
+    // Using the x10 representation, actual ratio is 8
+    target_ratio = 63U;
+    ret = find_segment(thermistor_driver_config[0].model.curve.data.discrete.cold_side, target_ratio,  RATIO_COEF_10, &lower_bound, &upper_bound );
+    ASSERT_TRUE(ret);
+    ASSERT_EQ(lower_bound->ratio, 8U);
+    ASSERT_EQ(upper_bound->ratio, 4U);
+
+    // Using the x100 representation, actual ratio is 0.53 (53%)
+    target_ratio = 53U;
+    ret = find_segment(thermistor_driver_config[0].model.curve.data.discrete.hot_side, target_ratio,  RATIO_COEF_100, &lower_bound, &upper_bound );
+    ASSERT_TRUE(ret);
+    ASSERT_EQ(lower_bound->ratio, 100U);
+    ASSERT_EQ(upper_bound->ratio, 25U);
+
+    // Using the x100 representation, actual ratio is 0.53 (53%)
+    target_ratio = 0U;
+    ret = find_segment(thermistor_driver_config[0].model.curve.data.discrete.hot_side, target_ratio,  RATIO_COEF_100, &lower_bound, &upper_bound );
+    ASSERT_FALSE(ret);
+    ASSERT_EQ(lower_bound->ratio, 1U);
+    ASSERT_EQ(upper_bound->ratio, 1U);
+}
+
+TEST(thermistor_tests, test_compute_ratios)
+{
+    // Cold side first
+    adc_millivolts_t reading = 2125U;
+    uint8_t ratio = 0;
+    ratio_coefficients_t coef = compute_ratio(&thermistor_driver_config[0].model, &reading, &ratio);
+    ASSERT_EQ(coef, RATIO_COEF_10);
+    ASSERT_EQ(ratio, 13U);
+
+    reading = 1200U;
+    coef = compute_ratio(&thermistor_driver_config[0].model, &reading, &ratio);
+    ASSERT_EQ(coef, RATIO_COEF_10);
+    ASSERT_EQ(ratio, 31U);
+
+    reading = 250U;
+    coef = compute_ratio(&thermistor_driver_config[0].model, &reading, &ratio);
+    ASSERT_EQ(coef, RATIO_COEF_1);
+    ASSERT_EQ(ratio, 19);
+
+    reading = 120U;
+    coef = compute_ratio(&thermistor_driver_config[0].model, &reading, &ratio);
+    ASSERT_EQ(coef, RATIO_COEF_1);
+    ASSERT_EQ(ratio, 40);
+
+    // Hot side
+    reading = 3000U;
+    coef = compute_ratio(&thermistor_driver_config[0].model, &reading, &ratio);
+    ASSERT_EQ(coef, RATIO_COEF_100);
+    ASSERT_EQ(ratio, 65);
+
+    reading = 4500U;
+    coef = compute_ratio(&thermistor_driver_config[0].model, &reading, &ratio);
+    ASSERT_EQ(coef, RATIO_COEF_100);
+    ASSERT_EQ(ratio, 10U);
+}
+
+TEST(thermistor_tests, test_compute_temperature)
+{
+    adc_millivolts_t reading = 2125U;
+    int8_t temp = compute_temperature(0, &reading);
+    ASSERT_EQ(temp, 23U);
+
+    reading = 2500U;
+    temp = compute_temperature(0, &reading);
+    ASSERT_EQ(temp, 25U);
+
+    reading = 2700U;
+    temp = compute_temperature(0, &reading);
+    ASSERT_EQ(temp, 27U);
+
+    reading = 3200U;
+    temp = compute_temperature(0, &reading);
+    ASSERT_EQ(temp, 33U);
+
+    reading = 4123U;
+    temp = compute_temperature(0, &reading);
+    ASSERT_EQ(temp, 42U);
+
+    reading = 4980U;
+    temp = compute_temperature(0, &reading);
+    ASSERT_EQ(temp, 77);
 }
 
 

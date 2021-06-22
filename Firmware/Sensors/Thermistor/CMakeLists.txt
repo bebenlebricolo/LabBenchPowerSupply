@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.0)
 
 add_library(thermistor_driver STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/thermistor.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/thermistor_private.c
 )
 
 target_include_directories(thermistor_driver PUBLIC

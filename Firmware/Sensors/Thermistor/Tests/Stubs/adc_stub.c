@@ -10,6 +10,7 @@ static struct
     bool registered;
 } stub_registered_channels[ADC_MUX_COUNT];
 
+static adc_error_t yielded_error = ADC_ERROR_OK;
 
 adc_error_t adc_read_millivolt(const adc_mux_t channel, adc_millivolts_t * const reading)
 {
@@ -24,6 +25,8 @@ adc_error_t adc_read_millivolt(const adc_mux_t channel, adc_millivolts_t * const
     }
 
     *reading = stub_registered_channels[channel].reading;
+
+    return yielded_error;
 }
 
 void set_adc_readings(const adc_mux_t channel, const adc_millivolts_t reading)
@@ -56,5 +59,11 @@ void clear_all(void)
 {
     clear_registered_channels();
     clear_readings();
+    yielded_error = ADC_ERROR_OK;
+}
+
+void set_error(const adc_error_t error)
+{
+    yielded_error = error;
 }
 
