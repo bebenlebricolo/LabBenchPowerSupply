@@ -69,6 +69,11 @@ add_subdirectory( ${CMAKE_SOURCE_DIR}/../Drivers/Io/Tests
     ${CMAKE_BINARY_DIR}/Tests/Drivers/Io
 )
 
+# Thermistor driver
+add_subdirectory( ${CMAKE_SOURCE_DIR}/../Sensors/Thermistor/Tests
+    ${CMAKE_BINARY_DIR}/Tests/Sensors/Thermistor
+)
+
 # Modules
 add_subdirectory( ${CMAKE_SOURCE_DIR}/../Modules/Timebase/Tests
     ${CMAKE_BINARY_DIR}/Tests/Modules/Timebase
