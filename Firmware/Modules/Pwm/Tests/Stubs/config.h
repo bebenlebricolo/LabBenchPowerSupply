@@ -6,7 +6,8 @@ extern "C"
 {
 #endif
 
-#define PWM_MAX_INSTANCES 1U
+#define PWM_MAX_HARD_INSTANCES 1U
+#define PWM_MAX_SOFT_INSTANCES 1U
 
 #ifdef __cplusplus
 }
