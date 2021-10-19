@@ -1,0 +1,3 @@
+[submodule "AvrAsyncCore"]
+	path = Firmware/AvrAsyncCore
+	url = git@github.com:bebenlebricolo/AvrAsyncCore.git
