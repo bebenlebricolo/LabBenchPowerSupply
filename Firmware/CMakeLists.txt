@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 # Use AVR GCC toolchain
-set(CMAKE_TOOLCHAIN_FILE ${CMAKE_SOURCE_DIR}/Toolchain/avr8-gcc-toolchain.cmake)
+set(CMAKE_TOOLCHAIN_FILE ${CMAKE_SOURCE_DIR}/AvrAsyncCore/Toolchain/avr8-gcc-toolchain.cmake)
 
 project(LabBenchPowerSupply_Firmware C)
 
@@ -27,8 +27,7 @@ endif()
 # Provided by the application
 set (CONFIG_FILE_DIR ${CMAKE_SOURCE_DIR}/App/inc)
 
-add_subdirectory(${CMAKE_SOURCE_DIR}/Utils)
-add_subdirectory(${CMAKE_SOURCE_DIR}/Drivers)
-add_subdirectory(${CMAKE_SOURCE_DIR}/Modules)
-add_subdirectory(${CMAKE_SOURCE_DIR}/Sensors)
+add_subdirectory(${CMAKE_SOURCE_DIR}/AvrAsyncCore)
 add_subdirectory(${CMAKE_SOURCE_DIR}/App)
+add_subdirectory(${CMAKE_SOURCE_DIR}/Sensors)
+
