@@ -11,7 +11,7 @@ add_library(thermistor_driver STATIC
 target_include_directories(thermistor_driver PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../inc
     ${CMAKE_CURRENT_SOURCE_DIR}/../private_inc
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../Drivers/Adc/inc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../../AvrAsyncCore/Drivers/Adc/inc
     ${CMAKE_CURRENT_SOURCE_DIR}/Stubs
 )
 
